@@ -201,10 +201,15 @@ class GameManager extends ChangeNotifier {
           ? GameConstants.specialPegColor 
           : GameConstants.normalPegColor;
       
+      // Special pegs get enhanced particle effects
+      final particleCount = peg.type == PegType.special 
+          ? 12  // More particles for special pegs
+          : GameConstants.collisionBurstParticleCount;
+      
       _particleSystem.spawnCollisionBurst(
         position: collision.collisionPosition,
         pegColor: pegColor,
-        particleCount: GameConstants.collisionBurstParticleCount,
+        particleCount: particleCount,
       );
       
       if (peg.type == PegType.special) {
@@ -225,6 +230,18 @@ class GameManager extends ChangeNotifier {
     
     if (level.allSpecialPegsHit) {
       _gameState.triggerSpecialBonus();
+      
+      // Trigger visual bonus effect - spawn particle bursts at all special peg locations
+      final specialPegs = level.pegs.where((peg) => peg.type == PegType.special).toList();
+      
+      for (final peg in specialPegs) {
+        // Spawn large golden burst at each special peg
+        _particleSystem.spawnCollisionBurst(
+          position: vm.Vector2(peg.position.x, peg.position.y),
+          pegColor: GameConstants.specialPegColor,
+          particleCount: 16, // Extra large burst for bonus trigger
+        );
+      }
     }
   }
 
