@@ -48,16 +48,72 @@ class PhysicsEngine {
       ball.position.x = ball.radius;
       ball.velocity.x = -ball.velocity.x * _damping;
     }
-    
+
     // Right boundary
     if (ball.position.x + ball.radius >= GameConstants.boardWidth) {
       ball.position.x = GameConstants.boardWidth - ball.radius;
       ball.velocity.x = -ball.velocity.x * _damping;
     }
-    
+
+    // Launch channel barrier - prevent ball from entering launch tube
+    _checkLaunchChannelBarrier(ball);
+
     // Bottom boundary (ball has left the board)
     if (ball.position.y > GameConstants.boardHeight + ball.radius) {
       ball.isActive = false;
+    }
+  }
+
+  void _checkLaunchChannelBarrier(Ball ball) {
+    // Launch channel boundaries
+    final channelLeft = GameConstants.launchChannelStartX;
+    final channelRight = GameConstants.launchChannelStartX + GameConstants.launchChannelWidth;
+    final channelTop = GameConstants.launchChannelEndY;
+    final channelBottom = GameConstants.launchChannelStartY;
+
+    // Check if ball is overlapping with launch channel rectangle
+    final ballLeft = ball.position.x - ball.radius;
+    final ballRight = ball.position.x + ball.radius;
+    final ballTop = ball.position.y - ball.radius;
+    final ballBottom = ball.position.y + ball.radius;
+
+    // AABB collision detection with launch channel
+    final isOverlapping = ballRight > channelLeft &&
+                          ballLeft < channelRight &&
+                          ballBottom > channelTop &&
+                          ballTop < channelBottom;
+
+    if (isOverlapping) {
+      // Calculate penetration depths on all sides
+      final leftPenetration = ballRight - channelLeft;
+      final rightPenetration = channelRight - ballLeft;
+      final topPenetration = ballBottom - channelTop;
+      final bottomPenetration = channelBottom - ballTop;
+
+      // Find minimum penetration (closest edge)
+      final minPenetration = math.min(
+        math.min(leftPenetration, rightPenetration),
+        math.min(topPenetration, bottomPenetration),
+      );
+
+      // Push ball out from the side with minimum penetration
+      if (minPenetration == leftPenetration) {
+        // Push ball to the left (most common case - ball entering from peg field)
+        ball.position.x = channelLeft - ball.radius;
+        ball.velocity.x = -ball.velocity.x.abs() * _damping; // Bounce left
+      } else if (minPenetration == rightPenetration) {
+        // Push ball to the right (less common)
+        ball.position.x = channelRight + ball.radius;
+        ball.velocity.x = ball.velocity.x.abs() * _damping; // Bounce right
+      } else if (minPenetration == topPenetration) {
+        // Push ball up (ball trying to enter from bottom)
+        ball.position.y = channelTop - ball.radius;
+        ball.velocity.y = -ball.velocity.y.abs() * _damping; // Bounce up
+      } else {
+        // Push ball down (ball trying to enter from top)
+        ball.position.y = channelBottom + ball.radius;
+        ball.velocity.y = ball.velocity.y.abs() * _damping; // Bounce down
+      }
     }
   }
 
