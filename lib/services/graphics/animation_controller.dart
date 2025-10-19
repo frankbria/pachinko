@@ -1,6 +1,8 @@
 /// Animation state tracking and curve definitions for game animations
 library;
 
+import 'dart:math' show pow;
+
 /// Defines the interpolation curve for animation progression
 enum AnimationCurve {
   /// Linear progression (constant speed)
@@ -115,4 +117,167 @@ class AnimationState {
       isRunning,
     );
   }
+}
+
+/// Manages multiple concurrent animations with different curves and durations
+///
+/// Coordinates animation lifecycle, progress tracking, and value interpolation
+/// for game effects like glowing pegs, fading UI elements, and particle trails.
+class AnimationController {
+  /// Map of animation ID to animation state
+  final Map<String, AnimationState> _animations = {};
+
+  /// Creates a new animation and registers it with the controller
+  ///
+  /// [id] - Unique identifier for this animation
+  /// [duration] - Total duration in seconds (must be > 0)
+  /// [curve] - Interpolation curve to apply (defaults to linear)
+  /// [loop] - Whether to restart when reaching 1.0 progress (defaults to false)
+  ///
+  /// Returns the created animation state
+  AnimationState createAnimation({
+    required String id,
+    required double duration,
+    AnimationCurve curve = AnimationCurve.linear,
+    bool loop = false,
+  }) {
+    final animation = AnimationState(
+      id: id,
+      duration: duration,
+      curve: curve,
+      loop: loop,
+      isRunning: false, // Start paused until start() is called
+    );
+    _animations[id] = animation;
+    return animation;
+  }
+
+  /// Starts or resumes an animation by ID
+  ///
+  /// If the animation is already running, this has no effect.
+  /// If the animation doesn't exist, returns false.
+  bool start(String id) {
+    final animation = _animations[id];
+    if (animation == null) return false;
+
+    if (!animation.isRunning) {
+      _animations[id] = animation.copyWith(isRunning: true);
+    }
+    return true;
+  }
+
+  /// Stops an animation by ID
+  ///
+  /// The animation's progress is preserved but it will not advance.
+  bool stop(String id) {
+    final animation = _animations[id];
+    if (animation == null) return false;
+
+    if (animation.isRunning) {
+      _animations[id] = animation.copyWith(isRunning: false);
+    }
+    return true;
+  }
+
+  /// Gets the current interpolated value for an animation (0.0 to 1.0)
+  ///
+  /// Applies the animation's curve to the linear progress to produce
+  /// an eased value suitable for rendering.
+  ///
+  /// Returns null if the animation doesn't exist.
+  double? getValue(String id) {
+    final animation = _animations[id];
+    if (animation == null) return null;
+
+    return _applyCurve(animation.progress, animation.curve);
+  }
+
+  /// Updates all running animations by the given time delta
+  ///
+  /// Advances elapsed time, recalculates progress, and handles looping.
+  /// Non-running animations are not updated.
+  ///
+  /// [deltaTime] - Time elapsed since last update in seconds
+  void update(double deltaTime) {
+    final updatedAnimations = <String, AnimationState>{};
+
+    for (final entry in _animations.entries) {
+      final id = entry.key;
+      final animation = entry.value;
+
+      if (!animation.isRunning) {
+        updatedAnimations[id] = animation;
+        continue;
+      }
+
+      // Advance elapsed time
+      var newElapsedTime = animation.elapsedTime + deltaTime;
+
+      // Handle looping by wrapping elapsed time
+      if (animation.loop && newElapsedTime >= animation.duration) {
+        newElapsedTime = newElapsedTime % animation.duration;
+      }
+
+      // Calculate linear progress
+      final linearProgress = (newElapsedTime / animation.duration).clamp(0.0, 1.0);
+
+      // Handle non-looping stop condition
+      if (!animation.loop && linearProgress >= 1.0) {
+        // Stop at end
+        updatedAnimations[id] = animation.copyWith(
+          elapsedTime: animation.duration,
+          progress: 1.0,
+          isRunning: false,
+        );
+      } else {
+        // Continue progressing (or looping)
+        updatedAnimations[id] = animation.copyWith(
+          elapsedTime: newElapsedTime,
+          progress: linearProgress,
+        );
+      }
+    }
+
+    _animations.clear();
+    _animations.addAll(updatedAnimations);
+  }
+
+  /// Applies an easing curve to a linear progress value
+  ///
+  /// [t] - Linear progress from 0.0 to 1.0
+  /// [curve] - The curve type to apply
+  ///
+  /// Returns the eased progress value from 0.0 to 1.0
+  double _applyCurve(double t, AnimationCurve curve) {
+    switch (curve) {
+      case AnimationCurve.linear:
+        return t;
+      case AnimationCurve.easeIn:
+        return pow(t, 2.0).toDouble();
+      case AnimationCurve.easeOut:
+        return 1.0 - pow(1.0 - t, 2.0).toDouble();
+      case AnimationCurve.easeInOut:
+        if (t < 0.5) {
+          return 2.0 * pow(t, 2.0).toDouble();
+        } else {
+          return 1.0 - 2.0 * pow(1.0 - t, 2.0).toDouble();
+        }
+    }
+  }
+
+  /// Removes an animation from the controller
+  ///
+  /// Returns true if the animation existed and was removed.
+  bool removeAnimation(String id) {
+    return _animations.remove(id) != null;
+  }
+
+  /// Gets all registered animation IDs
+  List<String> get animationIds => _animations.keys.toList();
+
+  /// Gets the count of registered animations
+  int get animationCount => _animations.length;
+
+  /// Checks if an animation exists
+  bool hasAnimation(String id) => _animations.containsKey(id);
 }

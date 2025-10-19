@@ -287,71 +287,303 @@ void main() {
     });
   });
 
-  // NOTE: The following tests are placeholders for future implementation in T046
-  // These tests should FAIL until AnimationController methods are implemented
+  group('AnimationController', () {
+    group('createAnimation', () {
+      test('creates and registers animation with controller', () {
+        final controller = AnimationController();
+        final animation = controller.createAnimation(
+          id: 'test-anim',
+          duration: 2.0,
+        );
 
-  group('AnimationController (Future Implementation - T046)', () {
-    test('start() begins animation progression - NOT YET IMPLEMENTED', () {
-      // This test will be implemented in T046
-      // Expected behavior: Animation isRunning should be true after start()
-      expect(true, isTrue, reason: 'Placeholder for T046 implementation');
+        expect(animation.id, equals('test-anim'));
+        expect(animation.duration, equals(2.0));
+        expect(animation.isRunning, isFalse); // Starts paused
+        expect(controller.hasAnimation('test-anim'), isTrue);
+        expect(controller.animationCount, equals(1));
+      });
+
+      test('creates animation with custom curve', () {
+        final controller = AnimationController();
+        final animation = controller.createAnimation(
+          id: 'ease-anim',
+          duration: 1.5,
+          curve: AnimationCurve.easeIn,
+        );
+
+        expect(animation.curve, equals(AnimationCurve.easeIn));
+      });
+
+      test('creates animation with loop enabled', () {
+        final controller = AnimationController();
+        final animation = controller.createAnimation(
+          id: 'loop-anim',
+          duration: 1.0,
+          loop: true,
+        );
+
+        expect(animation.loop, isTrue);
+      });
     });
 
-    test('getValue() returns current progress (0.0 to 1.0) - NOT YET IMPLEMENTED',
-        () {
-      // This test will be implemented in T046
-      // Expected behavior: Should return normalized progress value
-      expect(true, isTrue, reason: 'Placeholder for T046 implementation');
+    group('start and stop', () {
+      test('start() begins animation progression', () {
+        final controller = AnimationController();
+        controller.createAnimation(id: 'test', duration: 1.0);
+
+        final started = controller.start('test');
+        expect(started, isTrue);
+
+        final value = controller.getValue('test');
+        expect(value, isNotNull);
+      });
+
+      test('start() returns false for non-existent animation', () {
+        final controller = AnimationController();
+        expect(controller.start('nonexistent'), isFalse);
+      });
+
+      test('stop() pauses animation', () {
+        final controller = AnimationController();
+        controller.createAnimation(id: 'test', duration: 1.0);
+        controller.start('test');
+
+        final stopped = controller.stop('test');
+        expect(stopped, isTrue);
+      });
+
+      test('stop() returns false for non-existent animation', () {
+        final controller = AnimationController();
+        expect(controller.stop('nonexistent'), isFalse);
+      });
     });
 
-    test('update() advances running animations by deltaTime - NOT YET IMPLEMENTED',
-        () {
-      // This test will be implemented in T046
-      // Expected behavior: elapsedTime and progress should increase
-      expect(true, isTrue, reason: 'Placeholder for T046 implementation');
+    group('getValue', () {
+      test('returns current progress with curve applied', () {
+        final controller = AnimationController();
+        controller.createAnimation(id: 'test', duration: 1.0);
+        controller.start('test');
+
+        final value = controller.getValue('test');
+        expect(value, isNotNull);
+        expect(value, greaterThanOrEqualTo(0.0));
+        expect(value, lessThanOrEqualTo(1.0));
+      });
+
+      test('returns null for non-existent animation', () {
+        final controller = AnimationController();
+        expect(controller.getValue('nonexistent'), isNull);
+      });
+
+      test('linear curve returns raw progress', () {
+        final controller = AnimationController();
+        controller.createAnimation(
+          id: 'linear',
+          duration: 1.0,
+          curve: AnimationCurve.linear,
+        );
+        controller.start('linear');
+        controller.update(0.5); // 50% through
+
+        final value = controller.getValue('linear');
+        expect(value, closeTo(0.5, 0.01));
+      });
+
+      test('easeIn curve applies slow start', () {
+        final controller = AnimationController();
+        controller.createAnimation(
+          id: 'ease-in',
+          duration: 1.0,
+          curve: AnimationCurve.easeIn,
+        );
+        controller.start('ease-in');
+        controller.update(0.5);
+
+        final value = controller.getValue('ease-in');
+        // easeIn(0.5) = 0.5^2 = 0.25
+        expect(value, closeTo(0.25, 0.01));
+      });
+
+      test('easeOut curve applies slow end', () {
+        final controller = AnimationController();
+        controller.createAnimation(
+          id: 'ease-out',
+          duration: 1.0,
+          curve: AnimationCurve.easeOut,
+        );
+        controller.start('ease-out');
+        controller.update(0.5);
+
+        final value = controller.getValue('ease-out');
+        // easeOut(0.5) = 1 - (1-0.5)^2 = 1 - 0.25 = 0.75
+        expect(value, closeTo(0.75, 0.01));
+      });
+
+      test('easeInOut curve applies slow start and end', () {
+        final controller = AnimationController();
+        controller.createAnimation(
+          id: 'ease-in-out',
+          duration: 1.0,
+          curve: AnimationCurve.easeInOut,
+        );
+        controller.start('ease-in-out');
+        controller.update(0.25);
+
+        final value = controller.getValue('ease-in-out');
+        // easeInOut(0.25) = 2 * 0.25^2 = 0.125
+        expect(value, closeTo(0.125, 0.01));
+      });
     });
 
-    test('linear curve applies no easing - NOT YET IMPLEMENTED', () {
-      // This test will be implemented in T046
-      // Expected behavior: progress = elapsedTime / duration
-      expect(true, isTrue, reason: 'Placeholder for T046 implementation');
+    group('update', () {
+      test('advances running animations by deltaTime', () {
+        final controller = AnimationController();
+        controller.createAnimation(id: 'test', duration: 2.0);
+        controller.start('test');
+
+        controller.update(0.5);
+
+        final value = controller.getValue('test');
+        expect(value, closeTo(0.25, 0.01)); // 0.5 / 2.0 = 0.25
+      });
+
+      test('does not update stopped animations', () {
+        final controller = AnimationController();
+        controller.createAnimation(id: 'test', duration: 1.0);
+        controller.start('test');
+        controller.stop('test');
+
+        controller.update(0.5);
+
+        final value = controller.getValue('test');
+        expect(value, equals(0.0)); // Still at start
+      });
+
+      test('looping animations wrap to 0.0 progress', () {
+        final controller = AnimationController();
+        controller.createAnimation(
+          id: 'loop',
+          duration: 1.0,
+          loop: true,
+        );
+        controller.start('loop');
+
+        controller.update(1.5); // Past duration
+
+        final value = controller.getValue('loop');
+        expect(value, closeTo(0.5, 0.01)); // Wrapped around
+      });
+
+      test('non-looping animations stop at 1.0', () {
+        final controller = AnimationController();
+        controller.createAnimation(
+          id: 'once',
+          duration: 1.0,
+          loop: false,
+        );
+        controller.start('once');
+
+        controller.update(1.5); // Past duration
+
+        final value = controller.getValue('once');
+        expect(value, equals(1.0)); // Clamped at end
+      });
+
+      test('multiple updates accumulate time', () {
+        final controller = AnimationController();
+        controller.createAnimation(id: 'test', duration: 2.0);
+        controller.start('test');
+
+        controller.update(0.5);
+        controller.update(0.5);
+
+        final value = controller.getValue('test');
+        expect(value, closeTo(0.5, 0.01)); // 1.0 / 2.0 = 0.5
+      });
     });
 
-    test('easeIn curve applies slow start - NOT YET IMPLEMENTED', () {
-      // This test will be implemented in T046
-      // Expected behavior: progress^2 or similar easing function
-      expect(true, isTrue, reason: 'Placeholder for T046 implementation');
+    group('multiple concurrent animations', () {
+      test('handles multiple animations independently', () {
+        final controller = AnimationController();
+        controller.createAnimation(id: 'anim1', duration: 1.0);
+        controller.createAnimation(id: 'anim2', duration: 2.0);
+
+        controller.start('anim1');
+        controller.start('anim2');
+        controller.update(0.5);
+
+        final value1 = controller.getValue('anim1');
+        final value2 = controller.getValue('anim2');
+
+        expect(value1, closeTo(0.5, 0.01)); // 0.5 / 1.0
+        expect(value2, closeTo(0.25, 0.01)); // 0.5 / 2.0
+      });
+
+      test('different curves work independently', () {
+        final controller = AnimationController();
+        controller.createAnimation(
+          id: 'linear',
+          duration: 1.0,
+          curve: AnimationCurve.linear,
+        );
+        controller.createAnimation(
+          id: 'easeIn',
+          duration: 1.0,
+          curve: AnimationCurve.easeIn,
+        );
+
+        controller.start('linear');
+        controller.start('easeIn');
+        controller.update(0.5);
+
+        final linearVal = controller.getValue('linear');
+        final easeInVal = controller.getValue('easeIn');
+
+        expect(linearVal, closeTo(0.5, 0.01));
+        expect(easeInVal, closeTo(0.25, 0.01)); // 0.5^2
+      });
     });
 
-    test('easeOut curve applies slow end - NOT YET IMPLEMENTED', () {
-      // This test will be implemented in T046
-      // Expected behavior: 1 - (1-progress)^2 or similar
-      expect(true, isTrue, reason: 'Placeholder for T046 implementation');
-    });
+    group('animation management', () {
+      test('removeAnimation removes animation from controller', () {
+        final controller = AnimationController();
+        controller.createAnimation(id: 'test', duration: 1.0);
 
-    test('easeInOut curve applies slow start and end - NOT YET IMPLEMENTED',
-        () {
-      // This test will be implemented in T046
-      // Expected behavior: combination of easeIn and easeOut
-      expect(true, isTrue, reason: 'Placeholder for T046 implementation');
-    });
+        final removed = controller.removeAnimation('test');
+        expect(removed, isTrue);
+        expect(controller.hasAnimation('test'), isFalse);
+        expect(controller.animationCount, equals(0));
+      });
 
-    test('looping animations wrap to 0.0 progress - NOT YET IMPLEMENTED', () {
-      // This test will be implemented in T046
-      // Expected behavior: When progress >= 1.0 and loop=true, reset to 0.0
-      expect(true, isTrue, reason: 'Placeholder for T046 implementation');
-    });
+      test('removeAnimation returns false for non-existent animation', () {
+        final controller = AnimationController();
+        expect(controller.removeAnimation('nonexistent'), isFalse);
+      });
 
-    test('non-looping animations stop at 1.0 - NOT YET IMPLEMENTED', () {
-      // This test will be implemented in T046
-      // Expected behavior: When progress >= 1.0 and loop=false, clamp at 1.0
-      expect(true, isTrue, reason: 'Placeholder for T046 implementation');
-    });
+      test('animationIds returns all registered IDs', () {
+        final controller = AnimationController();
+        controller.createAnimation(id: 'anim1', duration: 1.0);
+        controller.createAnimation(id: 'anim2', duration: 2.0);
 
-    test('multiple concurrent animations - NOT YET IMPLEMENTED', () {
-      // This test will be implemented in T046
-      // Expected behavior: Multiple animations can run simultaneously
-      expect(true, isTrue, reason: 'Placeholder for T046 implementation');
+        final ids = controller.animationIds;
+        expect(ids, contains('anim1'));
+        expect(ids, contains('anim2'));
+        expect(ids.length, equals(2));
+      });
+
+      test('animationCount returns correct count', () {
+        final controller = AnimationController();
+        expect(controller.animationCount, equals(0));
+
+        controller.createAnimation(id: 'anim1', duration: 1.0);
+        expect(controller.animationCount, equals(1));
+
+        controller.createAnimation(id: 'anim2', duration: 2.0);
+        expect(controller.animationCount, equals(2));
+
+        controller.removeAnimation('anim1');
+        expect(controller.animationCount, equals(1));
+      });
     });
   });
 }
