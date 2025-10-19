@@ -3,7 +3,8 @@
 ## Project Overview
 A modern graphical Pachinko idle game for Android. Features authentic pachinko machine mechanics with realistic ball launching, physics simulation, and strategic scoring.
 
-## Current Status: ✅ PLAYABLE PROTOTYPE
+## Current Status: 🚧 GRAPHICS OVERHAUL IN PROGRESS (Feature 002)
+### Completed Features
 - ✅ Authentic ball launching system (bottom-right launch channel)
 - ✅ Advanced physics engine with collision detection
 - ✅ Organized peg patterns with proper spacing
@@ -11,6 +12,42 @@ A modern graphical Pachinko idle game for Android. Features authentic pachinko m
 - ✅ Level progression system with varying patterns
 - ✅ Special peg bonus mechanics
 - ✅ Cross-platform (Linux desktop, Android-ready)
+
+### Graphics Enhancement (Feature 002) - 50% Complete
+**Branch**: `002-graphics-overhaul` | **Spec**: `specs/002-graphics-overhaul/spec.md`
+
+✅ **Phase 1-2: Infrastructure & Foundation** (T001-T012)
+- Graphics configuration system with quality levels
+- Particle model with lifecycle management
+- ParticleSystem with object pooling (trail + collision)
+- AnimationController foundation
+- PerformanceMonitor with FPS tracking
+- RenderingLayer with anti-aliasing
+
+✅ **Phase 3 (50%): Particle Effects** (T013-T020)
+- 115 unit tests for particle system (all passing)
+- Trail particles on ball movement
+- Collision burst effects on peg hits
+- Particle rendering in PachinkoBoard
+- Performance-based quality adjustment
+
+✅ **Phase 4 (25%): Testing Framework** (T030-T033)
+- Visual regression test framework with golden files
+- 12 integration tests for visual validation
+- Performance monitoring with circular buffer
+- Adaptive quality control (High/Medium/Low)
+
+🚧 **In Progress**:
+- Phase 3: Animation system implementation (T021-T029)
+- Phase 4: Frame rate and animation timing tests (T034-T041)
+
+📋 **Pending**:
+- Phase 5: Glow animations for special pegs (T042-T057)
+- Phase 6: UI polish and anti-aliasing (T058-T067)
+- Phase 7: Performance optimization (T068-T072)
+- Phase 8: Documentation and polish (T073-T082)
+
+**Test Status**: 215 passing | 19 failing (expected - golden files not generated yet)
 
 ## Technology Stack
 - **Framework:** Flutter 3.24.5
@@ -27,22 +64,44 @@ lib/
 ├── main.dart                    # App entry point with Provider setup
 ├── models/
 │   ├── ball.dart               # Ball physics and properties
-│   ├── ball_launcher.dart      # ✨ NEW: Authentic launch system
+│   ├── ball_launcher.dart      # Authentic launch system
 │   ├── peg.dart                # Peg collision and types
 │   ├── slot.dart               # Scoring slots at bottom
 │   ├── level.dart              # Level generation and management
-│   └── game_state.dart         # Global game state management
+│   ├── game_state.dart         # Global game state management
+│   └── particle.dart           # ✨ NEW: Particle effect model
 ├── services/
 │   ├── physics_engine.dart     # Ball physics and collision detection
-│   └── game_manager.dart       # Main game loop and coordination
+│   ├── game_manager.dart       # Main game loop and coordination
+│   └── graphics/               # ✨ NEW: Graphics system
+│       ├── particle_system.dart     # Particle pools and orchestration
+│       ├── animation_controller.dart # Animation state management
+│       ├── performance_monitor.dart  # FPS tracking and quality control
+│       └── rendering_layer.dart      # Anti-aliased Paint configuration
 ├── screens/
 │   ├── game_screen.dart        # Main gameplay screen
 │   └── menu_screen.dart        # Main menu with level selection
 ├── widgets/
-│   └── pachinko_board.dart     # Custom Canvas game board renderer
+│   └── pachinko_board.dart     # Custom Canvas game board renderer (w/ particles)
 └── utils/
     ├── constants.dart          # Game configuration and styling
-    └── peg_patterns.dart       # ✨ NEW: Organized peg layouts
+    ├── graphics_config.dart    # ✨ NEW: Graphics constants
+    └── peg_patterns.dart       # Organized peg layouts
+
+test/
+├── unit/                       # ✨ NEW: Unit tests (215 passing)
+│   ├── particle_test.dart           # Particle model tests (56 tests)
+│   ├── particle_pool_test.dart      # Pool management tests (31 tests)
+│   ├── particle_system_test.dart    # System orchestration (28 tests)
+│   ├── animation_controller_test.dart # Animation tests (35 tests)
+│   ├── performance_monitor_test.dart  # Performance tests (39 tests)
+│   └── performance_monitor_implementation_test.dart # (26 tests)
+├── integration/                # ✨ NEW: Integration tests
+│   ├── visual_regression_test.dart  # Golden file tests (12 tests)
+│   └── README.md               # Visual testing guide
+└── golden/                     # ✨ NEW: Golden file baselines
+    ├── README.md               # Visual regression guidelines
+    └── integration/            # Integration test golden files
 ```
 
 ## Key Commands
