@@ -4,6 +4,7 @@ import 'package:vector_math/vector_math_64.dart' as vm;
 import '../services/game_manager.dart';
 import '../models/game_state.dart';
 import '../models/peg.dart';
+import '../models/ball_launcher.dart';
 import '../utils/constants.dart';
 import '../services/graphics/rendering_layer.dart';
 
@@ -337,34 +338,36 @@ class _PachinkoBoardPainter extends CustomPainter {
       ..color = Colors.white.withOpacity(0.8)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3.0;
-    
+
     // Left wall of channel
     canvas.drawLine(
       Offset(GameConstants.launchChannelStartX, GameConstants.launchChannelStartY),
       Offset(GameConstants.launchChannelStartX, GameConstants.launchChannelEndY),
       wallPaint,
     );
-    
-    // Right wall of channel  
+
+    // Right wall of channel
     canvas.drawLine(
       Offset(GameConstants.launchChannelStartX + GameConstants.launchChannelWidth, GameConstants.launchChannelStartY),
       Offset(GameConstants.launchChannelStartX + GameConstants.launchChannelWidth, GameConstants.launchChannelEndY),
       wallPaint,
     );
-    
-    // Draw launch path visualization
-    final pathPaint = Paint()
-      ..color = GameConstants.primaryColor.withOpacity(0.3)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
-    
-    final launchPath = gameManager.ballLauncher.getLaunchPath();
-    for (int i = 0; i < launchPath.length - 1; i++) {
-      canvas.drawLine(
-        Offset(launchPath[i].x, launchPath[i].y),
-        Offset(launchPath[i + 1].x, launchPath[i + 1].y),
-        pathPaint,
-      );
+
+    // Draw launch path visualization ONLY when charging
+    if (gameManager.ballLauncher.phase == LaunchPhase.charging) {
+      final pathPaint = Paint()
+        ..color = GameConstants.primaryColor.withOpacity(0.3)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0;
+
+      final launchPath = gameManager.ballLauncher.getLaunchPath();
+      for (int i = 0; i < launchPath.length - 1; i++) {
+        canvas.drawLine(
+          Offset(launchPath[i].x, launchPath[i].y),
+          Offset(launchPath[i + 1].x, launchPath[i + 1].y),
+          pathPaint,
+        );
+      }
     }
   }
 
