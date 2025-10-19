@@ -7,22 +7,27 @@ import '../models/game_state.dart';
 import '../models/peg.dart';
 import '../models/slot.dart';
 import '../utils/constants.dart';
+import '../utils/graphics_config.dart';
 import 'physics_engine.dart';
 import 'graphics/particle_system.dart';
+import 'graphics/performance_monitor.dart';
 
 class GameManager extends ChangeNotifier {
   final GameState _gameState = GameState();
   final PhysicsEngine _physicsEngine = PhysicsEngine();
   final BallLauncher _ballLauncher = BallLauncher();
   final ParticleSystem _particleSystem = ParticleSystem();
+  final PerformanceMetrics _performanceMonitor = PerformanceMetrics();
   Timer? _gameTimer;
   DateTime _lastFrameTime = DateTime.now();
+  GraphicsQuality _currentQuality = GraphicsQuality.high;
 
   // Getters
   GameState get gameState => _gameState;
   PhysicsEngine get physicsEngine => _physicsEngine;
   BallLauncher get ballLauncher => _ballLauncher;
   ParticleSystem get particleSystem => _particleSystem;
+  PerformanceMetrics get performanceMonitor => _performanceMonitor;
   bool get isRunning => _gameTimer?.isActive ?? false;
   
   void startGame({int level = 1}) {
@@ -87,17 +92,41 @@ class GameManager extends ChangeNotifier {
   }
 
   void _updateGame(Timer timer) {
-    final currentTime = DateTime.now();
-    final deltaTime = currentTime.difference(_lastFrameTime).inMicroseconds / 1000000.0;
-    _lastFrameTime = currentTime;
-    
+    final frameStartTime = DateTime.now();
+    final deltaTime = frameStartTime.difference(_lastFrameTime).inMicroseconds / 1000000.0;
+    _lastFrameTime = frameStartTime;
+
     // Cap delta time to prevent large jumps
     final clampedDeltaTime = deltaTime.clamp(0.0, 1.0 / 30.0);
-    
+
     _updatePhysics(clampedDeltaTime);
     _checkGameState();
-    
+
     notifyListeners();
+
+    // Record frame time for performance monitoring (in milliseconds)
+    final frameEndTime = DateTime.now();
+    final frameTime = frameEndTime.difference(frameStartTime).inMicroseconds / 1000.0;
+    _performanceMonitor.recordFrameTime(frameTime);
+
+    // Adjust particle quality based on performance
+    final recommendedQuality = _performanceMonitor.getRecommendedQuality();
+    if (recommendedQuality != _currentQuality) {
+      _currentQuality = recommendedQuality;
+      _particleSystem.adjustQuality(_convertQuality(recommendedQuality));
+    }
+  }
+
+  /// Converts GraphicsQuality to ParticleQualityLevel.
+  ParticleQualityLevel _convertQuality(GraphicsQuality quality) {
+    switch (quality) {
+      case GraphicsQuality.high:
+        return ParticleQualityLevel.high;
+      case GraphicsQuality.medium:
+        return ParticleQualityLevel.medium;
+      case GraphicsQuality.low:
+        return ParticleQualityLevel.low;
+    }
   }
 
   void _updatePhysics(double deltaTime) {
@@ -119,21 +148,34 @@ class GameManager extends ChangeNotifier {
     }
 
     if (balls.isEmpty) return;
-    
+
     // Update ball physics (only for balls not on guided path)
-    final freeBalls = balls.where((ball) => 
+    final freeBalls = balls.where((ball) =>
       _ballLauncher.currentBall == null || ball != _ballLauncher.currentBall).toList();
-    
+
     _physicsEngine.updateBalls(freeBalls, deltaTime);
-    
+
+    // Spawn trail particles for moving balls
+    for (final ball in freeBalls) {
+      final velocityMagnitude = ball.velocity.length;
+      if (velocityMagnitude > 50.0) {
+        _particleSystem.spawnTrailParticle(
+          position: ball.position,
+          velocity: ball.velocity * 0.3,
+          color: ball.color,
+          lifetime: GameConstants.particleTrailLifetime,
+        );
+      }
+    }
+
     // Check peg collisions (only for free balls)
-    final hitPegs = _physicsEngine.checkPegCollisions(freeBalls, level.pegs);
-    _handlePegHits(hitPegs);
-    
+    final pegCollisions = _physicsEngine.checkPegCollisions(freeBalls, level.pegs);
+    _handlePegHits(pegCollisions);
+
     // Check slot collisions (only for free balls)
     final hitSlots = _physicsEngine.checkSlotCollisions(freeBalls, level.slots);
     _handleSlotHits(hitSlots);
-    
+
     // Remove inactive balls
     balls.removeWhere((ball) => !ball.isActive);
     for (final ball in List.from(balls)) {
@@ -143,8 +185,21 @@ class GameManager extends ChangeNotifier {
     }
   }
 
-  void _handlePegHits(List<Peg> hitPegs) {
-    for (final peg in hitPegs) {
+  void _handlePegHits(List<PegCollision> pegCollisions) {
+    for (final collision in pegCollisions) {
+      final peg = collision.peg;
+      
+      // Spawn collision burst particles
+      final pegColor = peg.type == PegType.special 
+          ? GameConstants.specialPegColor 
+          : GameConstants.normalPegColor;
+      
+      _particleSystem.spawnCollisionBurst(
+        position: collision.collisionPosition,
+        pegColor: pegColor,
+        particleCount: GameConstants.collisionBurstParticleCount,
+      );
+      
       if (peg.type == PegType.special) {
         _checkSpecialBonus();
       }

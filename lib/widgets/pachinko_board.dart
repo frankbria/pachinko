@@ -5,6 +5,7 @@ import '../services/game_manager.dart';
 import '../models/game_state.dart';
 import '../models/peg.dart';
 import '../utils/constants.dart';
+import '../services/graphics/rendering_layer.dart';
 
 class PachinkoBoard extends StatefulWidget {
   const PachinkoBoard({super.key});
@@ -131,10 +132,13 @@ class _PachinkoBoardPainter extends CustomPainter {
     
     // Draw pegs
     _drawPegs(canvas, level);
-    
+
+    // Draw particles (after pegs, before UI elements)
+    _drawParticles(canvas);
+
     // Draw balls
     _drawBalls(canvas, gameState);
-    
+
     // Draw launch channel and area
     _drawLaunchChannel(canvas, level);
     _drawLaunchArea(canvas, level);
@@ -266,26 +270,47 @@ class _PachinkoBoardPainter extends CustomPainter {
   void _drawBalls(Canvas canvas, GameState gameState) {
     for (final ball in gameState.activeBalls) {
       if (!ball.isActive) continue;
-      
+
       final paint = Paint()
         ..color = ball.color
         ..style = PaintingStyle.fill;
-      
+
       final borderPaint = Paint()
         ..color = Colors.white.withOpacity(0.3)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.0;
-      
+
       canvas.drawCircle(
         Offset(ball.position.x, ball.position.y),
         ball.radius,
         paint,
       );
-      
+
       canvas.drawCircle(
         Offset(ball.position.x, ball.position.y),
         ball.radius,
         borderPaint,
+      );
+    }
+  }
+
+  void _drawParticles(Canvas canvas) {
+    final particles = gameManager.particleSystem.getAllActiveParticles();
+
+    for (final particle in particles) {
+      if (!particle.isActive) continue;
+
+      // Use RenderingLayer for anti-aliased particle rendering
+      final particlePaint = RenderingLayer.getPaint(
+        style: PaintingStyle.fill,
+        color: particle.color.withOpacity(particle.opacity),
+        antiAlias: true,
+      );
+
+      canvas.drawCircle(
+        Offset(particle.position.x, particle.position.y),
+        particle.size,
+        particlePaint,
       );
     }
   }

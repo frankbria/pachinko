@@ -1,32 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(flutter:*)",
-      "Bash(mkdir:*)",
-      "Bash(wget:*)",
-      "Bash(tar:*)",
-      "Bash(export:*)",
-      "Bash(mv:*)",
-      "Bash(sudo apt:*)",
-      "Bash(sudo apt install:*)",
-      "Bash(git init:*)",
-      "Bash(git remote add:*)",
-      "Bash(git add:*)",
-      "Bash(git reset:*)",
-      "Bash(git push:*)",
-      "Bash(git config:*)",
-      "Bash(.specify/scripts/bash/check-prerequisites.sh --json --require-tasks --include-tasks)",
-      "Bash(git checkout -b 001-graphics-architecture-overhaul)",
-      "SlashCommand(/speckit.constitution)",
-      "Bash(.specify/scripts/bash/create-new-feature.sh --json \"Graphics Architecture Overhaul: Transform the current basic Canvas rendering into a production-quality graphics system with smooth animations, particle effects, visual polish, and comprehensive user-centric testing. The graphics were described as ''quite rough'' and need significant improvement in visual quality, performance optimization, and testability. Must include particle effects for ball trails and collisions, smooth peg glow animations, polished UI elements with proper anti-aliasing, and a comprehensive Playwright-based testing framework that validates the user experience from a visual and interaction perspective.\" --short-name \"graphics-architecture-overhaul\")",
-      "Bash(.specify/scripts/bash/create-new-feature.sh --help)",
-      "Bash(git checkout 001-graphics-architecture-overhaul)",
-      "Bash(git branch -D 001-specify-scripts-bash)",
-      "SlashCommand(/speckit.plan)",
-      "Bash(.specify/scripts/bash/setup-plan.sh --json)",
-      "SlashCommand(/speckit.tasks)",
-      "Bash(.specify/scripts/bash/check-prerequisites.sh --json)"
+      "Read(///**)"
     ],
-    "deny": []
+    "deny": [],
+    "ask": []
   }
 }

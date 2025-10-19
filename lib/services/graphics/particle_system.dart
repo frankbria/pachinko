@@ -1,6 +1,6 @@
 import 'dart:math' show cos, sin, pi;
 import 'package:flutter/material.dart';
-import 'package:vector_math/vector_math.dart' hide Colors;
+import 'package:vector_math/vector_math_64.dart' hide Colors;
 import '../../models/particle.dart';
 
 enum ParticlePoolType { trail, collision }

@@ -5,6 +5,17 @@ import '../models/peg.dart';
 import '../models/slot.dart';
 import '../utils/constants.dart';
 
+/// Represents a collision between a ball and a peg
+class PegCollision {
+  final Peg peg;
+  final Vector2 collisionPosition;
+
+  PegCollision({
+    required this.peg,
+    required this.collisionPosition,
+  });
+}
+
 class PhysicsEngine {
   static const double _gravity = GameConstants.gravity;
   static const double _damping = GameConstants.bounceDamping;
@@ -50,25 +61,32 @@ class PhysicsEngine {
     }
   }
 
-  List<Peg> checkPegCollisions(List<Ball> balls, List<Peg> pegs) {
-    final hitPegs = <Peg>[];
-    
+  List<PegCollision> checkPegCollisions(List<Ball> balls, List<Peg> pegs) {
+    final collisions = <PegCollision>[];
+
     for (final ball in balls) {
       if (!ball.isActive) continue;
-      
+
       for (final peg in pegs) {
         if (peg.checkCollision(ball.position, ball.radius)) {
+          // Calculate collision position (point on peg surface closest to ball)
+          final direction = (ball.position - peg.position).normalized();
+          final collisionPosition = peg.position + direction * peg.radius;
+
           _resolvePegCollision(ball, peg);
-          
+
           if (!peg.hasBeenHit) {
             peg.onHit();
-            hitPegs.add(peg);
+            collisions.add(PegCollision(
+              peg: peg,
+              collisionPosition: collisionPosition,
+            ));
           }
         }
       }
     }
-    
-    return hitPegs;
+
+    return collisions;
   }
 
   void _resolvePegCollision(Ball ball, Peg peg) {
