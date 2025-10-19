@@ -133,14 +133,20 @@ class BallLauncher {
   
   Vector2 _calculateReleaseVelocity() {
     // Calculate initial velocity when ball enters peg field
-    final powerMultiplier = 0.3 + (_launchPower / _maxPower) * 0.7; // 0.3 to 1.0
-    final baseVelocity = Vector2(0, 150); // Slight downward velocity
+    // Ball should arc upward and leftward from the curve exit point
+    final powerMultiplier = 0.5 + (_launchPower / _maxPower) * 0.5; // 0.5 to 1.0
     
-    // Add some horizontal spread based on power
-    final horizontalSpread = (_launchPower / _maxPower - 0.5) * 100;
-    baseVelocity.x = horizontalSpread;
+    // Base velocity: leftward and upward to arc into peg field
+    // Higher power = more upward velocity to reach further into the board
+    final baseHorizontalVelocity = -200.0; // Leftward motion (negative X)
+    final baseVerticalVelocity = -150.0 - (_launchPower / _maxPower) * 200.0; // Upward (negative Y), power-dependent
     
-    return baseVelocity * powerMultiplier;
+    final velocity = Vector2(
+      baseHorizontalVelocity * powerMultiplier,
+      baseVerticalVelocity * powerMultiplier,
+    );
+    
+    return velocity;
   }
   
   void reset() {
