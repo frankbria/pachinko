@@ -1,6 +1,36 @@
-# Pachinko Game
+# Pachinko Game 🎮
 
-A modern graphical Pachinko idle game built with Flutter. Features authentic pachinko machine mechanics with realistic ball launching, physics simulation, and strategic scoring.
+A modern, graphical Pachinko idle game built with Flutter for Android. Features authentic pachinko machine mechanics with realistic ball physics, strategic scoring, and beautiful visual effects.
+
+## 🚀 Project Status
+
+**Current Release**: v0.1.0 - Playable Prototype
+**Active Development Branch**: [`002-graphics-overhaul`](https://github.com/frankbria/pachinko/tree/002-graphics-overhaul) (65% complete)
+
+### What's Working in Master
+- ✅ **Authentic Ball Launching** - Bottom-right launch channel with drag-to-charge power meter
+- ✅ **Advanced Physics Engine** - 60 FPS realistic ball physics with gravity and collisions
+- ✅ **Level System** - 3 distinct levels with varying peg patterns
+- ✅ **Special Pegs & Bonuses** - Hit all special pegs to trigger bonus balls
+- ✅ **Cross-Platform Ready** - Runs on Linux desktop, configured for Android
+
+### 🔨 In Development (`002-graphics-overhaul` Branch)
+
+The graphics architecture overhaul transforms the prototype into a polished game:
+
+**✅ Completed (Phase 1-5 - 65%)**:
+- Particle system with trail and collision effects
+- Performance monitoring with adaptive quality
+- Animated glow effects on special pegs (pulsing golden halos)
+- Enhanced collision particles (12 for special, 16 for bonus)
+- 303 tests passing (98.45% graphics coverage)
+
+**🔄 Next (Phase 6-8 - 35%)**:
+- UI polish (transitions, score animations, anti-aliasing)
+- Performance optimization (quality adjustments, memory)
+- Documentation and cross-platform testing
+
+See [DEVELOPMENT.md](./DEVELOPMENT.md) for feature branch workflow details.
 
 ## 🎮 Game Features
 
