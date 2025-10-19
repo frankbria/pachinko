@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Read(///**)"
+      "Bash(git commit -m \"docs(claude): update status with graphics overhaul progress\n\nUpdated CLAUDE.md to reflect current Feature 002 implementation status:\n- 50% completion milestone reached\n- Phases 1-2 complete (infrastructure and foundation)\n- Phase 3: 50% complete (particle effects implemented)\n- Phase 4: 25% complete (testing framework foundation)\n- 215 tests passing, comprehensive test coverage\n- Updated project structure with new graphics components\n\nStatus: Graphics system foundation complete, particle effects operational,\nperformance monitoring active, visual regression framework ready.\")",
+      "Bash(if [ -d \"/home/frankbria/projects/pachinko/specs/002-graphics-overhaul/checklists\" ])",
+      "Bash(then)",
+      "Bash(else)",
+      "Bash(fi)",
+      "Bash(cat requirements.md)",
+      "Bash(chmod +x /home/frankbria/projects/pachinko/scripts/update_goldens.sh /home/frankbria/projects/pachinko/scripts/generate_coverage.sh)",
+      "Bash(./scripts/generate_coverage.sh)"
     ],
     "deny": [],
     "ask": []
