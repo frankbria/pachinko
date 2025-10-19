@@ -18,6 +18,7 @@ class _PachinkoBoardState extends State<PachinkoBoard> {
   vm.Vector2? _dragStart;
   vm.Vector2? _dragEnd;
   bool _isDragging = false;
+  Size _boardSize = Size.zero; // Track board size for coordinate transformation
 
   @override
   Widget build(BuildContext context) {
@@ -27,14 +28,19 @@ class _PachinkoBoardState extends State<PachinkoBoard> {
           onPanStart: (details) => _onPanStart(details, gameManager),
           onPanUpdate: (details) => _onPanUpdate(details, gameManager),
           onPanEnd: (details) => _onPanEnd(details, gameManager),
-          child: CustomPaint(
-            painter: _PachinkoBoardPainter(
-              gameManager: gameManager,
-              dragStart: _dragStart,
-              dragEnd: _dragEnd,
-              isDragging: _isDragging,
-            ),
-            size: Size.infinite,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              _boardSize = Size(constraints.maxWidth, constraints.maxHeight);
+              return CustomPaint(
+                painter: _PachinkoBoardPainter(
+                  gameManager: gameManager,
+                  dragStart: _dragStart,
+                  dragEnd: _dragEnd,
+                  isDragging: _isDragging,
+                ),
+                size: Size.infinite,
+              );
+            },
           ),
         );
       },
@@ -91,8 +97,12 @@ class _PachinkoBoardState extends State<PachinkoBoard> {
   }
   
   double _getScale(GameManager gameManager) {
-    // This will be calculated in the painter
-    return 1.0; // Placeholder
+    // Calculate scale based on actual widget size
+    if (_boardSize == Size.zero) return 1.0;
+    
+    final scaleX = _boardSize.width / GameConstants.boardWidth;
+    final scaleY = _boardSize.height / GameConstants.boardHeight;
+    return scaleX < scaleY ? scaleX : scaleY;
   }
 }
 

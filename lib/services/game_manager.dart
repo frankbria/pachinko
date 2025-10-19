@@ -183,8 +183,7 @@ class GameManager extends ChangeNotifier {
     final hitSlots = _physicsEngine.checkSlotCollisions(freeBalls, level.slots);
     _handleSlotHits(hitSlots);
 
-    // Remove inactive balls
-    balls.removeWhere((ball) => !ball.isActive);
+    // Remove inactive balls (use loop instead of removeWhere to avoid unmodifiable list error)
     for (final ball in List.from(balls)) {
       if (!ball.isActive) {
         _gameState.removeBall(ball);
