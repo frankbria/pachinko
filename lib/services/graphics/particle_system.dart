@@ -1,5 +1,6 @@
+import 'dart:math' show cos, sin, pi;
 import 'package:flutter/material.dart';
-import 'package:vector_math/vector_math_64.dart';
+import 'package:vector_math/vector_math.dart' hide Colors;
 import '../../models/particle.dart';
 
 enum ParticlePoolType { trail, collision }
@@ -40,22 +41,22 @@ class ParticlePool {
     required double lifetime,
     double size = 3.0,
   }) {
-    final particle = particles[_nextIndex];
-
     // Deactivate old particle if it was active
-    if (particle.isActive) {
+    if (particles[_nextIndex].isActive) {
       activeCount--;
     }
 
-    // Activate and configure particle
-    particle.position = position.clone();
-    particle.velocity = velocity.clone();
-    particle.color = color;
-    particle.lifetime = lifetime;
-    particle.age = 0.0;
-    particle.size = size;
-    particle.opacity = 1.0;
-    particle.isActive = true;
+    // Create new particle instance to replace old one
+    particles[_nextIndex] = Particle(
+      position: position.clone(),
+      velocity: velocity.clone(),
+      color: color,
+      lifetime: lifetime,
+      age: 0.0,
+      size: size,
+      opacity: 1.0,
+      isActive: true,
+    );
 
     activeCount++;
     _nextIndex = (_nextIndex + 1) % maxCapacity;
@@ -155,10 +156,10 @@ class ParticleSystem {
 
     // Spawn particles in circular pattern
     for (int i = 0; i < count; i++) {
-      final angle = (i / count) * 2 * 3.14159265359;
+      final angle = (i / count) * 2 * pi;
       final velocity = Vector2(
-        100 * (angle.cos()),
-        100 * (angle.sin()),
+        100 * cos(angle),
+        100 * sin(angle),
       );
 
       collisionPool.spawn(
