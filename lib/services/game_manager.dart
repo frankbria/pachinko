@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:vector_math/vector_math_64.dart';
+import 'package:vector_math/vector_math_64.dart' as vm;
 import '../models/ball.dart';
 import '../models/ball_launcher.dart';
 import '../models/game_state.dart';
@@ -278,7 +278,7 @@ class GameManager extends ChangeNotifier {
     if (level == null) return;
 
     // Find all special pegs
-    final specialPegs = level.pegs.where((peg) => peg.isSpecial).toList();
+    final specialPegs = level.pegs.where((peg) => peg.type == PegType.special).toList();
 
     // Create glow animation for each special peg
     for (int i = 0; i < specialPegs.length; i++) {
