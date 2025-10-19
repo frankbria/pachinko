@@ -69,6 +69,10 @@ class BallLauncher {
     if (_phase == LaunchPhase.ready) {
       _phase = LaunchPhase.charging;
       _launchPower = 0.0;
+      // Reset path state for new ball
+      _pathIndex = 0;
+      _pathProgress = 0.0;
+      _totalPathLength = 0.0;
     }
   }
   
@@ -80,19 +84,18 @@ class BallLauncher {
   
   Ball? launch() {
     if (_phase != LaunchPhase.charging) return null;
-    
+
     _phase = LaunchPhase.launching;
-    
+
     // Create ball at launch position
     _currentBall = Ball(
       position: Vector2(GameConstants.ballLaunchX, GameConstants.ballLaunchY),
       color: const Color(0xFFFFFFFF),
     );
-    
-    _pathIndex = 0;
-    _pathProgress = 0.0;
+
+    // Path state already reset in startCharging()
     _phase = LaunchPhase.traveling;
-    
+
     return _currentBall;
   }
   
