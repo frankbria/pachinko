@@ -92,4 +92,84 @@ class RenderingLayer {
         style: PaintingStyle.fill,
         antiAlias: false,
       );
+
+  // ============================================================================
+  // Rendering Methods
+  // ============================================================================
+
+  /// Renders a glow effect at the specified position with intensity modulation.
+  ///
+  /// Creates a radial gradient glow using multiple color stops for smooth falloff.
+  /// The glow intensity can be animated for pulsing effects on special pegs.
+  ///
+  /// Parameters:
+  /// - [canvas]: The canvas to draw on
+  /// - [center]: Center position of the glow effect
+  /// - [radius]: Base radius of the glow in pixels
+  /// - [color]: Base color of the glow
+  /// - [intensity]: Glow intensity from 0.0 (invisible) to 1.0 (full strength)
+  ///
+  /// Usage:
+  /// ```dart
+  /// RenderingLayer.renderGlowEffect(
+  ///   canvas,
+  ///   center: Offset(100, 100),
+  ///   radius: 25.0,
+  ///   color: Colors.yellow,
+  ///   intensity: animationValue, // From AnimationController
+  /// );
+  /// ```
+  static void renderGlowEffect(
+    Canvas canvas, {
+    required Offset center,
+    required double radius,
+    required Color color,
+    required double intensity,
+  }) {
+    // Clamp intensity to valid range
+    final clampedIntensity = intensity.clamp(0.0, 1.0);
+
+    // Early exit if intensity is effectively zero (performance optimization)
+    if (clampedIntensity < 0.01) {
+      return;
+    }
+
+    // Calculate effective radius based on intensity
+    // Glow expands slightly at higher intensity for more dramatic effect
+    final effectiveRadius = radius * (1.0 + clampedIntensity * 0.3);
+
+    // Create radial gradient for glow effect
+    // Multiple color stops create smooth falloff from center to edge
+    final gradient = Gradient.radial(
+      center,
+      effectiveRadius,
+      [
+        // Bright center (full opacity modulated by intensity)
+        color.withOpacity(clampedIntensity * 0.9),
+        // Mid-range (50% opacity modulated by intensity)
+        color.withOpacity(clampedIntensity * 0.5),
+        // Edge transition (25% opacity)
+        color.withOpacity(clampedIntensity * 0.25),
+        // Outer edge (fade to transparent)
+        color.withOpacity(0.0),
+      ],
+      [
+        0.0, // Center
+        0.4, // Inner glow region
+        0.7, // Mid glow region
+        1.0, // Outer edge
+      ],
+    );
+
+    // Create paint with gradient and blur
+    final paint = Paint()
+      ..shader = gradient
+      ..maskFilter = MaskFilter.blur(
+        BlurStyle.normal,
+        radius * 0.5 * clampedIntensity, // Blur scales with intensity
+      );
+
+    // Draw glow circle
+    canvas.drawCircle(center, effectiveRadius, paint);
+  }
 }

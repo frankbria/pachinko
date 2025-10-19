@@ -11,6 +11,7 @@ import '../utils/graphics_config.dart';
 import 'physics_engine.dart';
 import 'graphics/particle_system.dart';
 import 'graphics/performance_monitor.dart';
+import 'graphics/animation_controller.dart';
 
 class GameManager extends ChangeNotifier {
   final GameState _gameState = GameState();
@@ -18,6 +19,7 @@ class GameManager extends ChangeNotifier {
   final BallLauncher _ballLauncher = BallLauncher();
   final ParticleSystem _particleSystem = ParticleSystem();
   final PerformanceMetrics _performanceMonitor = PerformanceMetrics();
+  final AnimationController _animationController = AnimationController();
   Timer? _gameTimer;
   DateTime _lastFrameTime = DateTime.now();
   GraphicsQuality _currentQuality = GraphicsQuality.high;
@@ -28,10 +30,12 @@ class GameManager extends ChangeNotifier {
   BallLauncher get ballLauncher => _ballLauncher;
   ParticleSystem get particleSystem => _particleSystem;
   PerformanceMetrics get performanceMonitor => _performanceMonitor;
+  AnimationController get animationController => _animationController;
   bool get isRunning => _gameTimer?.isActive ?? false;
   
   void startGame({int level = 1}) {
     _gameState.startNewGame(level: level);
+    _setupGlowAnimations();
     _startGameLoop();
     notifyListeners();
   }
@@ -138,6 +142,9 @@ class GameManager extends ChangeNotifier {
     // Update particle system
     _particleSystem.update(deltaTime);
 
+    // Update animation controller for glow effects
+    _animationController.update(deltaTime);
+
     // Update ball launcher (for balls traveling on guided path)
     if (_ballLauncher.phase == LaunchPhase.traveling) {
       final ballReleased = _ballLauncher.updateBallPath(deltaTime);
@@ -241,7 +248,41 @@ class GameManager extends ChangeNotifier {
   void selectLevel(int levelNumber) {
     _gameTimer?.cancel();
     _gameState.loadLevel(levelNumber);
+    _setupGlowAnimations();
     notifyListeners();
+  }
+
+  /// Sets up glow animations for all special pegs in the current level
+  ///
+  /// Creates looping pulsing animations for special pegs.
+  /// Each special peg gets its own animation with a 2-second cycle.
+  void _setupGlowAnimations() {
+    final level = _gameState.currentLevel;
+    if (level == null) return;
+
+    // Find all special pegs
+    final specialPegs = level.pegs.where((peg) => peg.isSpecial).toList();
+
+    // Create glow animation for each special peg
+    for (int i = 0; i < specialPegs.length; i++) {
+      final animationId = 'special_peg_glow_$i';
+      
+      // Remove existing animation if present
+      if (_animationController.hasAnimation(animationId)) {
+        _animationController.removeAnimation(animationId);
+      }
+
+      // Create new looping animation (2-second cycle, easeInOut for smooth pulsing)
+      _animationController.createAnimation(
+        id: animationId,
+        duration: 2.0,
+        curve: AnimationCurve.easeInOut,
+        loop: true,
+      );
+
+      // Start animation immediately
+      _animationController.start(animationId);
+    }
   }
 
 

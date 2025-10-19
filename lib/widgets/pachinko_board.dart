@@ -241,6 +241,8 @@ class _PachinkoBoardPainter extends CustomPainter {
   }
 
   void _drawPegs(Canvas canvas, level) {
+    int specialPegIndex = 0; // Track special peg index for animation lookup
+    
     for (final peg in level.pegs) {
       final paint = Paint()
         ..color = peg.renderColor
@@ -252,17 +254,21 @@ class _PachinkoBoardPainter extends CustomPainter {
         paint,
       );
       
-      // Draw glow effect for special pegs
-      if (peg.type == PegType.special && peg.isHighlighted) {
-        final glowPaint = Paint()
-          ..color = GameConstants.specialPegColor.withOpacity(0.3)
-          ..style = PaintingStyle.fill;
+      // Draw animated glow effect for special pegs
+      if (peg.type == PegType.special) {
+        final animationId = 'special_peg_glow_$specialPegIndex';
+        final animationValue = gameManager.animationController.getValue(animationId) ?? 0.0;
         
-        canvas.drawCircle(
-          Offset(peg.position.x, peg.position.y),
-          peg.radius + 5,
-          glowPaint,
+        // Render glow with animated intensity
+        RenderingLayer.renderGlowEffect(
+          canvas,
+          center: Offset(peg.position.x, peg.position.y),
+          radius: peg.radius + 10.0, // Glow extends beyond peg
+          color: GameConstants.specialPegColor,
+          intensity: animationValue * 0.8, // Scale to 0.0-0.8 for subtlety
         );
+        
+        specialPegIndex++;
       }
     }
   }
