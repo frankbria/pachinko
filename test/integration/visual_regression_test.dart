@@ -330,6 +330,98 @@ void main() {
 
       _teardownTest(gameManager);
     });
+
+    // Test AC2.1, FR-004: Special peg glow animations (US2 - T045)
+    testWidgets('special pegs display pulsing glow animation', (tester) async {
+      final gameManager = await _setupTestGame(tester, levelNumber: 1);
+
+      // Allow initial render and animation setup
+      await tester.pumpAndSettle();
+
+      // Simulate animation progression for one full pulse cycle (2 seconds)
+      await _simulateGameTime(tester, duration: const Duration(milliseconds: 2000));
+
+      // Verify glow animation is rendering on special pegs
+      // Golden file should show special pegs with visible glow effect
+      await expectLater(
+        find.byType(PachinkoBoard),
+        matchesGoldenFile('golden/integration/special_peg_glow_initial.png'),
+      );
+
+      _teardownTest(gameManager);
+    });
+
+    testWidgets('special peg glow intensity varies smoothly over time', (tester) async {
+      final gameManager = await _setupTestGame(tester, levelNumber: 1);
+
+      // Allow initial render
+      await tester.pumpAndSettle();
+
+      // Capture glow at peak intensity (1.0 second into 2-second cycle)
+      await _simulateGameTime(tester, duration: const Duration(milliseconds: 1000));
+
+      await expectLater(
+        find.byType(PachinkoBoard),
+        matchesGoldenFile('golden/integration/special_peg_glow_peak.png'),
+      );
+
+      _teardownTest(gameManager);
+    });
+
+    testWidgets('special peg glow fades smoothly at minimum intensity', (tester) async {
+      final gameManager = await _setupTestGame(tester, levelNumber: 1);
+
+      // Allow initial render
+      await tester.pumpAndSettle();
+
+      // Capture glow at minimum intensity (0.0 seconds / 2.0 seconds into cycle)
+      await _simulateGameTime(tester, duration: const Duration(milliseconds: 0));
+
+      await expectLater(
+        find.byType(PachinkoBoard),
+        matchesGoldenFile('golden/integration/special_peg_glow_minimum.png'),
+      );
+
+      _teardownTest(gameManager);
+    });
+
+    testWidgets('multiple special pegs animate in sync', (tester) async {
+      final gameManager = await _setupTestGame(tester, levelNumber: 1);
+
+      // Allow initial render
+      await tester.pumpAndSettle();
+
+      // Simulate mid-cycle progression
+      await _simulateGameTime(tester, duration: const Duration(milliseconds: 500));
+
+      // Verify all special pegs have synchronized glow animations
+      // Golden file should show consistent glow intensity across all special pegs
+      await expectLater(
+        find.byType(PachinkoBoard),
+        matchesGoldenFile('golden/integration/special_pegs_sync.png'),
+      );
+
+      _teardownTest(gameManager);
+    });
+
+    testWidgets('glow animation continues smoothly across multiple cycles', (tester) async {
+      final gameManager = await _setupTestGame(tester, levelNumber: 1);
+
+      // Allow initial render
+      await tester.pumpAndSettle();
+
+      // Simulate 3 full animation cycles (6 seconds)
+      await _simulateGameTime(tester, duration: const Duration(milliseconds: 6000));
+
+      // Verify glow animation still renders correctly after multiple cycles
+      // Should be back at initial state due to looping
+      await expectLater(
+        find.byType(PachinkoBoard),
+        matchesGoldenFile('golden/integration/special_peg_glow_looped.png'),
+      );
+
+      _teardownTest(gameManager);
+    });
   });
 }
 
