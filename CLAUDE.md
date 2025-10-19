@@ -13,41 +13,46 @@ A modern graphical Pachinko idle game for Android. Features authentic pachinko m
 - ✅ Special peg bonus mechanics
 - ✅ Cross-platform (Linux desktop, Android-ready)
 
-### Graphics Enhancement (Feature 002) - 50% Complete
+### Graphics Enhancement (Feature 002) - 52% Complete
 **Branch**: `002-graphics-overhaul` | **Spec**: `specs/002-graphics-overhaul/spec.md`
 
-✅ **Phase 1-2: Infrastructure & Foundation** (T001-T012)
-- Graphics configuration system with quality levels
-- Particle model with lifecycle management
-- ParticleSystem with object pooling (trail + collision)
-- AnimationController foundation
-- PerformanceMonitor with FPS tracking
-- RenderingLayer with anti-aliasing
+✅ **Phase 1-2: Infrastructure & Foundation** (T001-T012) - COMPLETE
+- Graphics configuration system with quality levels (High/Medium/Low)
+- Particle model with lifecycle management and object pooling
+- ParticleSystem with separate pools (100 trail, 50 collision)
+- AnimationState & AnimationController with easing curves
+- PerformanceMonitor with 60-frame circular buffer and FPS tracking
+- RenderingLayer with anti-aliasing support
 
-✅ **Phase 3 (50%): Particle Effects** (T013-T020)
-- 115 unit tests for particle system (all passing)
-- Trail particles on ball movement
-- Collision burst effects on peg hits
-- Particle rendering in PachinkoBoard
-- Performance-based quality adjustment
+✅ **Phase 3: Particle Effects (P1)** (T013-T029) - COMPLETE
+- 128 unit tests for particle system (all passing)
+- Trail particles on ball movement (velocity > 50 px/s)
+- Collision burst effects on peg hits (8-particle radial pattern)
+- Particle rendering integrated in PachinkoBoard CustomPainter
+- Performance-based adaptive quality adjustment
+- Special peg collision enhancements
 
-✅ **Phase 4 (25%): Testing Framework** (T030-T033)
-- Visual regression test framework with golden files
-- 12 integration tests for visual validation
-- Performance monitoring with circular buffer
-- Adaptive quality control (High/Medium/Low)
+✅ **Phase 4: Testing Framework (P1)** (T034-T041) - COMPLETE
+- 13 widget tests for PachinkoBoard rendering
+- 12 visual regression tests with golden file baselines
+- Performance monitoring integration in GameManager
+- Automated test utilities (update_goldens.sh, generate_coverage.sh)
+- Graphics subsystem: **98.45% coverage** (exceeds 85% requirement)
 
-🚧 **In Progress**:
-- Phase 3: Animation system implementation (T021-T029)
-- Phase 4: Frame rate and animation timing tests (T034-T041)
+🚧 **Phase 5: Glow Animations (P2)** (T042-T057) - 26% Complete
+- ✅ T042-T043: AnimationState + AnimationController (49 tests passing)
+  - Multi-animation coordination with easing curves
+  - Looping and non-looping animation support
+  - Linear, easeIn, easeOut, easeInOut curve implementations
+- 📋 T044-T045: GlowEffect widget and integration tests
+- 📋 T046-T057: GlowEffect implementation and GameManager integration
 
 📋 **Pending**:
-- Phase 5: Glow animations for special pegs (T042-T057)
 - Phase 6: UI polish and anti-aliasing (T058-T067)
 - Phase 7: Performance optimization (T068-T072)
 - Phase 8: Documentation and polish (T073-T082)
 
-**Test Status**: 215 passing | 19 failing (expected - golden files not generated yet)
+**Test Status**: **289 passing** | 2 skipped (widget golden baselines) | 98.45% graphics coverage
 
 ## Technology Stack
 - **Framework:** Flutter 3.24.5
