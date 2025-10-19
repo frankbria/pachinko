@@ -8,18 +8,21 @@ import '../models/peg.dart';
 import '../models/slot.dart';
 import '../utils/constants.dart';
 import 'physics_engine.dart';
+import 'graphics/particle_system.dart';
 
 class GameManager extends ChangeNotifier {
   final GameState _gameState = GameState();
   final PhysicsEngine _physicsEngine = PhysicsEngine();
   final BallLauncher _ballLauncher = BallLauncher();
+  final ParticleSystem _particleSystem = ParticleSystem();
   Timer? _gameTimer;
   DateTime _lastFrameTime = DateTime.now();
-  
+
   // Getters
   GameState get gameState => _gameState;
   PhysicsEngine get physicsEngine => _physicsEngine;
   BallLauncher get ballLauncher => _ballLauncher;
+  ParticleSystem get particleSystem => _particleSystem;
   bool get isRunning => _gameTimer?.isActive ?? false;
   
   void startGame({int level = 1}) {
@@ -100,9 +103,12 @@ class GameManager extends ChangeNotifier {
   void _updatePhysics(double deltaTime) {
     final balls = _gameState.activeBalls;
     final level = _gameState.currentLevel;
-    
+
     if (level == null) return;
-    
+
+    // Update particle system
+    _particleSystem.update(deltaTime);
+
     // Update ball launcher (for balls traveling on guided path)
     if (_ballLauncher.phase == LaunchPhase.traveling) {
       final ballReleased = _ballLauncher.updateBallPath(deltaTime);
@@ -111,7 +117,7 @@ class GameManager extends ChangeNotifier {
         _ballLauncher.reset();
       }
     }
-    
+
     if (balls.isEmpty) return;
     
     // Update ball physics (only for balls not on guided path)

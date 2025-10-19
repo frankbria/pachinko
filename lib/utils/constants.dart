@@ -94,6 +94,34 @@ class GameConstants {
   static const double masterVolume = 0.7;
   static const double sfxVolume = 0.8;
   static const double musicVolume = 0.5;
+
+  // Graphics - Particle System
+  static const int maxTrailParticles = 100;
+  static const int maxCollisionParticles = 50;
+  static const double particleTrailLifetime = 0.5; // seconds
+  static const double particleCollisionLifetime = 0.3; // seconds
+  static const double particleTrailSize = 3.0; // pixels
+  static const double particleCollisionSize = 4.0; // pixels
+
+  // Graphics - Performance
+  static const double targetFPS = 60.0;
+  static const double targetFrameTime = 16.67; // milliseconds (1000/60)
+  static const double fpsThresholdHigh = 60.0;
+  static const double fpsThresholdMedium = 55.0;
+  static const double fpsThresholdLow = 50.0;
+  static const int performanceBufferSize = 60; // 1 second window at 60 FPS
+
+  // Graphics - Animation
+  static const double glowAnimationDuration = 2.0; // seconds
+  static const double fadeAnimationDuration = 0.3; // seconds
+  static const double glowBlurRadius = 10.0; // pixels
+  static const double glowIntensityMin = 0.3;
+  static const double glowIntensityMax = 1.0;
+
+  // Graphics - Rendering
+  static const bool antiAliasingEnabled = true;
+  static const double defaultStrokeWidth = 2.0;
+  static const int collisionBurstParticleCount = 8;
 }
 
 class GameStrings {
