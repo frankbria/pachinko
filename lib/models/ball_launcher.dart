@@ -20,6 +20,7 @@ class BallLauncher {
   List<Vector2> _launchPath = [];
   int _pathIndex = 0;
   double _pathProgress = 0.0;
+  double _totalPathLength = 0.0;
   
   LaunchPhase get phase => _phase;
   double get launchPower => _launchPower;
@@ -97,56 +98,81 @@ class BallLauncher {
   
   bool updateBallPath(double deltaTime) {
     if (_phase != LaunchPhase.traveling || _currentBall == null) return false;
-    
+
     // Speed based on launch power
     final speed = 200.0 + (_launchPower / _maxPower) * 300.0; // 200-500 pixels/second
-    _pathProgress += speed * deltaTime;
-    
-    // Move along path segments
-    while (_pathProgress >= 20.0 && _pathIndex < _launchPath.length - 1) {
-      _pathProgress -= 20.0;
-      _pathIndex++;
+
+    // Calculate total path length if not cached
+    if (_totalPathLength == 0.0) {
+      for (int i = 0; i < _launchPath.length - 1; i++) {
+        _totalPathLength += (_launchPath[i + 1] - _launchPath[i]).length;
+      }
     }
-    
-    // Check if we've reached the end of the path
-    if (_pathIndex >= _launchPath.length - 1) {
+
+    // Advance along path based on speed
+    _pathProgress += speed * deltaTime;
+
+    // Check if we've completed the path
+    if (_pathProgress >= _totalPathLength) {
       // Ball is now free-falling in the peg field
-      final finalVelocity = _calculateReleaseVelocity();
-      _currentBall!.velocity = finalVelocity;
+      // Velocity is already set from the last path segment - no need to recalculate
+      _currentBall!.position = _launchPath.last;
       _phase = LaunchPhase.released;
       return true; // Ball is now released to physics
     }
-    
-    // Interpolate position along current path segment
-    if (_pathIndex < _launchPath.length - 1) {
-      final current = _launchPath[_pathIndex];
-      final next = _launchPath[_pathIndex + 1];
-      final segmentProgress = (_pathProgress / 20.0).clamp(0.0, 1.0);
-      
-      final lerpedX = current.x + (next.x - current.x) * segmentProgress;
-      final lerpedY = current.y + (next.y - current.y) * segmentProgress;
-      _currentBall!.position = Vector2(lerpedX, lerpedY);
+
+    // Find which segment we're on and where within that segment
+    double accumulatedLength = 0.0;
+    int currentSegment = 0;
+
+    for (int i = 0; i < _launchPath.length - 1; i++) {
+      final segmentLength = (_launchPath[i + 1] - _launchPath[i]).length;
+
+      if (_pathProgress < accumulatedLength + segmentLength) {
+        // We're on this segment
+        currentSegment = i;
+        final segmentProgress = (_pathProgress - accumulatedLength) / segmentLength;
+        final current = _launchPath[i];
+        final next = _launchPath[i + 1];
+
+        // Interpolate position smoothly along segment
+        _currentBall!.position = current + (next - current) * segmentProgress;
+
+        // Update ball velocity to match path direction for smooth transition
+        final pathDirection = (next - current).normalized();
+        _currentBall!.velocity = pathDirection * speed;
+
+        break;
+      }
+
+      accumulatedLength += segmentLength;
+      currentSegment = i;
     }
-    
+
+    // If we're on the last segment, ensure velocity matches that segment direction
+    if (currentSegment >= _launchPath.length - 2) {
+      final lastSegment = _launchPath.length - 2;
+      final current = _launchPath[lastSegment];
+      final next = _launchPath[lastSegment + 1];
+      final pathDirection = (next - current).normalized();
+      _currentBall!.velocity = pathDirection * speed;
+    }
+
     return false; // Ball still traveling on guided path
   }
   
   Vector2 _calculateReleaseVelocity() {
-    // Calculate initial velocity when ball enters peg field
-    // Ball should arc upward and leftward from the curve exit point
-    final powerMultiplier = 0.5 + (_launchPower / _maxPower) * 0.5; // 0.5 to 1.0
-    
-    // Base velocity: leftward and upward to arc into peg field
-    // Higher power = more upward velocity to reach further into the board
-    final baseHorizontalVelocity = -200.0; // Leftward motion (negative X)
-    final baseVerticalVelocity = -150.0 - (_launchPower / _maxPower) * 200.0; // Upward (negative Y), power-dependent
-    
-    final velocity = Vector2(
-      baseHorizontalVelocity * powerMultiplier,
-      baseVerticalVelocity * powerMultiplier,
-    );
-    
-    return velocity;
+    // Calculate direction tangent to final path segment for smooth transition
+    final pathDirection = (_launchPath[_launchPath.length - 1] -
+                          _launchPath[_launchPath.length - 2]).normalized();
+
+    // Scale speed based on launch power (200-500 pixels/second)
+    final releaseSpeed = 200.0 + (_launchPower / _maxPower) * 300.0;
+
+    // Apply direction and speed for smooth continuation from path
+    final releaseVelocity = pathDirection * releaseSpeed;
+
+    return releaseVelocity;
   }
   
   void reset() {
@@ -155,6 +181,7 @@ class BallLauncher {
     _currentBall = null;
     _pathIndex = 0;
     _pathProgress = 0.0;
+    _totalPathLength = 0.0;
   }
   
   List<Vector2> getLaunchPath() => List.unmodifiable(_launchPath);
