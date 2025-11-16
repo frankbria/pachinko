@@ -46,4 +46,4 @@ app.*.map.json
 /tools/flutter/
 
 # Linux build files
-/linux/flutter/ephemeral/
+/linux/flutter/ephemeral/.claude/settings.local.json
