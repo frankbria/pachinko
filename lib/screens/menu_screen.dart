@@ -4,6 +4,7 @@ import '../services/game_manager.dart';
 import '../utils/constants.dart';
 import 'game_screen.dart';
 import 'high_scores_screen.dart';
+import 'achievements_screen.dart';
 
 class MenuScreen extends StatelessWidget {
   const MenuScreen({super.key});
@@ -89,6 +90,15 @@ class MenuScreen extends StatelessWidget {
                   title: 'High Scores',
                   icon: Icons.emoji_events,
                   onPressed: () => _showHighScores(context),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Achievements Button
+                _MenuButton(
+                  title: 'Achievements',
+                  icon: Icons.workspace_premium,
+                  onPressed: () => _showAchievements(context),
                 ),
 
                 const SizedBox(height: 60),
@@ -252,6 +262,14 @@ class MenuScreen extends StatelessWidget {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const HighScoresScreen(),
+      ),
+    );
+  }
+
+  void _showAchievements(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const AchievementsScreen(),
       ),
     );
   }

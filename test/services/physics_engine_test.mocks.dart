@@ -318,6 +318,51 @@ class MockPeg extends _i1.Mock implements _i5.Peg {
       );
 
   @override
+  bool get isAnimating => (super.noSuchMethod(
+        Invocation.getter(#isAnimating),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  set isAnimating(bool? _isAnimating) => super.noSuchMethod(
+        Invocation.setter(
+          #isAnimating,
+          _isAnimating,
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  double get pulseProgress => (super.noSuchMethod(
+        Invocation.getter(#pulseProgress),
+        returnValue: 0.0,
+      ) as double);
+
+  @override
+  set pulseProgress(double? _pulseProgress) => super.noSuchMethod(
+        Invocation.setter(
+          #pulseProgress,
+          _pulseProgress,
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  double get shimmerIntensity => (super.noSuchMethod(
+        Invocation.getter(#shimmerIntensity),
+        returnValue: 0.0,
+      ) as double);
+
+  @override
+  set shimmerIntensity(double? _shimmerIntensity) => super.noSuchMethod(
+        Invocation.setter(
+          #shimmerIntensity,
+          _shimmerIntensity,
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
   _i3.Color get renderColor => (super.noSuchMethod(
         Invocation.getter(#renderColor),
         returnValue: _FakeColor_1(
@@ -325,6 +370,18 @@ class MockPeg extends _i1.Mock implements _i5.Peg {
           Invocation.getter(#renderColor),
         ),
       ) as _i3.Color);
+
+  @override
+  double get pulseGlowRadius => (super.noSuchMethod(
+        Invocation.getter(#pulseGlowRadius),
+        returnValue: 0.0,
+      ) as double);
+
+  @override
+  double get pulseGlowOpacity => (super.noSuchMethod(
+        Invocation.getter(#pulseGlowOpacity),
+        returnValue: 0.0,
+      ) as double);
 
   @override
   bool checkCollision(
@@ -372,6 +429,15 @@ class MockPeg extends _i1.Mock implements _i5.Peg {
         Invocation.method(
           #reset,
           [],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void updateAnimation(double? deltaTime) => super.noSuchMethod(
+        Invocation.method(
+          #updateAnimation,
+          [deltaTime],
         ),
         returnValueForMissingStub: null,
       );

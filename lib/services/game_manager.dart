@@ -10,6 +10,7 @@ import '../utils/constants.dart';
 import 'physics_engine.dart';
 import 'audio_service.dart';
 import 'storage_service.dart';
+import 'achievement_service.dart';
 
 class GameManager extends ChangeNotifier {
   final GameState _gameState;
@@ -17,6 +18,7 @@ class GameManager extends ChangeNotifier {
   final BallLauncher _ballLauncher;
   final AudioService? _audioService;
   final StorageService? _storageService;
+  final AchievementService? _achievementService;
   Timer? _gameTimer;
   DateTime _lastFrameTime = DateTime.now();
 
@@ -30,8 +32,10 @@ class GameManager extends ChangeNotifier {
     BallLauncher? ballLauncher,
     AudioService? audioService,
     StorageService? storageService,
+    AchievementService? achievementService,
   }) : _audioService = audioService,
        _storageService = storageService,
+       _achievementService = achievementService,
        _gameState = gameState ?? GameState(),
        _physicsEngine = physicsEngine ?? PhysicsEngine(audioService: audioService),
        _ballLauncher = ballLauncher ?? BallLauncher();
@@ -87,6 +91,9 @@ class GameManager extends ChangeNotifier {
 
       // Play launch sound
       _audioService?.playLaunch();
+
+      // Track ball launch achievement
+      _achievementService?.trackBallLaunched();
 
       if (!isRunning) {
         _startGameLoop();
@@ -174,6 +181,11 @@ class GameManager extends ChangeNotifier {
       _gameState.addScore(slot.pointValue);
       // Play slot score sound
       _audioService?.playSlotScore(slot.pointValue);
+
+      // Track edge slot achievement (edge slots are worth 2000 points)
+      if (slot.pointValue >= 2000) {
+        _achievementService?.trackEdgeSlot();
+      }
     }
   }
 
@@ -185,6 +197,10 @@ class GameManager extends ChangeNotifier {
       _gameState.triggerSpecialBonus();
       // Play bonus trigger fanfare
       _audioService?.playBonusTrigger();
+
+      // Track achievements
+      _achievementService?.trackAllSpecialPegsHit();
+      _achievementService?.trackSpecialBonus();
     }
   }
 
@@ -205,11 +221,16 @@ class GameManager extends ChangeNotifier {
   /// Saves the current score as a high score for the current level.
   void _saveHighScore() {
     final storageService = _storageService;
+    final level = _gameState.currentLevel?.levelNumber ?? 1;
+    final score = _gameState.score;
+
     if (storageService != null) {
-      final level = _gameState.currentLevel?.levelNumber ?? 1;
-      final score = _gameState.score;
       storageService.saveHighScore(level, score);
     }
+
+    // Track achievements for level completion and score
+    _achievementService?.trackLevelComplete(level);
+    _achievementService?.trackLevelScore(level, score);
   }
 
   void nextLevel() {
