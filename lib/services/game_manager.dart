@@ -8,11 +8,13 @@ import '../models/peg.dart';
 import '../models/slot.dart';
 import '../utils/constants.dart';
 import 'physics_engine.dart';
+import 'audio_service.dart';
 
 class GameManager extends ChangeNotifier {
   final GameState _gameState;
   final PhysicsEngine _physicsEngine;
   final BallLauncher _ballLauncher;
+  final AudioService? _audioService;
   Timer? _gameTimer;
   DateTime _lastFrameTime = DateTime.now();
 
@@ -24,8 +26,10 @@ class GameManager extends ChangeNotifier {
     GameState? gameState,
     PhysicsEngine? physicsEngine,
     BallLauncher? ballLauncher,
-  }) : _gameState = gameState ?? GameState(),
-       _physicsEngine = physicsEngine ?? PhysicsEngine(),
+    AudioService? audioService,
+  }) : _audioService = audioService,
+       _gameState = gameState ?? GameState(),
+       _physicsEngine = physicsEngine ?? PhysicsEngine(audioService: audioService),
        _ballLauncher = ballLauncher ?? BallLauncher();
 
   // Getters
@@ -72,16 +76,19 @@ class GameManager extends ChangeNotifier {
   
   void launchBall() {
     if (!_gameState.canLaunchBall) return;
-    
+
     final ball = _ballLauncher.launch();
     if (ball != null) {
       _gameState.launchBall(ball);
-      
+
+      // Play launch sound
+      _audioService?.playLaunch();
+
       if (!isRunning) {
         _startGameLoop();
       }
     }
-    
+
     notifyListeners();
   }
 
@@ -141,7 +148,6 @@ class GameManager extends ChangeNotifier {
     _handleSlotHits(hitSlots);
     
     // Remove inactive balls
-    balls.removeWhere((ball) => !ball.isActive);
     for (final ball in List.from(balls)) {
       if (!ball.isActive) {
         _gameState.removeBall(ball);
@@ -152,6 +158,8 @@ class GameManager extends ChangeNotifier {
   void _handlePegHits(List<Peg> hitPegs) {
     for (final peg in hitPegs) {
       if (peg.type == PegType.special) {
+        // Play special peg sound
+        _audioService?.playSpecialPeg();
         _checkSpecialBonus();
       }
     }
@@ -160,15 +168,19 @@ class GameManager extends ChangeNotifier {
   void _handleSlotHits(List<Slot> hitSlots) {
     for (final slot in hitSlots) {
       _gameState.addScore(slot.pointValue);
+      // Play slot score sound
+      _audioService?.playSlotScore(slot.pointValue);
     }
   }
 
   void _checkSpecialBonus() {
     final level = _gameState.currentLevel;
     if (level == null || _gameState.specialBonusTriggered) return;
-    
+
     if (level.allSpecialPegsHit) {
       _gameState.triggerSpecialBonus();
+      // Play bonus trigger fanfare
+      _audioService?.playBonusTrigger();
     }
   }
 

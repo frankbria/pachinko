@@ -4,11 +4,17 @@ import '../models/ball.dart';
 import '../models/peg.dart';
 import '../models/slot.dart';
 import '../utils/constants.dart';
+import 'audio_service.dart';
 
 class PhysicsEngine {
+  final AudioService? _audioService;
+
   static const double _gravity = GameConstants.gravity;
   static const double _damping = GameConstants.bounceDamping;
   static const double _airResistance = GameConstants.airResistance;
+
+  /// Creates a PhysicsEngine with optional AudioService for sound effects
+  PhysicsEngine({AudioService? audioService}) : _audioService = audioService;
   
   void updateBalls(List<Ball> balls, double deltaTime) {
     for (final ball in balls) {
@@ -52,22 +58,24 @@ class PhysicsEngine {
 
   List<Peg> checkPegCollisions(List<Ball> balls, List<Peg> pegs) {
     final hitPegs = <Peg>[];
-    
+
     for (final ball in balls) {
       if (!ball.isActive) continue;
-      
+
       for (final peg in pegs) {
         if (peg.checkCollision(ball.position, ball.radius)) {
           _resolvePegCollision(ball, peg);
-          
+
           if (!peg.hasBeenHit) {
             peg.onHit();
             hitPegs.add(peg);
+            // Play peg hit sound (for all peg types)
+            _audioService?.playPegHit();
           }
         }
       }
     }
-    
+
     return hitPegs;
   }
 
