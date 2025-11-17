@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:math' as math;
 import 'package:vector_math/vector_math_64.dart';
 
 enum PegType {
@@ -14,7 +15,13 @@ class Peg {
   Color color;
   bool isHighlighted;
   bool hasBeenHit;
-  
+
+  // Animation state
+  bool isAnimating = false;
+  double pulseProgress = 0.0; // 0.0 to 1.0 for pulse animation
+  double shimmerIntensity = 0.0; // 0.0 to 1.0 for special peg shimmer
+  int _lastHitTime = 0;
+
   Peg({
     required this.position,
     this.radius = 12.0,
@@ -22,7 +29,13 @@ class Peg {
     Color? color,
     this.isHighlighted = false,
     this.hasBeenHit = false,
-  }) : color = color ?? _getDefaultColor(type);
+  }) : color = color ?? _getDefaultColor(type) {
+    // Special pegs start with shimmer
+    if (type == PegType.special) {
+      isHighlighted = true;
+      isAnimating = true;
+    }
+  }
 
   static Color _getDefaultColor(PegType type) {
     switch (type) {
@@ -47,6 +60,10 @@ class Peg {
 
   void onHit() {
     hasBeenHit = true;
+    isAnimating = true;
+    pulseProgress = 0.0;
+    _lastHitTime = DateTime.now().millisecondsSinceEpoch;
+
     if (type == PegType.special) {
       isHighlighted = false;
     }
@@ -54,15 +71,60 @@ class Peg {
 
   void reset() {
     hasBeenHit = false;
+    isAnimating = false;
+    pulseProgress = 0.0;
+    shimmerIntensity = 0.0;
+
     if (type == PegType.special) {
       isHighlighted = true;
+      isAnimating = true; // Restart shimmer
+    }
+  }
+
+  /// Update animation state based on time
+  void updateAnimation(double deltaTime) {
+    // Handle pulse animation (on hit)
+    if (pulseProgress < 1.0 && _lastHitTime > 0) {
+      final elapsed = DateTime.now().millisecondsSinceEpoch - _lastHitTime;
+      pulseProgress = (elapsed / 250.0).clamp(0.0, 1.0); // 250ms pulse duration
+
+      if (pulseProgress >= 1.0) {
+        isAnimating = false; // Pulse complete
+      }
+    }
+
+    // Handle shimmer animation (special pegs)
+    if (type == PegType.special && isHighlighted && !hasBeenHit) {
+      // Sine wave shimmer effect
+      shimmerIntensity = 0.3 + 0.3 * math.sin(DateTime.now().millisecondsSinceEpoch / 500.0);
+    } else {
+      shimmerIntensity = 0.0;
     }
   }
 
   Color get renderColor {
     if (type == PegType.special && isHighlighted) {
-      return Color.lerp(color, const Color(0xFFFFFF00), 0.5)!; // Add yellow glow
+      // Apply shimmer intensity to yellow glow
+      return Color.lerp(color, const Color(0xFFFFFF00), 0.5 + shimmerIntensity)!;
     }
     return hasBeenHit ? color.withOpacity(0.6) : color;
+  }
+
+  /// Get pulse glow radius for rendering
+  double get pulseGlowRadius {
+    if (pulseProgress > 0.0 && pulseProgress < 1.0) {
+      // Expand then fade out
+      return radius + (10.0 * pulseProgress);
+    }
+    return 0.0;
+  }
+
+  /// Get pulse glow opacity for rendering
+  double get pulseGlowOpacity {
+    if (pulseProgress > 0.0 && pulseProgress < 1.0) {
+      // Fade out as pulse expands
+      return 0.6 * (1.0 - pulseProgress);
+    }
+    return 0.0;
   }
 }

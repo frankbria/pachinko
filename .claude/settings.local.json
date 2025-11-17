@@ -10,7 +10,12 @@
       "Bash(export PATH:*)",
       "Bash(flutter test)",
       "Bash(touch:*)",
-      "Bash(flutter test:*)"
+      "Bash(flutter test:*)",
+      "Bash(flutter pub get:*)",
+      "Bash(dart run build_runner build:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(wget:*)",
+      "Bash(dart analyze:*)"
     ],
     "deny": [],
     "ask": []

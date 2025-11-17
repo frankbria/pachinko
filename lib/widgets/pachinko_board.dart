@@ -247,28 +247,45 @@ class _PachinkoBoardPainter extends CustomPainter {
 
   void _drawPegs(Canvas canvas, level) {
     for (final peg in level.pegs) {
+      // Update peg animation
+      peg.updateAnimation(1/60); // Assuming 60 FPS
+
+      // Draw pulse glow effect (on hit)
+      if (peg.pulseGlowRadius > 0.0) {
+        final pulsePaint = Paint()
+          ..color = peg.color.withOpacity(peg.pulseGlowOpacity)
+          ..style = PaintingStyle.fill;
+
+        canvas.drawCircle(
+          Offset(peg.position.x, peg.position.y),
+          peg.pulseGlowRadius,
+          pulsePaint,
+        );
+      }
+
+      // Draw shimmer glow for special pegs
+      if (peg.type == PegType.special && peg.isHighlighted && peg.shimmerIntensity > 0.0) {
+        final shimmerPaint = Paint()
+          ..color = GameConstants.specialPegColor.withOpacity(0.3 * peg.shimmerIntensity)
+          ..style = PaintingStyle.fill;
+
+        canvas.drawCircle(
+          Offset(peg.position.x, peg.position.y),
+          peg.radius + (5 + 3 * peg.shimmerIntensity),
+          shimmerPaint,
+        );
+      }
+
+      // Draw peg body
       final paint = Paint()
         ..color = peg.renderColor
         ..style = PaintingStyle.fill;
-      
+
       canvas.drawCircle(
         Offset(peg.position.x, peg.position.y),
         peg.radius,
         paint,
       );
-      
-      // Draw glow effect for special pegs
-      if (peg.type == PegType.special && peg.isHighlighted) {
-        final glowPaint = Paint()
-          ..color = GameConstants.specialPegColor.withOpacity(0.3)
-          ..style = PaintingStyle.fill;
-        
-        canvas.drawCircle(
-          Offset(peg.position.x, peg.position.y),
-          peg.radius + 5,
-          glowPaint,
-        );
-      }
     }
   }
 

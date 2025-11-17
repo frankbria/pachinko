@@ -9,12 +9,14 @@ import '../models/slot.dart';
 import '../utils/constants.dart';
 import 'physics_engine.dart';
 import 'audio_service.dart';
+import 'storage_service.dart';
 
 class GameManager extends ChangeNotifier {
   final GameState _gameState;
   final PhysicsEngine _physicsEngine;
   final BallLauncher _ballLauncher;
   final AudioService? _audioService;
+  final StorageService? _storageService;
   Timer? _gameTimer;
   DateTime _lastFrameTime = DateTime.now();
 
@@ -27,7 +29,9 @@ class GameManager extends ChangeNotifier {
     PhysicsEngine? physicsEngine,
     BallLauncher? ballLauncher,
     AudioService? audioService,
+    StorageService? storageService,
   }) : _audioService = audioService,
+       _storageService = storageService,
        _gameState = gameState ?? GameState(),
        _physicsEngine = physicsEngine ?? PhysicsEngine(audioService: audioService),
        _ballLauncher = ballLauncher ?? BallLauncher();
@@ -189,9 +193,22 @@ class GameManager extends ChangeNotifier {
       if (_gameState.ballsRemaining <= 0) {
         _gameTimer?.cancel();
         _gameState.updatePhase(GamePhase.gameOver);
+
+        // Save high score when level completes
+        _saveHighScore();
       } else {
         _gameState.updatePhase(GamePhase.ready);
       }
+    }
+  }
+
+  /// Saves the current score as a high score for the current level.
+  void _saveHighScore() {
+    final storageService = _storageService;
+    if (storageService != null) {
+      final level = _gameState.currentLevel?.levelNumber ?? 1;
+      final score = _gameState.score;
+      storageService.saveHighScore(level, score);
     }
   }
 

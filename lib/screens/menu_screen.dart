@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../services/game_manager.dart';
 import '../utils/constants.dart';
 import 'game_screen.dart';
+import 'high_scores_screen.dart';
 
 class MenuScreen extends StatelessWidget {
   const MenuScreen({super.key});
@@ -80,7 +81,16 @@ class MenuScreen extends StatelessWidget {
                   icon: Icons.help_outline,
                   onPressed: () => _showInstructions(context),
                 ),
-                
+
+                const SizedBox(height: 20),
+
+                // High Scores Button
+                _MenuButton(
+                  title: 'High Scores',
+                  icon: Icons.emoji_events,
+                  onPressed: () => _showHighScores(context),
+                ),
+
                 const SizedBox(height: 60),
                 
                 // Game Info
@@ -234,6 +244,14 @@ class MenuScreen extends StatelessWidget {
             child: const Text('Got it!'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showHighScores(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const HighScoresScreen(),
       ),
     );
   }

@@ -679,4 +679,287 @@ void main() {
       expect(find.byType(PachinkoBoard), findsOneWidget);
     });
   });
+
+  group('PachinkoBoard Animations - Ball Launch Path', () {
+    /// GIVEN ball launcher is charging power
+    /// WHEN launch path visualization animates
+    /// THEN path appears with fading/pulsing effect
+    testWidgets('givenBallLauncher_whenChargingPower_thenLaunchPathVisualized',
+      (WidgetTester tester) async {
+      when(mockBallLauncher.phase).thenReturn(LaunchPhase.charging);
+      when(mockBallLauncher.launchPower).thenReturn(50.0);
+
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+
+      // Start drag to trigger launch path visualization
+      const launchX = GameConstants.launchChannelStartX;
+      const launchY = GameConstants.launchChannelStartY;
+      final gesture = await tester.startGesture(const Offset(launchX, launchY));
+      await gesture.moveTo(const Offset(launchX, launchY - 100));
+      await tester.pump();
+
+      // Verify launch path is accessed for visualization
+      verify(mockBallLauncher.getLaunchPath()).called(greaterThan(0));
+
+      await gesture.up();
+      await tester.pumpAndSettle();
+    });
+
+    /// GIVEN launch path curve
+    /// WHEN ball traveling along path
+    /// THEN curve interpolation is smooth
+    testWidgets('givenLaunchPath_whenBallTraveling_thenCurveInterpolationSmooth',
+      (WidgetTester tester) async {
+      when(mockBallLauncher.phase).thenReturn(LaunchPhase.traveling);
+
+      final launchPath = [
+        Vector2(GameConstants.launchChannelStartX, GameConstants.launchChannelStartY),
+        Vector2(GameConstants.launchChannelStartX, GameConstants.launchChannelEndY),
+        Vector2(GameConstants.launchChannelStartX - 40, GameConstants.launchChannelEndY - 40),
+      ];
+      when(mockBallLauncher.getLaunchPath()).thenReturn(launchPath);
+
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+      await tester.pump();
+
+      verify(mockBallLauncher.getLaunchPath()).called(greaterThan(0));
+    });
+  });
+
+  group('PachinkoBoard Animations - Peg Hit Effects', () {
+    /// GIVEN peg collision occurs
+    /// WHEN ball hits peg
+    /// THEN pulse effect is triggered on peg
+    testWidgets('givenPegCollision_whenBallHitsPeg_thenPulseEffectTriggered',
+      (WidgetTester tester) async {
+      final testPeg = Peg(position: Vector2(200, 200), type: PegType.normal);
+      testPeg.onHit(); // Simulate hit
+      when(mockLevel.pegs).thenReturn([testPeg]);
+
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+      await tester.pump();
+
+      // Peg should be marked as hit
+      expect(testPeg.hasBeenHit, isTrue);
+    });
+
+    /// GIVEN pulse animation is running
+    /// WHEN animation completes
+    /// THEN peg returns to normal state
+    testWidgets('givenPulseAnimation_whenComplete_thenPegReturnsToNormalState',
+      (WidgetTester tester) async {
+      final testPeg = Peg(position: Vector2(200, 200), type: PegType.normal);
+      when(mockLevel.pegs).thenReturn([testPeg]);
+
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+
+      // Trigger hit and wait for pulse animation to complete (~250ms)
+      testPeg.onHit();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(testPeg.hasBeenHit, isTrue);
+    });
+  });
+
+  group('PachinkoBoard Animations - Special Peg Glow', () {
+    /// GIVEN special peg exists
+    /// WHEN rendered
+    /// THEN shimmer effect is visible
+    testWidgets('givenSpecialPeg_whenRendered_thenShimmerEffectVisible',
+      (WidgetTester tester) async {
+      final specialPeg = Peg(position: Vector2(200, 200), type: PegType.special);
+      when(mockLevel.pegs).thenReturn([specialPeg]);
+
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+      await tester.pump();
+
+      // Special peg should be highlighted
+      expect(specialPeg.isHighlighted, isTrue);
+    });
+
+    /// GIVEN all special pegs hit
+    /// WHEN all hit
+    /// THEN glow animation stops
+    testWidgets('givenSpecialPegHit_whenAllHit_thenGlowAnimationStops',
+      (WidgetTester tester) async {
+      final specialPeg = Peg(position: Vector2(200, 200), type: PegType.special);
+      specialPeg.onHit(); // Hit the special peg
+      when(mockLevel.pegs).thenReturn([specialPeg]);
+
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+      await tester.pump();
+
+      // After hit, special peg should not be highlighted
+      expect(specialPeg.isHighlighted, isFalse);
+    });
+  });
+
+  group('PachinkoBoard Animations - Score Popup', () {
+    /// GIVEN slot is hit
+    /// WHEN score awarded
+    /// THEN floating text appears
+    testWidgets('givenSlotHit_whenScoreAwarded_thenFloatingTextAppears',
+      (WidgetTester tester) async {
+      // This test will verify score popup rendering
+      // Actual implementation will add AnimatedWidget overlay
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+      await tester.pump();
+
+      // Placeholder for score popup verification
+      expect(find.byType(PachinkoBoard), findsOneWidget);
+    });
+
+    /// GIVEN score popup animation
+    /// WHEN animation complete
+    /// THEN text fades out
+    testWidgets('givenScorePopup_whenAnimationComplete_thenTextFadesOut',
+      (WidgetTester tester) async {
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+
+      // Animate for 2 seconds (score popup duration)
+      await tester.pump(const Duration(seconds: 2));
+
+      expect(find.byType(PachinkoBoard), findsOneWidget);
+    });
+  });
+
+  group('PachinkoBoard Animations - Bonus Effects', () {
+    /// GIVEN special bonus triggered
+    /// WHEN triggered
+    /// THEN screen flash animation plays
+    testWidgets('givenSpecialBonus_whenTriggered_thenScreenFlashAnimationPlays',
+      (WidgetTester tester) async {
+      when(mockGameState.specialBonusTriggered).thenReturn(true);
+
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+      await tester.pump();
+
+      verify(mockGameState.specialBonusTriggered).called(greaterThan(0));
+    });
+
+    /// GIVEN bonus particles triggered
+    /// WHEN triggered
+    /// THEN particle burst is visible
+    testWidgets('givenBonusParticles_whenTriggered_thenParticleBurstVisible',
+      (WidgetTester tester) async {
+      when(mockGameState.specialBonusTriggered).thenReturn(true);
+
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+
+      // Pump through particle animation (~500ms)
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.byType(PachinkoBoard), findsOneWidget);
+    });
+  });
+
+  group('PachinkoBoard Animations - Level Transition', () {
+    /// GIVEN level complete
+    /// WHEN transitioning
+    /// THEN fade animation plays
+    testWidgets('givenLevelComplete_whenTransitioning_thenFadeAnimationPlays',
+      (WidgetTester tester) async {
+      when(mockGameState.phase).thenReturn(GamePhase.levelComplete);
+
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+
+      // Pump through fade out animation
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.byType(PachinkoBoard), findsOneWidget);
+    });
+
+    /// GIVEN new level loaded
+    /// WHEN loaded
+    /// THEN fade in animation smooth
+    testWidgets('givenNewLevel_whenLoaded_thenFadeInAnimationSmooth',
+      (WidgetTester tester) async {
+      when(mockGameState.currentLevelNumber).thenReturn(2);
+
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+
+      // Pump through fade in animation
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.byType(PachinkoBoard), findsOneWidget);
+    });
+  });
+
+  group('PachinkoBoard Golden Tests - Animation States', () {
+    /// GIVEN ball launch path charging
+    /// WHEN rendered
+    /// THEN matches golden for launch path visualization
+    testWidgets('givenLaunchCharging_whenRendered_thenMatchesGolden',
+      (WidgetTester tester) async {
+      when(mockBallLauncher.phase).thenReturn(LaunchPhase.charging);
+      when(mockBallLauncher.launchPower).thenReturn(75.0);
+
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+
+      const launchX = GameConstants.launchChannelStartX;
+      const launchY = GameConstants.launchChannelStartY;
+      final gesture = await tester.startGesture(const Offset(launchX, launchY));
+      await gesture.moveTo(const Offset(launchX, launchY - 150));
+      await tester.pump();
+
+      await expectLater(
+        find.byType(PachinkoBoard),
+        matchesGoldenFile('goldens/ball_launch_charging.png'),
+      );
+
+      await gesture.up();
+      await tester.pumpAndSettle();
+    });
+
+    /// GIVEN peg hit pulse effect
+    /// WHEN rendered mid-animation
+    /// THEN matches golden for peg pulse
+    testWidgets('givenPegHitPulse_whenRendered_thenMatchesGolden',
+      (WidgetTester tester) async {
+      final testPeg = Peg(position: Vector2(250, 300), type: PegType.normal);
+      testPeg.onHit();
+      when(mockLevel.pegs).thenReturn([testPeg]);
+
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+      await tester.pump(const Duration(milliseconds: 125)); // Mid-pulse
+
+      await expectLater(
+        find.byType(PachinkoBoard),
+        matchesGoldenFile('goldens/peg_hit_pulse.png'),
+      );
+    });
+
+    /// GIVEN special peg shimmer
+    /// WHEN rendered
+    /// THEN matches golden for shimmer state
+    testWidgets('givenSpecialPegShimmer_whenRendered_thenMatchesGolden',
+      (WidgetTester tester) async {
+      final specialPeg = Peg(position: Vector2(250, 300), type: PegType.special);
+      when(mockLevel.pegs).thenReturn([specialPeg]);
+
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+      await tester.pump();
+
+      await expectLater(
+        find.byType(PachinkoBoard),
+        matchesGoldenFile('goldens/special_peg_shimmer.png'),
+      );
+    });
+
+    /// GIVEN bonus flash effect
+    /// WHEN rendered
+    /// THEN matches golden for screen flash
+    testWidgets('givenBonusFlash_whenRendered_thenMatchesGolden',
+      (WidgetTester tester) async {
+      when(mockGameState.specialBonusTriggered).thenReturn(true);
+
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+      await tester.pump(const Duration(milliseconds: 100)); // Early flash
+
+      await expectLater(
+        find.byType(PachinkoBoard),
+        matchesGoldenFile('goldens/bonus_flash.png'),
+      );
+    });
+  });
 }

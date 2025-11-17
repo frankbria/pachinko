@@ -132,15 +132,25 @@ class BallLauncher {
   }
   
   Vector2 _calculateReleaseVelocity() {
-    // Calculate initial velocity when ball enters peg field
-    final powerMultiplier = 0.3 + (_launchPower / _maxPower) * 0.7; // 0.3 to 1.0
-    final baseVelocity = Vector2(0, 150); // Slight downward velocity
-    
-    // Add some horizontal spread based on power
-    final horizontalSpread = (_launchPower / _maxPower - 0.5) * 100;
-    baseVelocity.x = horizontalSpread;
-    
-    return baseVelocity * powerMultiplier;
+    // Calculate velocity based on final path segment direction
+    if (_launchPath.length < 3) {
+      return Vector2(0, 150); // Fallback for edge case
+    }
+
+    // Use second-to-last and third-to-last points for direction
+    // (last point may be duplicate entry point)
+    final thirdToLast = _launchPath[_launchPath.length - 3];
+    final secondToLast = _launchPath[_launchPath.length - 2];
+
+    // Calculate direction vector from path curve
+    final direction = (secondToLast - thirdToLast).normalized();
+
+    // Calculate speed based on launch power (100-300 pixels/second)
+    final powerMultiplier = 0.5 + (_launchPower / _maxPower) * 1.0; // 0.5 to 1.5
+    final baseSpeed = 200.0 * powerMultiplier;
+
+    // Apply direction to create velocity vector maintaining curve momentum
+    return direction * baseSpeed;
   }
   
   void reset() {

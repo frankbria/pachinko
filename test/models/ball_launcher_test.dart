@@ -447,14 +447,19 @@ void main() {
   });
 
   group('Release Velocity Calculation -', () {
-    /// Tests release velocity calculation formula.
+    /// Tests release velocity calculation based on path direction.
     ///
-    /// Formula:
-    /// powerMultiplier = 0.3 + (power / maxPower) * 0.7  // Range: 0.3 to 1.0
-    /// horizontalSpread = (power / maxPower - 0.5) * 100  // Range: -50 to +50
-    /// baseVelocity = Vector2(horizontalSpread, 150)
-    /// finalVelocity = baseVelocity * powerMultiplier
-    test('given zero power launch, when ball released, then uses minimum velocity multiplier 0.3', () {
+    /// NEW FORMULA (direction-based):
+    /// direction = (last - secondToLast).normalized()  // Direction from final path segment
+    /// powerMultiplier = 0.5 + (power / maxPower) * 1.0  // Range: 0.5 to 1.5
+    /// baseSpeed = 200.0 * powerMultiplier  // Range: 100 to 300 pixels/second
+    /// finalVelocity = direction * baseSpeed
+    ///
+    /// Expected behavior:
+    /// - Ball should have leftward (negative X) velocity from curve direction
+    /// - Ball should have downward (positive Y) velocity from curve direction
+    /// - Velocity magnitude should scale with launch power
+    test('given zero power launch, when ball released, then uses minimum velocity multiplier 0.5', () {
       // Given
       final launcher = BallLauncher();
       launcher.startCharging();
@@ -473,15 +478,15 @@ void main() {
       final ball = launcher.currentBall;
       expect(ball, isNotNull);
 
-      // Velocity should be baseVelocity * 0.3
-      // horizontalSpread = (0/100 - 0.5) * 100 = -50
-      // baseVelocity = Vector2(-50, 150)
-      // finalVelocity = Vector2(-50, 150) * 0.3 = Vector2(-15, 45)
-      expect(ball!.velocity.x, closeTo(-15.0, 0.1));
-      expect(ball.velocity.y, closeTo(45.0, 0.1));
+      // Velocity should follow path curve direction (leftward + downward)
+      // powerMultiplier = 0.5, baseSpeed = 200.0 * 0.5 = 100.0 px/s
+      // Direction is normalized, so magnitude should be ~100.0
+      expect(ball!.velocity.length, closeTo(100.0, 10.0));
+      expect(ball.velocity.x, lessThan(0)); // Leftward
+      expect(ball.velocity.y, lessThan(0)); // Downward (negative Y in screen coords means down)
     });
 
-    test('given full power launch, when ball released, then uses maximum velocity multiplier 1.0', () {
+    test('given full power launch, when ball released, then uses maximum velocity multiplier 1.5', () {
       // Given
       final launcher = BallLauncher();
       launcher.startCharging();
@@ -500,15 +505,13 @@ void main() {
       final ball = launcher.currentBall;
       expect(ball, isNotNull);
 
-      // Velocity should be baseVelocity * 1.0
-      // horizontalSpread = (100/100 - 0.5) * 100 = 50
-      // baseVelocity = Vector2(50, 150)
-      // finalVelocity = Vector2(50, 150) * 1.0 = Vector2(50, 150)
-      expect(ball!.velocity.x, closeTo(50.0, 0.1));
-      expect(ball.velocity.y, closeTo(150.0, 0.1));
+      // powerMultiplier = 1.5, baseSpeed = 200.0 * 1.5 = 300.0 px/s
+      expect(ball!.velocity.length, closeTo(300.0, 10.0));
+      expect(ball.velocity.x, lessThan(0)); // Leftward
+      expect(ball.velocity.y, lessThan(0)); // Downward
     });
 
-    test('given mid power launch, when ball released, then horizontal spread is zero', () {
+    test('given mid power launch, when ball released, then uses mid-range velocity', () {
       // Given
       final launcher = BallLauncher();
       launcher.startCharging();
@@ -526,10 +529,11 @@ void main() {
       final ball = launcher.currentBall;
       expect(ball, isNotNull);
 
-      // horizontalSpread = (50/100 - 0.5) * 100 = 0
-      // powerMultiplier = 0.3 + 0.5 * 0.7 = 0.65
-      // finalVelocity.x = 0 * 0.65 = 0
-      expect(ball!.velocity.x, closeTo(0.0, 0.1));
+      // powerMultiplier = 0.5 + 0.5 * 1.0 = 1.0
+      // baseSpeed = 200.0 * 1.0 = 200.0 px/s
+      expect(ball!.velocity.length, closeTo(200.0, 10.0));
+      expect(ball.velocity.x, lessThan(0)); // Leftward
+      expect(ball.velocity.y, lessThan(0)); // Downward
     });
 
     test('given different power levels, when ball released, then velocity magnitude increases with power', () {
@@ -557,12 +561,30 @@ void main() {
       expect(highPowerVelocity, greaterThan(lowPowerVelocity));
     });
 
-    test('given low power, when ball released, then horizontal velocity is negative', () {
+    test('given any power launch, when ball released, then velocity has both X and Y components', () {
       // Given
       final launcher = BallLauncher();
       launcher.startCharging();
-      launcher.updateCharging(25.0); // Below 50, so horizontal should be negative
+      launcher.updateCharging(50.0);
+      launcher.launch();
 
+      // When
+      for (int i = 0; i < 100; i++) {
+        if (launcher.updateBallPath(0.1)) break;
+      }
+
+      // Then - verify velocity is not purely vertical (both components non-zero)
+      final ball = launcher.currentBall;
+      expect(ball, isNotNull);
+      expect(ball!.velocity.x.abs(), greaterThan(0.1)); // Significant horizontal component
+      expect(ball.velocity.y.abs(), greaterThan(0.1)); // Significant vertical component
+    });
+
+    test('given ball released, when velocity calculated, then follows curve direction leftward and downward', () {
+      // Given
+      final launcher = BallLauncher();
+      launcher.startCharging();
+      launcher.updateCharging(50.0);
       launcher.launch();
 
       // When
@@ -573,7 +595,9 @@ void main() {
       // Then
       final ball = launcher.currentBall;
       expect(ball, isNotNull);
-      expect(ball!.velocity.x, lessThan(0)); // Negative horizontal spread
+      // Curve goes from right to left (negative X) and top to bottom (negative Y in screen coords)
+      expect(ball!.velocity.x, lessThan(0)); // Leftward trajectory
+      expect(ball.velocity.y, lessThan(0)); // Downward trajectory
     });
   });
 

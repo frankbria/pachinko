@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'services/game_manager.dart';
 import 'services/audio_service.dart';
+import 'services/storage_service.dart';
 import 'screens/menu_screen.dart';
 import 'utils/constants.dart';
 
@@ -18,6 +19,7 @@ class PachinkoApp extends StatefulWidget {
 
 class _PachinkoAppState extends State<PachinkoApp> {
   late final AudioService _audioService;
+  StorageService? _storageService;
 
   @override
   void initState() {
@@ -25,6 +27,18 @@ class _PachinkoAppState extends State<PachinkoApp> {
     // Create and initialize AudioService
     _audioService = AudioService();
     _audioService.initialize();
+
+    // Initialize StorageService asynchronously
+    _initializeStorageService();
+  }
+
+  Future<void> _initializeStorageService() async {
+    final storageService = await StorageService.initialize();
+    if (mounted) {
+      setState(() {
+        _storageService = storageService;
+      });
+    }
   }
 
   @override
@@ -40,9 +54,14 @@ class _PachinkoAppState extends State<PachinkoApp> {
       providers: [
         // AudioService provider (non-ChangeNotifier)
         Provider<AudioService>.value(value: _audioService),
-        // GameManager provider with ChangeNotifier support and AudioService injection
+        // StorageService provider (nullable until initialized)
+        Provider<StorageService?>.value(value: _storageService),
+        // GameManager provider with ChangeNotifier support and service injection
         ChangeNotifierProvider(
-          create: (context) => GameManager(audioService: _audioService),
+          create: (context) => GameManager(
+            audioService: _audioService,
+            storageService: _storageService,
+          ),
         ),
       ],
       child: MaterialApp(
