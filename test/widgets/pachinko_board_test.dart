@@ -144,9 +144,9 @@ void main() {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Tap in launch area (scale-adjusted coordinates)
-      final launchX = GameConstants.launchChannelStartX;
-      final launchY = GameConstants.launchChannelStartY;
-      await tester.tapAt(Offset(launchX, launchY));
+      const launchX = GameConstants.launchChannelStartX;
+      const launchY = GameConstants.launchChannelStartY;
+      await tester.tapAt(const Offset(launchX, launchY));
       await tester.pump();
 
       verify(mockGameManager.startLaunchCharging()).called(1);
@@ -178,9 +178,9 @@ void main() {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Tap in launch area
-      final launchX = GameConstants.launchChannelStartX;
-      final launchY = GameConstants.launchChannelStartY;
-      await tester.tapAt(Offset(launchX, launchY));
+      const launchX = GameConstants.launchChannelStartX;
+      const launchY = GameConstants.launchChannelStartY;
+      await tester.tapAt(const Offset(launchX, launchY));
       await tester.pump();
 
       verifyNever(mockGameManager.startLaunchCharging());
@@ -197,9 +197,9 @@ void main() {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Start drag in launch area
-      final launchX = GameConstants.launchChannelStartX;
-      final launchY = GameConstants.launchChannelStartY;
-      await tester.dragFrom(Offset(launchX, launchY), const Offset(0, -50));
+      const launchX = GameConstants.launchChannelStartX;
+      const launchY = GameConstants.launchChannelStartY;
+      await tester.dragFrom(const Offset(launchX, launchY), const Offset(0, -50));
       await tester.pump();
 
       // Verify that drag was processed (startLaunchCharging called)
@@ -218,9 +218,9 @@ void main() {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Start and complete drag in launch area
-      final launchX = GameConstants.launchChannelStartX;
-      final launchY = GameConstants.launchChannelStartY;
-      await tester.dragFrom(Offset(launchX, launchY), const Offset(0, -100));
+      const launchX = GameConstants.launchChannelStartX;
+      const launchY = GameConstants.launchChannelStartY;
+      await tester.dragFrom(const Offset(launchX, launchY), const Offset(0, -100));
       await tester.pump();
 
       // Verify power was calculated based on drag distance (100 pixels)
@@ -239,9 +239,9 @@ void main() {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Drag from launch area
-      final launchX = GameConstants.launchChannelStartX;
-      final launchY = GameConstants.launchChannelStartY;
-      await tester.dragFrom(Offset(launchX, launchY), const Offset(0, -50));
+      const launchX = GameConstants.launchChannelStartX;
+      const launchY = GameConstants.launchChannelStartY;
+      await tester.dragFrom(const Offset(launchX, launchY), const Offset(0, -50));
       await tester.pump();
 
       verify(mockGameManager.updateLaunchPower(any)).called(greaterThan(0));
@@ -258,9 +258,9 @@ void main() {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Drag exactly 100 pixels from launch area
-      final launchX = GameConstants.launchChannelStartX;
-      final launchY = GameConstants.launchChannelStartY;
-      await tester.dragFrom(Offset(launchX, launchY), const Offset(0, -100));
+      const launchX = GameConstants.launchChannelStartX;
+      const launchY = GameConstants.launchChannelStartY;
+      await tester.dragFrom(const Offset(launchX, launchY), const Offset(0, -100));
       await tester.pump();
 
       // Verify power calculation: 100 / 2.0 = 50.0
@@ -293,9 +293,9 @@ void main() {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Attempt drag from launch area
-      final launchX = GameConstants.launchChannelStartX;
-      final launchY = GameConstants.launchChannelStartY;
-      await tester.dragFrom(Offset(launchX, launchY), const Offset(0, -50));
+      const launchX = GameConstants.launchChannelStartX;
+      const launchY = GameConstants.launchChannelStartY;
+      await tester.dragFrom(const Offset(launchX, launchY), const Offset(0, -50));
       await tester.pump();
 
       verifyNever(mockGameManager.updateLaunchPower(any));
@@ -311,9 +311,9 @@ void main() {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Complete drag from launch area
-      final launchX = GameConstants.launchChannelStartX;
-      final launchY = GameConstants.launchChannelStartY;
-      await tester.dragFrom(Offset(launchX, launchY), const Offset(0, -100));
+      const launchX = GameConstants.launchChannelStartX;
+      const launchY = GameConstants.launchChannelStartY;
+      await tester.dragFrom(const Offset(launchX, launchY), const Offset(0, -100));
       await tester.pumpAndSettle();
 
       verify(mockGameManager.launchBall()).called(1);
@@ -329,9 +329,9 @@ void main() {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Complete first drag
-      final launchX = GameConstants.launchChannelStartX;
-      final launchY = GameConstants.launchChannelStartY;
-      await tester.dragFrom(Offset(launchX, launchY), const Offset(0, -50));
+      const launchX = GameConstants.launchChannelStartX;
+      const launchY = GameConstants.launchChannelStartY;
+      await tester.dragFrom(const Offset(launchX, launchY), const Offset(0, -50));
       await tester.pumpAndSettle();
 
       // Reset mock to clear previous calls
@@ -340,7 +340,7 @@ void main() {
       when(mockGameManager.ballLauncher).thenReturn(mockBallLauncher);
 
       // Start new drag - should call startLaunchCharging again
-      await tester.dragFrom(Offset(launchX, launchY), const Offset(0, -50));
+      await tester.dragFrom(const Offset(launchX, launchY), const Offset(0, -50));
       await tester.pump();
 
       verify(mockGameManager.startLaunchCharging()).called(1);
@@ -386,11 +386,11 @@ void main() {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Start drag (this will cause painter to receive drag state)
-      final launchX = GameConstants.launchChannelStartX;
-      final launchY = GameConstants.launchChannelStartY;
+      const launchX = GameConstants.launchChannelStartX;
+      const launchY = GameConstants.launchChannelStartY;
 
-      final gesture = await tester.startGesture(Offset(launchX, launchY));
-      await gesture.moveTo(Offset(launchX, launchY - 50));
+      final gesture = await tester.startGesture(const Offset(launchX, launchY));
+      await gesture.moveTo(const Offset(launchX, launchY - 50));
       await tester.pump();
 
       // Verify painter is invoked with updated state
@@ -430,11 +430,11 @@ void main() {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Start drag to trigger power indicator
-      final launchX = GameConstants.launchChannelStartX;
-      final launchY = GameConstants.launchChannelStartY;
+      const launchX = GameConstants.launchChannelStartX;
+      const launchY = GameConstants.launchChannelStartY;
 
-      final gesture = await tester.startGesture(Offset(launchX, launchY));
-      await gesture.moveTo(Offset(launchX, launchY - 50));
+      final gesture = await tester.startGesture(const Offset(launchX, launchY));
+      await gesture.moveTo(const Offset(launchX, launchY - 50));
       await tester.pump();
 
       // Verify ballLauncher properties accessed (for power indicator)
@@ -568,11 +568,11 @@ void main() {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Start drag to show power indicator
-      final launchX = GameConstants.launchChannelStartX;
-      final launchY = GameConstants.launchChannelStartY;
+      const launchX = GameConstants.launchChannelStartX;
+      const launchY = GameConstants.launchChannelStartY;
 
-      final gesture = await tester.startGesture(Offset(launchX, launchY));
-      await gesture.moveTo(Offset(launchX, launchY - 150));
+      final gesture = await tester.startGesture(const Offset(launchX, launchY));
+      await gesture.moveTo(const Offset(launchX, launchY - 150));
       await tester.pump();
 
       await expectLater(
