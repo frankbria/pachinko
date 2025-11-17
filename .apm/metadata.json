@@ -1,0 +1,9 @@
+{
+  "cliVersion": "0.5.1",
+  "templateVersion": "v0.5.1+templates.3",
+  "assistants": [
+    "Claude Code"
+  ],
+  "installedAt": "2025-11-16T20:09:44.432Z",
+  "lastUpdated": "2025-11-16T20:09:44.432Z"
+}

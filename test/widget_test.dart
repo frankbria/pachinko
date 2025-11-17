@@ -1,30 +1,38 @@
-// This is a basic Flutter widget test.
+// Basic Flutter widget test for Pachinko game
 //
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// This test verifies that the application launches correctly with proper
+// Provider setup and MenuScreen initialization.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 
 import 'package:pachinko_game/main.dart';
+import 'package:pachinko_game/services/game_manager.dart';
+import 'package:pachinko_game/screens/menu_screen.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('Pachinko app launches with MenuScreen', (WidgetTester tester) async {
+    // Build our app and trigger a frame
+    await tester.pumpWidget(const PachinkoApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Verify that MenuScreen is displayed
+    expect(find.byType(MenuScreen), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    // Verify that GameManager Provider is available
+    final BuildContext context = tester.element(find.byType(MenuScreen));
+    expect(Provider.of<GameManager>(context, listen: false), isNotNull);
+  });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+  testWidgets('PachinkoApp provides GameManager through Provider', (WidgetTester tester) async {
+    // Build the app
+    await tester.pumpWidget(const PachinkoApp());
+
+    // Verify Provider setup by accessing GameManager
+    final BuildContext context = tester.element(find.byType(MaterialApp));
+    final gameManager = Provider.of<GameManager>(context, listen: false);
+
+    expect(gameManager, isNotNull);
+    expect(gameManager, isA<GameManager>());
   });
 }

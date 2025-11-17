@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__morphllm-fast-apply__edit_file",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\ndocs: improve CODE_REVIEW.md markdown formatting\n\nEnhanced markdown structure throughout the code review document for better readability:\n- Fixed broken emphasis markers (****** to proper **)\n- Added proper heading hierarchy with #### for task sections\n- Converted plain text to markdown lists and checklists\n- Wrapped code examples in fenced code blocks with language tags\n- Added horizontal dividers between major sections\n- Applied proper formatting to file paths, commands, and labels\n- Improved semantic structure for achievement lists and test scenarios\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)",
+      "Bash(sed:*)",
+      "Bash(mkdir:*)",
+      "Bash(export PATH:*)",
+      "Bash(flutter test)",
+      "Bash(touch:*)",
+      "Bash(flutter test:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
