@@ -10,12 +10,24 @@ import '../utils/constants.dart';
 import 'physics_engine.dart';
 
 class GameManager extends ChangeNotifier {
-  final GameState _gameState = GameState();
-  final PhysicsEngine _physicsEngine = PhysicsEngine();
-  final BallLauncher _ballLauncher = BallLauncher();
+  final GameState _gameState;
+  final PhysicsEngine _physicsEngine;
+  final BallLauncher _ballLauncher;
   Timer? _gameTimer;
   DateTime _lastFrameTime = DateTime.now();
-  
+
+  /// Creates a GameManager with optional dependency injection.
+  ///
+  /// Dependencies default to production instances if not provided,
+  /// enabling both production use and testability with mocks.
+  GameManager({
+    GameState? gameState,
+    PhysicsEngine? physicsEngine,
+    BallLauncher? ballLauncher,
+  }) : _gameState = gameState ?? GameState(),
+       _physicsEngine = physicsEngine ?? PhysicsEngine(),
+       _ballLauncher = ballLauncher ?? BallLauncher();
+
   // Getters
   GameState get gameState => _gameState;
   PhysicsEngine get physicsEngine => _physicsEngine;
