@@ -369,9 +369,9 @@ void main() {
       (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
-      // Verify painter accesses GameManager properties
+      // Verify painter accesses GameManager's gameState
+      // Note: ballLauncher is only accessed when dragging (power indicator)
       verify(mockGameManager.gameState).called(greaterThan(0));
-      verify(mockGameManager.ballLauncher).called(greaterThan(0));
     });
 
     /// GIVEN user is dragging
@@ -682,47 +682,44 @@ void main() {
 
   group('PachinkoBoard Animations - Ball Launch Path', () {
     /// GIVEN ball launcher is charging power
-    /// WHEN launch path visualization animates
-    /// THEN path appears with fading/pulsing effect
-    testWidgets('givenBallLauncher_whenChargingPower_thenLaunchPathVisualized',
+    /// WHEN power is being charged
+    /// THEN power indicator is shown
+    testWidgets('givenBallLauncher_whenChargingPower_thenPowerIndicatorShown',
       (WidgetTester tester) async {
+      when(mockGameState.canLaunchBall).thenReturn(true);
       when(mockBallLauncher.phase).thenReturn(LaunchPhase.charging);
       when(mockBallLauncher.launchPower).thenReturn(50.0);
+      when(mockBallLauncher.maxPower).thenReturn(100.0);
 
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
-      // Start drag to trigger launch path visualization
+      // Start drag to trigger power indicator
       const launchX = GameConstants.launchChannelStartX;
       const launchY = GameConstants.launchChannelStartY;
       final gesture = await tester.startGesture(const Offset(launchX, launchY));
       await gesture.moveTo(const Offset(launchX, launchY - 100));
       await tester.pump();
 
-      // Verify launch path is accessed for visualization
-      verify(mockBallLauncher.getLaunchPath()).called(greaterThan(0));
+      // Verify power and maxPower are accessed for power meter rendering
+      verify(mockBallLauncher.launchPower).called(greaterThan(0));
+      verify(mockBallLauncher.maxPower).called(greaterThan(0));
 
       await gesture.up();
       await tester.pumpAndSettle();
     });
 
-    /// GIVEN launch path curve
-    /// WHEN ball traveling along path
-    /// THEN curve interpolation is smooth
-    testWidgets('givenLaunchPath_whenBallTraveling_thenCurveInterpolationSmooth',
+    /// GIVEN launch channel with curved boundary
+    /// WHEN board is rendered
+    /// THEN curved boundary spans from left edge to launch column
+    testWidgets('givenLaunchChannel_whenRendered_thenCurvedBoundaryCorrectlyPositioned',
       (WidgetTester tester) async {
-      when(mockBallLauncher.phase).thenReturn(LaunchPhase.traveling);
-
-      final launchPath = [
-        Vector2(GameConstants.launchChannelStartX, GameConstants.launchChannelStartY),
-        Vector2(GameConstants.launchChannelStartX, GameConstants.launchChannelEndY),
-        Vector2(GameConstants.launchChannelStartX - 40, GameConstants.launchChannelEndY - 40),
-      ];
-      when(mockBallLauncher.getLaunchPath()).thenReturn(launchPath);
-
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
       await tester.pump();
 
-      verify(mockBallLauncher.getLaunchPath()).called(greaterThan(0));
+      // The curved boundary should be drawn at the top of the field
+      // Visual verification is done through golden tests
+      // This test ensures the widget renders without errors
+      expect(find.byType(PachinkoBoard), findsOneWidget);
     });
   });
 

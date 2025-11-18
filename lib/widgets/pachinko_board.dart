@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:vector_math/vector_math_64.dart' as vm;
 import '../services/game_manager.dart';
 import '../models/game_state.dart';
 import '../models/peg.dart';
 import '../utils/constants.dart';
-import 'dart:math' as math;
 
 class PachinkoBoard extends StatefulWidget {
   const PachinkoBoard({super.key});
@@ -339,49 +337,32 @@ class _PachinkoBoardPainter extends CustomPainter {
       wallPaint,
     );
     
-    // Draw curved boundary at top of field
-    // This guides the ball naturally from the launch channel into the peg field
+    // Draw curved boundary at TOP of field
+    // Smooth arc from left boundary to top of launch column
     final curvePaint = Paint()
-      ..color = Colors.white.withOpacity(0.6)
+      ..color = Colors.white.withOpacity(0.8)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 4.0;
-    
-    final curveStartX = GameConstants.launchChannelStartX + GameConstants.launchChannelWidth;
-    final curveEndY = GameConstants.launchChannelEndY;
-    const curveRadius = 40.0;
-    
-    // Draw the curve using an arc
-    final curveRect = Rect.fromLTWH(
-      curveStartX - curveRadius,
-      curveEndY - curveRadius,
-      curveRadius * 2,
-      curveRadius * 2,
+      ..strokeWidth = 3.0;
+
+    // Define curve endpoints
+    const leftBoundary = 20.0; // Left edge of field
+    final rightBoundary = GameConstants.launchChannelStartX; // Top of launch column (~360)
+    const topOfField = GameConstants.launchChannelEndY; // y ≈ 60
+
+    // Create smooth arc using quadratic bezier curve
+    final path = Path();
+    path.moveTo(leftBoundary, topOfField);
+
+    // Control point for smooth arc (midpoint, slightly lower)
+    final controlX = (leftBoundary + rightBoundary) / 2;
+    final controlY = topOfField + 40; // Arc dips down 40px
+
+    path.quadraticBezierTo(
+      controlX, controlY,  // Control point
+      rightBoundary, topOfField  // End point
     );
-    
-    canvas.drawArc(
-      curveRect,
-      -math.pi / 2, // Start at top (270 degrees)
-      math.pi / 2,  // Sweep 90 degrees to the right
-      false,
-      curvePaint,
-    );
-    
-    // Draw launch path visualization
-    if (kDebugMode) {
-      final pathPaint = Paint()
-        ..color = GameConstants.primaryColor.withOpacity(0.3)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.0;
-      
-      final launchPath = gameManager.ballLauncher.getLaunchPath();
-      for (int i = 0; i < launchPath.length - 1; i++) {
-        canvas.drawLine(
-          Offset(launchPath[i].x, launchPath[i].y),
-          Offset(launchPath[i + 1].x, launchPath[i + 1].y),
-          pathPaint,
-        );
-      }
-    }
+
+    canvas.drawPath(path, curvePaint);
   }
 
   void _drawLaunchArea(Canvas canvas, level) {

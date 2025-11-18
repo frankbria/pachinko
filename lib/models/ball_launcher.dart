@@ -155,37 +155,49 @@ class BallLauncher {
       return Vector2(0, 150); // Fallback for edge case
     }
 
-    // Find the segment we're currently on for accurate direction
-    int currentSegment = _launchPath.length - 2;
-    
-    // Use the last few segments to calculate smooth direction
-    // This ensures the velocity matches the curve direction
-    if (_launchPath.length >= 3) {
-      final thirdToLast = _launchPath[_launchPath.length - 3];
-      final secondToLast = _launchPath[_launchPath.length - 2];
-      final lastPoint = _launchPath[_launchPath.length - 1];
-      
-      // Calculate direction from the average of the last segments
-      // This creates a smoother transition
-      final dir1 = (secondToLast - thirdToLast).normalized();
-      final dir2 = (lastPoint - secondToLast).normalized();
-      final direction = ((dir1 + dir2) / 2).normalized();
-      
-      // Calculate speed based on launch power (150-350 pixels/second)
-      // Lower speeds for smoother entry into peg field
-      final powerMultiplier = 0.5 + (_launchPower / _maxPower) * 1.0; // 0.5 to 1.5
-      final baseSpeed = 200.0 * powerMultiplier;
-      
-      // Apply direction to create velocity vector
-      return direction * baseSpeed;
+    // Use multiple segments for smooth velocity calculation
+    // This ensures the velocity naturally follows the curve
+    if (_launchPath.length >= 5) {
+      // Average direction over last 4 segments for very smooth transition
+      final points = [
+        _launchPath[_launchPath.length - 5],
+        _launchPath[_launchPath.length - 4],
+        _launchPath[_launchPath.length - 3],
+        _launchPath[_launchPath.length - 2],
+        _launchPath[_launchPath.length - 1],
+      ];
+
+      // Calculate weighted average direction (more weight on recent segments)
+      var totalDirection = Vector2.zero();
+      var totalWeight = 0.0;
+
+      for (int i = 0; i < points.length - 1; i++) {
+        final segmentDir = (points[i + 1] - points[i]).normalized();
+        final weight = (i + 1).toDouble(); // Linear weight increase
+        totalDirection += segmentDir * weight;
+        totalWeight += weight;
+      }
+
+      final direction = (totalDirection / totalWeight).normalized();
+
+      // Smooth speed calculation with gradual power scaling
+      // Base speed: 180 px/s, max speed: 280 px/s
+      final powerRatio = _launchPower / _maxPower;
+      final baseSpeed = 180.0 + (powerRatio * 100.0);
+
+      // Apply cubic easing for even smoother feel
+      final easedPower = powerRatio * powerRatio * (3.0 - 2.0 * powerRatio);
+      final finalSpeed = baseSpeed * (0.85 + easedPower * 0.15);
+
+      return direction * finalSpeed;
     }
 
-    // Fallback: use last two points
+    // Fallback for shorter paths
     final secondToLast = _launchPath[_launchPath.length - 2];
     final lastPoint = _launchPath[_launchPath.length - 1];
     final direction = (lastPoint - secondToLast).normalized();
     final baseSpeed = 200.0;
-    
+
     return direction * baseSpeed;
   }
   

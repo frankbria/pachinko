@@ -479,9 +479,9 @@ void main() {
       expect(ball, isNotNull);
 
       // Velocity should follow path curve direction (leftward + downward)
-      // powerMultiplier = 0.5, baseSpeed = 200.0 * 0.5 = 100.0 px/s
-      // Direction is normalized, so magnitude should be ~100.0
-      expect(ball!.velocity.length, closeTo(100.0, 10.0));
+      // New formula: baseSpeed = 180 + (0 * 100) = 180
+      // With easing: finalSpeed = 180 * 0.85 = 153 px/s
+      expect(ball!.velocity.length, closeTo(153.0, 10.0));
       expect(ball.velocity.x, lessThan(0)); // Leftward
       expect(ball.velocity.y, lessThan(0)); // Downward (negative Y in screen coords means down)
     });
@@ -505,8 +505,9 @@ void main() {
       final ball = launcher.currentBall;
       expect(ball, isNotNull);
 
-      // powerMultiplier = 1.5, baseSpeed = 200.0 * 1.5 = 300.0 px/s
-      expect(ball!.velocity.length, closeTo(300.0, 10.0));
+      // New formula: baseSpeed = 180 + (1.0 * 100) = 280
+      // With easing: finalSpeed = 280 * 1.0 = 280 px/s
+      expect(ball!.velocity.length, closeTo(280.0, 10.0));
       expect(ball.velocity.x, lessThan(0)); // Leftward
       expect(ball.velocity.y, lessThan(0)); // Downward
     });
@@ -529,9 +530,9 @@ void main() {
       final ball = launcher.currentBall;
       expect(ball, isNotNull);
 
-      // powerMultiplier = 0.5 + 0.5 * 1.0 = 1.0
-      // baseSpeed = 200.0 * 1.0 = 200.0 px/s
-      expect(ball!.velocity.length, closeTo(200.0, 10.0));
+      // New formula: baseSpeed = 180 + (0.5 * 100) = 230
+      // With easing (powerRatio 0.5): easedPower ≈ 0.5, finalSpeed ≈ 212.75 px/s
+      expect(ball!.velocity.length, closeTo(212.75, 10.0));
       expect(ball.velocity.x, lessThan(0)); // Leftward
       expect(ball.velocity.y, lessThan(0)); // Downward
     });

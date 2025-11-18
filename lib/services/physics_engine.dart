@@ -51,42 +51,60 @@ class PhysicsEngine {
     }
     
     // Top curved boundary collision detection
-    // This matches the visual curve at the top of the field
-    final curveStartX = GameConstants.launchChannelStartX + GameConstants.launchChannelWidth;
-    final curveEndY = GameConstants.launchChannelEndY;
-    const curveRadius = 40.0;
-    final curveCenterX = curveStartX - curveRadius;
-    final curveCenterY = curveEndY - curveRadius;
-    
+    // Smooth quadratic bezier arc from left boundary to launch column top
+    const leftBoundary = 20.0;
+    final rightBoundary = GameConstants.launchChannelStartX;
+    const topOfField = GameConstants.launchChannelEndY;
+
     // Check if ball is in the region of the curved boundary
-    if (ball.position.y <= curveEndY && 
-        ball.position.x >= curveCenterX - curveRadius &&
-        ball.position.x <= curveStartX) {
-      
-      // Calculate distance from curve center
-      final dx = ball.position.x - curveCenterX;
-      final dy = ball.position.y - curveCenterY;
-      final distanceFromCenter = math.sqrt(dx * dx + dy * dy);
-      
-      // Check if ball is colliding with the inner edge of the curve
-      if (distanceFromCenter < curveRadius + ball.radius && 
-          distanceFromCenter > curveRadius - ball.radius) {
-        
-        // Calculate collision normal (pointing away from curve center)
-        final normalX = dx / distanceFromCenter;
-        final normalY = dy / distanceFromCenter;
-        
-        // Push ball outside the curve boundary
-        final overlap = (curveRadius + ball.radius) - distanceFromCenter;
+    if (ball.position.y <= topOfField + 50 && // Within 50px below the curve
+        ball.position.x >= leftBoundary &&
+        ball.position.x <= rightBoundary) {
+
+      // Calculate the curve height at the ball's x position
+      // Quadratic bezier: controlX = midpoint, controlY = topOfField + 40
+      final controlX = (leftBoundary + rightBoundary) / 2;
+      final controlY = topOfField + 40;
+
+      // Calculate t parameter for the bezier curve based on x position
+      final t = (ball.position.x - leftBoundary) / (rightBoundary - leftBoundary);
+
+      // Quadratic bezier formula: B(t) = (1-t)^2 * P0 + 2(1-t)t * P1 + t^2 * P2
+      final curveY = (1 - t) * (1 - t) * topOfField +
+                     2 * (1 - t) * t * controlY +
+                     t * t * topOfField;
+
+      // Check if ball is above the curve (colliding)
+      if (ball.position.y <= curveY + ball.radius) {
+        // Calculate the derivative for the normal vector
+        // Derivative: B'(t) = 2(1-t)(P1-P0) + 2t(P2-P1)
+        final derivativeX = 2 * (1 - t) * (controlX - leftBoundary) +
+                           2 * t * (rightBoundary - controlX);
+        final derivativeY = 2 * (1 - t) * (controlY - topOfField) +
+                           2 * t * (topOfField - controlY);
+
+        // Calculate the normal (perpendicular to derivative, pointing down)
+        final normalLength = math.sqrt(derivativeX * derivativeX + derivativeY * derivativeY);
+        final normalX = derivativeY / normalLength;  // Perpendicular
+        final normalY = -derivativeX / normalLength;
+
+        // Ensure normal points downward (away from curve)
+        final normalYFinal = normalY > 0 ? normalY : -normalY;
+        final normalXFinal = normalY > 0 ? normalX : -normalX;
+
+        // Push ball below the curve
+        final overlap = (curveY + ball.radius) - ball.position.y;
         if (overlap > 0) {
-          ball.position.x += normalX * overlap;
-          ball.position.y += normalY * overlap;
+          ball.position.x += normalXFinal * overlap;
+          ball.position.y += normalYFinal * overlap;
         }
-        
+
         // Reflect velocity along the normal
-        final dotProduct = ball.velocity.x * normalX + ball.velocity.y * normalY;
-        ball.velocity.x = (ball.velocity.x - 2 * dotProduct * normalX) * _damping;
-        ball.velocity.y = (ball.velocity.y - 2 * dotProduct * normalY) * _damping;
+        final dotProduct = ball.velocity.x * normalXFinal + ball.velocity.y * normalYFinal;
+        if (dotProduct < 0) {  // Only bounce if moving toward the curve
+          ball.velocity.x = (ball.velocity.x - 2 * dotProduct * normalXFinal) * _damping;
+          ball.velocity.y = (ball.velocity.y - 2 * dotProduct * normalYFinal) * _damping;
+        }
       }
     }
     
