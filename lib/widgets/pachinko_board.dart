@@ -323,46 +323,48 @@ class _PachinkoBoardPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3.0;
     
-    // Left wall of channel
+    // Left wall of channel - lowered by 25 pixels total
     canvas.drawLine(
       Offset(GameConstants.launchChannelStartX, GameConstants.launchChannelStartY),
-      Offset(GameConstants.launchChannelStartX, GameConstants.launchChannelEndY),
+      Offset(GameConstants.launchChannelStartX, 135.0),  // Left side at y=135
       wallPaint,
     );
     
-    // Right wall of channel  
+    // Right wall of channel - keeps original height
     canvas.drawLine(
       Offset(GameConstants.launchChannelStartX + GameConstants.launchChannelWidth, GameConstants.launchChannelStartY),
-      Offset(GameConstants.launchChannelStartX + GameConstants.launchChannelWidth, GameConstants.launchChannelEndY),
+      Offset(GameConstants.launchChannelStartX + GameConstants.launchChannelWidth, GameConstants.launchChannelEndY),  // Right side at y=110
       wallPaint,
     );
     
-    // Draw curved boundary at TOP of field
-    // Smooth arc from left boundary to top of launch column
+    // Draw curved boundary at TOP of field - user's exact specification
     final curvePaint = Paint()
       ..color = Colors.white.withOpacity(0.8)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3.0;
 
-    // Define curve endpoints
-    const leftBoundary = 20.0; // Left edge of field
-    final rightBoundary = GameConstants.launchChannelStartX; // Top of launch column (~360)
-    const topOfField = GameConstants.launchChannelEndY; // y ≈ 60
+    // Top boundary: quadratic bezier from left to right
+    const topBoundaryStartX = 30.0;
+    const topBoundaryStartY = 110.0;  // Lowered to match left launch tube wall
+    const topBoundaryControlX = 210.0;
+    const topBoundaryControlY = -100.0; // Control point above screen for downward bow
+    const topBoundaryEndX = 390.0;
+    const topBoundaryEndY = 110.0;
 
-    // Create smooth arc using quadratic bezier curve
-    final path = Path();
-    path.moveTo(leftBoundary, topOfField);
-
-    // Control point for smooth arc (midpoint, slightly higher to create downward-facing curve)
-    final controlX = (leftBoundary + rightBoundary) / 2;
-    final controlY = topOfField - 40; // Arc bows up 40px to create ∪ shape
-
-    path.quadraticBezierTo(
-      controlX, controlY,  // Control point
-      rightBoundary, topOfField  // End point
+    final boundaryPath = Path();
+    boundaryPath.moveTo(topBoundaryStartX, topBoundaryStartY);
+    boundaryPath.quadraticBezierTo(
+      topBoundaryControlX, topBoundaryControlY,  // Control point
+      topBoundaryEndX, topBoundaryEndY            // End point
     );
+    canvas.drawPath(boundaryPath, curvePaint);
 
-    canvas.drawPath(path, curvePaint);
+    // Left vertical FIELD barrier at x=30 (playfield boundary)
+    canvas.drawLine(
+      Offset(30.0, GameConstants.launchChannelStartY),
+      Offset(30.0, 110.0),  // Ends at y=110, where top boundary starts
+      curvePaint,
+    );
   }
 
   void _drawLaunchArea(Canvas canvas, level) {

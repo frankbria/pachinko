@@ -28,7 +28,7 @@ class GameConstants {
   static const double launchChannelWidth = 30.0;
   static const double launchChannelStartX = boardWidth - launchChannelWidth - 10.0;
   static const double launchChannelStartY = boardHeight - slotAreaHeight - 50.0;
-  static const double launchChannelEndY = 60.0;
+  static const double launchChannelEndY = 110.0;
   static const double ballLaunchX = launchChannelStartX + launchChannelWidth / 2;
   static const double ballLaunchY = launchChannelStartY;
   

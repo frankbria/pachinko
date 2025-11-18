@@ -44,44 +44,58 @@ class PhysicsEngine {
       ball.velocity.x = -ball.velocity.x * _damping;
     }
     
-    // Right boundary
-    if (ball.position.x + ball.radius >= GameConstants.boardWidth) {
-      ball.position.x = GameConstants.boardWidth - ball.radius;
+    // Left vertical FIELD barrier collision at x=30 (playfield boundary)
+    const leftFieldBarrierX = 30.0;
+    const leftFieldBarrierTopY = 110.0;  // Ends at y=110 where top boundary starts
+    final leftFieldBarrierBottomY = GameConstants.launchChannelStartY;
+    
+    if (ball.position.x - ball.radius <= leftFieldBarrierX && 
+        ball.position.y >= leftFieldBarrierTopY && 
+        ball.position.y <= leftFieldBarrierBottomY) {
+      ball.position.x = leftFieldBarrierX + ball.radius;
       ball.velocity.x = -ball.velocity.x * _damping;
     }
     
-    // Top curved boundary collision detection
-    // Smooth quadratic bezier arc from left boundary to launch column top
-    const leftBoundary = 20.0;
-    final rightBoundary = GameConstants.launchChannelStartX;
-    const topOfField = GameConstants.launchChannelEndY;
+    // Right boundary - CONDITIONAL based on ball Y position
+    // When y <= 110 (above playfield): right boundary is at x=390 (board/launch tube right edge)
+    // When y > 110 (in playfield): right boundary is at x=360 (playfield right edge, blocks launch tube entry)
+    final rightBoundaryX = ball.position.y <= 110.0 ? 390.0 : GameConstants.launchChannelStartX;
+    
+    if (ball.position.x + ball.radius >= rightBoundaryX) {
+      ball.position.x = rightBoundaryX - ball.radius;
+      ball.velocity.x = -ball.velocity.x * _damping;
+    }
+    
+    // Top curved boundary collision - user's exact specification
+    // Quadratic bezier from (30, 110) -> control (210, -100) -> (390, 110)
+    const topBoundaryStartX = 30.0;
+    const topBoundaryStartY = 110.0;  // Matches left field barrier top
+    const topBoundaryControlX = 210.0;
+    const topBoundaryControlY = -100.0;
+    const topBoundaryEndX = 390.0;
+    const topBoundaryEndY = 110.0;
 
     // Check if ball is in the region of the curved boundary
-    if (ball.position.y <= topOfField + 50 && // Within 50px below the curve
-        ball.position.x >= leftBoundary &&
-        ball.position.x <= rightBoundary) {
-
-      // Calculate the curve height at the ball's x position
-      // Quadratic bezier: controlX = midpoint, controlY = topOfField - 40 (creates downward-facing curve)
-      final controlX = (leftBoundary + rightBoundary) / 2;
-      final controlY = topOfField - 40;
-
+    if (ball.position.x >= topBoundaryStartX && ball.position.x <= topBoundaryEndX) {
       // Calculate t parameter for the bezier curve based on x position
-      final t = (ball.position.x - leftBoundary) / (rightBoundary - leftBoundary);
+      final t = (ball.position.x - topBoundaryStartX) / (topBoundaryEndX - topBoundaryStartX);
 
-      // Quadratic bezier formula: B(t) = (1-t)^2 * P0 + 2(1-t)t * P1 + t^2 * P2
-      final curveY = (1 - t) * (1 - t) * topOfField +
-                     2 * (1 - t) * t * controlY +
-                     t * t * topOfField;
+      // Quadratic bezier formula: B(t) = (1-t)²P₀ + 2(1-t)tP₁ + t²P₂
+      final curveY = (1 - t) * (1 - t) * topBoundaryStartY +
+                     2 * (1 - t) * t * topBoundaryControlY +
+                     t * t * topBoundaryEndY;
 
-      // Check if ball is above the curve (colliding)
-      if (ball.position.y <= curveY + ball.radius) {
+      // Distance from BOTTOM of ball to the curve (not center)
+      final distanceToCurve = (ball.position.y - ball.radius) - curveY;
+
+      // Only apply collision if ball has penetrated the curve
+      if (distanceToCurve < 0) {
         // Calculate the derivative for the normal vector
-        // Derivative: B'(t) = 2(1-t)(P1-P0) + 2t(P2-P1)
-        final derivativeX = 2 * (1 - t) * (controlX - leftBoundary) +
-                           2 * t * (rightBoundary - controlX);
-        final derivativeY = 2 * (1 - t) * (controlY - topOfField) +
-                           2 * t * (topOfField - controlY);
+        // Derivative: B'(t) = 2(1-t)(P₁-P₀) + 2t(P₂-P₁)
+        final derivativeX = 2 * (1 - t) * (topBoundaryControlX - topBoundaryStartX) +
+                           2 * t * (topBoundaryEndX - topBoundaryControlX);
+        final derivativeY = 2 * (1 - t) * (topBoundaryControlY - topBoundaryStartY) +
+                           2 * t * (topBoundaryEndY - topBoundaryControlY);
 
         // Calculate the normal (perpendicular to derivative, pointing down)
         final normalLength = math.sqrt(derivativeX * derivativeX + derivativeY * derivativeY);
@@ -93,11 +107,9 @@ class PhysicsEngine {
         final normalXFinal = normalY > 0 ? normalX : -normalX;
 
         // Push ball below the curve
-        final overlap = (curveY + ball.radius) - ball.position.y;
-        if (overlap > 0) {
-          ball.position.x += normalXFinal * overlap;
-          ball.position.y += normalYFinal * overlap;
-        }
+        final overlap = -distanceToCurve;  // distanceToCurve is negative, so overlap is positive
+        ball.position.x += normalXFinal * overlap;
+        ball.position.y += normalYFinal * overlap;
 
         // Reflect velocity along the normal
         final dotProduct = ball.velocity.x * normalXFinal + ball.velocity.y * normalYFinal;
