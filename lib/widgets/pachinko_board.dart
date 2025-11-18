@@ -353,9 +353,9 @@ class _PachinkoBoardPainter extends CustomPainter {
     final path = Path();
     path.moveTo(leftBoundary, topOfField);
 
-    // Control point for smooth arc (midpoint, slightly lower)
+    // Control point for smooth arc (midpoint, slightly higher to create downward-facing curve)
     final controlX = (leftBoundary + rightBoundary) / 2;
-    final controlY = topOfField + 40; // Arc dips down 40px
+    final controlY = topOfField - 40; // Arc bows up 40px to create ∪ shape
 
     path.quadraticBezierTo(
       controlX, controlY,  // Control point

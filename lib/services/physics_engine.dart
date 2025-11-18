@@ -62,9 +62,9 @@ class PhysicsEngine {
         ball.position.x <= rightBoundary) {
 
       // Calculate the curve height at the ball's x position
-      // Quadratic bezier: controlX = midpoint, controlY = topOfField + 40
+      // Quadratic bezier: controlX = midpoint, controlY = topOfField - 40 (creates downward-facing curve)
       final controlX = (leftBoundary + rightBoundary) / 2;
-      final controlY = topOfField + 40;
+      final controlY = topOfField - 40;
 
       // Calculate t parameter for the bezier curve based on x position
       final t = (ball.position.x - leftBoundary) / (rightBoundary - leftBoundary);
