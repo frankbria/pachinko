@@ -66,6 +66,7 @@ class _GameHUD extends StatelessWidget {
                 label: GameStrings.ballsRemaining,
                 value: gameState.ballsRemaining.toString(),
                 color: GameConstants.ballColor,
+                highlighted: gameState.ballCountHighlighted,
               ),
               _HUDItem(
                 icon: Icons.layers,
@@ -86,39 +87,58 @@ class _HUDItem extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
+  final bool highlighted;
 
   const _HUDItem({
     required this.icon,
     required this.label,
     required this.value,
     required this.color,
+    this.highlighted = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          color: color,
-          size: 24,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: highlighted
+            ? const Color(0xFFFFD700).withOpacity(0.3) // Gold highlight
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: highlighted
+              ? const Color(0xFFFFD700)
+              : Colors.transparent,
+          width: highlighted ? 3 : 0,
         ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            color: highlighted ? const Color(0xFFFFD700) : color,
+            size: highlighted ? 28 : 24,
           ),
-        ),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Colors.white70,
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: highlighted ? const Color(0xFFFFD700) : Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: highlighted ? 22 : null,
+            ),
           ),
-        ),
-      ],
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: highlighted ? const Color(0xFFFFD700).withOpacity(0.9) : Colors.white70,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

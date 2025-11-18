@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
 import 'package:pachinko_game/models/game_state.dart';
 import 'package:pachinko_game/models/ball.dart';
 import 'package:vector_math/vector_math_64.dart';
@@ -946,6 +947,202 @@ void main() {
       // Then - listener called on both trigger and dismiss
       expect(callCountAfterBonus, greaterThan(callCountBeforeBonus)); // Called on trigger
       expect(listenerCallCount, greaterThan(callCountAfterBonus)); // Called on auto-dismiss
+    });
+  });
+
+  group('Visual Feedback -', () {
+    test('given GameState, when addFloatingText called, then floating text added to list', () {
+      /// Validates addFloatingText() adds text to floatingTexts list
+
+      // Given
+      final gameState = GameState();
+      gameState.startNewGame();
+      expect(gameState.floatingTexts, isEmpty);
+
+      // When
+      gameState.addFloatingText(
+        '+100',
+        const Offset(100, 100),
+        const Color(0xFFFFFFFF),
+      );
+
+      // Then
+      expect(gameState.floatingTexts.length, equals(1));
+      expect(gameState.floatingTexts.first.text, equals('+100'));
+    });
+
+    test('given GameState with floating text, when updateFloatingTexts called with time, then texts updated', () {
+      /// Validates updateFloatingTexts() updates text animations
+
+      // Given
+      final gameState = GameState();
+      gameState.startNewGame();
+      gameState.addFloatingText(
+        '+100',
+        const Offset(100, 100),
+        const Color(0xFFFFFFFF),
+      );
+      final initialTexts = gameState.floatingTexts.length;
+
+      // When - update with small time delta
+      gameState.updateFloatingTexts(0.5);
+
+      // Then - text still exists (not expired yet)
+      expect(gameState.floatingTexts.length, equals(initialTexts));
+    });
+
+    test('given GameState with expired floating text, when updateFloatingTexts called, then expired texts removed', () {
+      /// Validates updateFloatingTexts() removes expired texts
+
+      // Given
+      final gameState = GameState();
+      gameState.startNewGame();
+      gameState.addFloatingText(
+        '+100',
+        const Offset(100, 100),
+        const Color(0xFFFFFFFF),
+      );
+      expect(gameState.floatingTexts.length, equals(1));
+
+      // When - update with time beyond duration (1.6s > 1.5s)
+      gameState.updateFloatingTexts(1.6);
+
+      // Then - text removed
+      expect(gameState.floatingTexts, isEmpty);
+    });
+
+    test('given GameState, when spawnConfetti called, then correct number of particles created', () {
+      /// Validates spawnConfetti() creates requested number of particles
+
+      // Given
+      final gameState = GameState();
+      gameState.startNewGame();
+      expect(gameState.confettiParticles, isEmpty);
+
+      // When
+      gameState.spawnConfetti(Vector2(200, 300), 50);
+
+      // Then - 50 particles created
+      expect(gameState.confettiParticles.length, equals(50));
+    });
+
+    test('given GameState with confetti, when updateConfetti called with time, then particles updated', () {
+      /// Validates updateConfetti() updates particle physics
+
+      // Given
+      final gameState = GameState();
+      gameState.startNewGame();
+      gameState.spawnConfetti(Vector2(200, 300), 10);
+      final initialParticles = gameState.confettiParticles.length;
+
+      // When - update with small time delta
+      gameState.updateConfetti(0.5);
+
+      // Then - particles still exist (not expired yet)
+      expect(gameState.confettiParticles.length, equals(initialParticles));
+    });
+
+    test('given GameState with expired confetti, when updateConfetti called, then expired particles removed', () {
+      /// Validates updateConfetti() removes expired particles
+
+      // Given
+      final gameState = GameState();
+      gameState.startNewGame();
+      gameState.spawnConfetti(Vector2(200, 300), 10);
+      expect(gameState.confettiParticles.length, equals(10));
+
+      // When - update with time beyond maxLifetime (2.5s > 2.0s)
+      gameState.updateConfetti(2.5);
+
+      // Then - all particles removed
+      expect(gameState.confettiParticles, isEmpty);
+    });
+
+    test('given GameState, when ball counter highlight triggered, then ballCountHighlighted is true', () {
+      /// Validates triggerSpecialBonus() activates ball counter highlight
+
+      // Given
+      final gameState = GameState();
+      gameState.startNewGame();
+      expect(gameState.ballCountHighlighted, isFalse);
+
+      // When
+      gameState.triggerSpecialBonus();
+
+      // Then
+      expect(gameState.ballCountHighlighted, isTrue);
+    });
+
+    test('given GameState with ball counter highlight, when timer expires, then highlight deactivates', () {
+      /// Validates updateBallCountHighlight() deactivates after duration
+
+      // Given
+      final gameState = GameState();
+      gameState.startNewGame();
+      gameState.triggerSpecialBonus();
+      expect(gameState.ballCountHighlighted, isTrue);
+
+      // When - update beyond highlight duration (1.1s > 1.0s)
+      gameState.updateBallCountHighlight(1.1);
+
+      // Then
+      expect(gameState.ballCountHighlighted, isFalse);
+    });
+
+    test('given GameState with ball counter highlight, when timer running, then highlight remains active', () {
+      /// Validates updateBallCountHighlight() keeps highlight during timer
+
+      // Given
+      final gameState = GameState();
+      gameState.startNewGame();
+      gameState.triggerSpecialBonus();
+      expect(gameState.ballCountHighlighted, isTrue);
+
+      // When - update within duration (0.5s < 1.0s)
+      gameState.updateBallCountHighlight(0.5);
+
+      // Then
+      expect(gameState.ballCountHighlighted, isTrue);
+    });
+
+    test('given GameState with listener, when addFloatingText called, then notifyListeners triggered', () {
+      /// Validates ChangeNotifier behavior: addFloatingText() calls notifyListeners()
+
+      // Given
+      final gameState = GameState();
+      gameState.startNewGame();
+      int listenerCallCount = 0;
+      gameState.addListener(() {
+        listenerCallCount++;
+      });
+
+      // When
+      gameState.addFloatingText(
+        '+100',
+        const Offset(100, 100),
+        const Color(0xFFFFFFFF),
+      );
+
+      // Then
+      expect(listenerCallCount, greaterThan(0));
+    });
+
+    test('given GameState with listener, when spawnConfetti called, then notifyListeners triggered', () {
+      /// Validates ChangeNotifier behavior: spawnConfetti() calls notifyListeners()
+
+      // Given
+      final gameState = GameState();
+      gameState.startNewGame();
+      int listenerCallCount = 0;
+      gameState.addListener(() {
+        listenerCallCount++;
+      });
+
+      // When
+      gameState.spawnConfetti(Vector2(200, 300), 50);
+
+      // Then
+      expect(listenerCallCount, greaterThan(0));
     });
   });
 }

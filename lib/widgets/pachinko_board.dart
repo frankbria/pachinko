@@ -152,12 +152,22 @@ class _PachinkoBoardPainter extends CustomPainter {
     if (isDragging && dragStart != null && dragEnd != null && gameState.canLaunchBall) {
       _drawLaunchPowerIndicator(canvas, scale);
     }
-    
+
+    // Draw confetti particles
+    for (final particle in gameState.confettiParticles) {
+      _drawConfettiParticle(canvas, particle);
+    }
+
+    // Draw floating texts
+    for (final floatingText in gameState.floatingTexts) {
+      _drawFloatingText(canvas, floatingText);
+    }
+
     // Draw special bonus indicator
     if (gameState.specialBonusTriggered) {
       _drawSpecialBonusEffect(canvas, size, scale);
     }
-    
+
     canvas.restore();
   }
 
@@ -523,6 +533,61 @@ class _PachinkoBoardPainter extends CustomPainter {
       Offset(
         (GameConstants.boardWidth - textPainter.width) / 2,
         GameConstants.boardHeight / 2 - textPainter.height / 2,
+      ),
+    );
+  }
+
+  void _drawConfettiParticle(Canvas canvas, particle) {
+    canvas.save();
+
+    // Translate to particle position
+    canvas.translate(particle.position.x, particle.position.y);
+
+    // Rotate
+    canvas.rotate(particle.rotation);
+
+    // Draw rectangle (confetti piece)
+    final paint = Paint()
+      ..color = particle.color.withOpacity(particle.opacity)
+      ..style = PaintingStyle.fill;
+
+    canvas.drawRect(
+      Rect.fromCenter(
+        center: Offset.zero,
+        width: particle.size,
+        height: particle.size * 0.6,
+      ),
+      paint,
+    );
+
+    canvas.restore();
+  }
+
+  void _drawFloatingText(Canvas canvas, floatingText) {
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: floatingText.text,
+        style: TextStyle(
+          color: floatingText.color.withOpacity(floatingText.opacity),
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          shadows: [
+            Shadow(
+              color: Colors.black.withOpacity(floatingText.opacity * 0.5),
+              blurRadius: 4,
+              offset: const Offset(1, 1),
+            ),
+          ],
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(
+      canvas,
+      Offset(
+        floatingText.currentPosition.dx - textPainter.width / 2,
+        floatingText.currentPosition.dy,
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:vector_math/vector_math_64.dart';
+import 'package:flutter/material.dart';
+import 'package:vector_math/vector_math_64.dart' as vm;
 import '../models/ball.dart';
 import '../models/ball_launcher.dart';
 import '../models/game_state.dart';
@@ -118,13 +119,19 @@ class GameManager extends ChangeNotifier {
     final currentTime = DateTime.now();
     final deltaTime = currentTime.difference(_lastFrameTime).inMicroseconds / 1000000.0;
     _lastFrameTime = currentTime;
-    
+
     // Cap delta time to prevent large jumps
     final clampedDeltaTime = deltaTime.clamp(0.0, 1.0 / 30.0);
-    
+
     _updatePhysics(clampedDeltaTime);
+
+    // Update visual effects
+    _gameState.updateFloatingTexts(clampedDeltaTime);
+    _gameState.updateBallCountHighlight(clampedDeltaTime);
+    _gameState.updateConfetti(clampedDeltaTime);
+
     _checkGameState();
-    
+
     notifyListeners();
   }
 
@@ -183,11 +190,25 @@ class GameManager extends ChangeNotifier {
       // Play slot score sound
       _audioService?.playSlotScore(slot.pointValue);
 
+      // Add floating text for visual feedback
+      _gameState.addFloatingText(
+        '+${slot.pointValue}',
+        Offset(slot.position.x, slot.position.y - 20), // Above slot
+        _getScoreColor(slot.pointValue),
+      );
+
       // Track edge slot achievement (edge slots are worth 2000 points)
       if (slot.pointValue >= 2000) {
         _achievementService?.trackEdgeSlot();
       }
     }
+  }
+
+  Color _getScoreColor(int points) {
+    if (points >= 2000) return const Color(0xFFFFD700); // Gold
+    if (points >= 1000) return const Color(0xFFFFA500); // Orange
+    if (points >= 500) return const Color(0xFFFFFF00); // Yellow
+    return Colors.white;
   }
 
   void _checkSpecialBonus() {
@@ -198,6 +219,12 @@ class GameManager extends ChangeNotifier {
       _gameState.triggerSpecialBonus();
       // Play bonus trigger fanfare
       _audioService?.playBonusTrigger();
+
+      // Spawn confetti at center of board
+      _gameState.spawnConfetti(
+        vm.Vector2(GameConstants.boardWidth / 2, GameConstants.boardHeight / 2),
+        50, // 50 confetti particles
+      );
 
       // Track achievements
       _achievementService?.trackAllSpecialPegsHit();

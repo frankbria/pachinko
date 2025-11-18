@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:vector_math/vector_math_64.dart';
 import 'package:flutter/material.dart';
 import 'ball.dart';
 import 'level.dart';
+import 'confetti_particle.dart';
+import '../widgets/floating_text.dart';
 
 enum GamePhase {
   loading,
@@ -31,6 +34,13 @@ class GameState extends ChangeNotifier {
   Timer? _bonusDisplayTimer;
   double _bonusOverlayOpacity = 0.0;
 
+  // Visual effects
+  final List<FloatingText> _floatingTexts = [];
+  final List<ConfettiParticle> _confettiParticles = [];
+  bool _ballCountHighlighted = false;
+  double _ballCountHighlightTimer = 0.0;
+  static const double _ballCountHighlightDuration = 1.0; // 1 second
+
   // Getters
   Level? get currentLevel => _currentLevel;
   int get currentLevelNumber => _currentLevelNumber;
@@ -43,6 +53,9 @@ class GameState extends ChangeNotifier {
   double get bonusOverlayOpacity => _bonusOverlayOpacity;
   bool get canLaunchBall => _phase == GamePhase.ready && _ballsRemaining > 0;
   bool get isGameOver => _ballsRemaining <= 0 && _activeBalls.isEmpty;
+  List<FloatingText> get floatingTexts => List.unmodifiable(_floatingTexts);
+  List<ConfettiParticle> get confettiParticles => List.unmodifiable(_confettiParticles);
+  bool get ballCountHighlighted => _ballCountHighlighted;
   
   void loadLevel(int levelNumber) {
     _currentLevelNumber = levelNumber;
@@ -114,6 +127,10 @@ class GameState extends ChangeNotifier {
         _activeBalls.add(bonusBall);
       }
       _bonusBallsToAdd = 0; // Reset since we added them immediately
+
+      // Trigger ball counter highlight
+      _ballCountHighlighted = true;
+      _ballCountHighlightTimer = _ballCountHighlightDuration;
     }
 
     // Auto-dismiss bonus overlay after 2.5 seconds
@@ -125,6 +142,73 @@ class GameState extends ChangeNotifier {
     });
 
     notifyListeners();
+  }
+
+  /// Add floating text for visual feedback
+  void addFloatingText(String text, Offset position, Color color) {
+    _floatingTexts.add(FloatingText(
+      text: text,
+      startPosition: position,
+      color: color,
+    ));
+    notifyListeners();
+  }
+
+  /// Update floating text animations
+  void updateFloatingTexts(double deltaTime) {
+    _floatingTexts.removeWhere((text) => text.update(deltaTime));
+  }
+
+  /// Spawn confetti particles at position
+  void spawnConfetti(Vector2 position, int count) {
+    final random = math.Random();
+
+    for (int i = 0; i < count; i++) {
+      final angle = (i / count) * 2 * math.pi + random.nextDouble() * 0.5;
+      final speed = 100.0 + random.nextDouble() * 150.0;
+
+      final particle = ConfettiParticle(
+        position: position.clone(),
+        velocity: Vector2(
+          math.cos(angle) * speed,
+          math.sin(angle) * speed - 200.0, // Initial upward bias
+        ),
+        color: _randomConfettiColor(random),
+        size: 6.0 + random.nextDouble() * 6.0,
+      );
+
+      _confettiParticles.add(particle);
+    }
+
+    notifyListeners();
+  }
+
+  Color _randomConfettiColor(math.Random random) {
+    final colors = [
+      const Color(0xFFFFD700), // Gold
+      const Color(0xFFFF6B6B), // Red
+      const Color(0xFF4ECDC4), // Cyan
+      const Color(0xFFFFA500), // Orange
+      const Color(0xFF95E1D3), // Mint
+      const Color(0xFFF38181), // Pink
+    ];
+    return colors[random.nextInt(colors.length)];
+  }
+
+  /// Update confetti particle physics
+  void updateConfetti(double deltaTime) {
+    _confettiParticles.removeWhere((particle) => particle.update(deltaTime));
+  }
+
+  /// Update ball counter highlight animation
+  void updateBallCountHighlight(double deltaTime) {
+    if (_ballCountHighlightTimer > 0) {
+      _ballCountHighlightTimer -= deltaTime;
+      if (_ballCountHighlightTimer <= 0) {
+        _ballCountHighlighted = false;
+        _ballCountHighlightTimer = 0;
+      }
+    }
   }
 
   void nextLevel() {
