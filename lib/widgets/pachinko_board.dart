@@ -347,15 +347,16 @@ class _PachinkoBoardPainter extends CustomPainter {
       wallPaint,
     );
     
-    // Draw curved boundary at TOP of field - user's exact specification
-    final curvePaint = Paint()
+    // Draw field boundaries - tightened for more challenging gameplay
+    final boundaryPaint = Paint()
       ..color = Colors.white.withOpacity(0.8)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3.0;
 
-    // Top boundary: quadratic bezier from left to right
+    // Top curved boundary: quadratic bezier from left to right
+    // Starts at x=30 to connect with left launch channel wall
     const topBoundaryStartX = 30.0;
-    const topBoundaryStartY = 110.0;  // Lowered to match left launch tube wall
+    const topBoundaryStartY = 110.0;
     const topBoundaryControlX = 210.0;
     const topBoundaryControlY = -100.0; // Control point above screen for downward bow
     const topBoundaryEndX = 390.0;
@@ -367,14 +368,17 @@ class _PachinkoBoardPainter extends CustomPainter {
       topBoundaryControlX, topBoundaryControlY,  // Control point
       topBoundaryEndX, topBoundaryEndY            // End point
     );
-    canvas.drawPath(boundaryPath, curvePaint);
+    canvas.drawPath(boundaryPath, boundaryPaint);
 
-    // Left vertical FIELD barrier at x=30 (playfield boundary)
+    // Left vertical launch channel wall at x=30 (existing visual element)
     canvas.drawLine(
       Offset(30.0, GameConstants.launchChannelStartY),
       Offset(30.0, 110.0),  // Ends at y=110, where top boundary starts
-      curvePaint,
+      boundaryPaint,
     );
+
+    // Note: Field boundaries (left at x=25, right at x=360) are enforced
+    // in physics engine but not drawn - they're invisible gameplay boundaries
   }
 
   void _drawLaunchArea(Canvas canvas, level) {
@@ -508,7 +512,7 @@ class _PachinkoBoardPainter extends CustomPainter {
     // Calculate bonus balls amount
     final bonusBalls = 5 + (gameState.currentLevelNumber ~/ 2);
 
-    // Draw bonus text with opacity and shadow
+    // Draw bonus text with opacity (shadows removed for Linux compatibility)
     final textPainter = TextPainter(
       text: TextSpan(
         text: '+$bonusBalls BALLS!',
@@ -516,13 +520,6 @@ class _PachinkoBoardPainter extends CustomPainter {
           color: GameConstants.bonusBallColor.withOpacity(opacity),
           fontSize: 36,
           fontWeight: FontWeight.bold,
-          shadows: [
-            Shadow(
-              color: Colors.black.withOpacity(opacity * 0.5),
-              blurRadius: 8,
-              offset: const Offset(2, 2),
-            ),
-          ],
         ),
       ),
       textDirection: TextDirection.ltr,

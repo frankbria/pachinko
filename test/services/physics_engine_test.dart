@@ -153,9 +153,9 @@ void main() {
     /// Tests left wall collision with restitution coefficient (0.7)
     /// Formula: velocity.x = -velocity.x * bounceDamping (0.7)
     test('Given ball hitting left wall When updateBalls called Then ball bounces with 0.7 restitution', () {
-      // Given: Ball moving left near left boundary
+      // Given: Ball moving left near left boundary in playfield
       final ball = Ball(
-        position: Vector2(5, 200), // Near left wall
+        position: Vector2(5, 200), // Near left wall, in playfield (y > 110)
         velocity: Vector2(-50, 0), // Moving left
         radius: GameConstants.ballRadius,
       );
@@ -164,7 +164,8 @@ void main() {
       physicsEngine.updateBalls([ball], GameConstants.physicsTimeStep);
 
       // Then: Ball should bounce right with damping
-      expect(ball.position.x, equals(ball.radius)); // Clamped to boundary
+      // In playfield, left boundary is fieldLeftBoundaryX = 15.0
+      expect(ball.position.x, equals(GameConstants.fieldLeftBoundaryX + ball.radius));
       expect(ball.velocity.x, greaterThan(0)); // Reversed direction
       // Velocity should be approximately 50 * 0.7 = 35 (after air resistance too)
       expect(ball.velocity.x.abs(), closeTo(50 * GameConstants.bounceDamping * GameConstants.airResistance, 1.0));
@@ -172,9 +173,9 @@ void main() {
 
     /// Tests right wall collision with restitution coefficient (0.7)
     test('Given ball hitting right wall When updateBalls called Then ball bounces with 0.7 restitution', () {
-      // Given: Ball moving right near right boundary
+      // Given: Ball moving right near right boundary in playfield
       final ball = Ball(
-        position: Vector2(GameConstants.boardWidth - 5, 200),
+        position: Vector2(GameConstants.boardWidth - 5, 200), // In playfield (y > 110)
         velocity: Vector2(50, 0), // Moving right
         radius: GameConstants.ballRadius,
       );
@@ -183,7 +184,8 @@ void main() {
       physicsEngine.updateBalls([ball], GameConstants.physicsTimeStep);
 
       // Then: Ball should bounce left with damping
-      expect(ball.position.x, equals(GameConstants.boardWidth - ball.radius));
+      // In playfield, right boundary is fieldRightBoundaryX = 345.0
+      expect(ball.position.x, equals(GameConstants.fieldRightBoundaryX - ball.radius));
       expect(ball.velocity.x, lessThan(0)); // Reversed
       expect(ball.velocity.x.abs(), closeTo(50 * GameConstants.bounceDamping * GameConstants.airResistance, 1.0));
     });
@@ -581,6 +583,61 @@ void main() {
       expect(points.length, lessThan(numPoints));
       // Last point should be near or past board height
       expect(points.last.y, greaterThanOrEqualTo(GameConstants.boardHeight - 100));
+    });
+  });
+
+  group('Field Boundary Enforcement', () {
+    /// Tests left field boundary collision when ball is in playfield (y > 110)
+    test('Given ball at left field boundary in playfield When collision checked Then ball bounces', () {
+      // Given: Ball at left field boundary (x=15) in playfield (y=200)
+      final ball = Ball(
+        position: Vector2(GameConstants.fieldLeftBoundaryX - 5, 200),
+        velocity: Vector2(-50, 0),  // Moving left
+      );
+      final physicsEngine = PhysicsEngine();
+
+      // When: Update physics
+      physicsEngine.updateBalls([ball], 1 / 60);
+
+      // Then: Ball should have bounced (velocity reversed)
+      expect(ball.velocity.x, greaterThan(0));
+      // Ball position should be corrected to stay within boundary
+      expect(ball.position.x, greaterThanOrEqualTo(GameConstants.fieldLeftBoundaryX));
+    });
+
+    /// Tests right field boundary collision when ball is in playfield (y > 110)
+    test('Given ball at right field boundary in playfield When collision checked Then ball bounces', () {
+      // Given: Ball at right field boundary (x=345) in playfield (y=200)
+      final ball = Ball(
+        position: Vector2(GameConstants.fieldRightBoundaryX + 5, 200),
+        velocity: Vector2(50, 0),  // Moving right
+      );
+      final physicsEngine = PhysicsEngine();
+
+      // When: Update physics
+      physicsEngine.updateBalls([ball], 1 / 60);
+
+      // Then: Ball should have bounced (velocity reversed)
+      expect(ball.velocity.x, lessThan(0));
+      // Ball position should be corrected to stay within boundary
+      expect(ball.position.x, lessThanOrEqualTo(GameConstants.fieldRightBoundaryX));
+    });
+
+    /// Tests that balls in launch area (y <= 110) use board boundaries instead of field boundaries
+    test('Given ball at x=5 in launch area When collision checked Then uses board left boundary', () {
+      // Given: Ball near left edge in launch area (y=100)
+      final ball = Ball(
+        position: Vector2(5, 100),
+        velocity: Vector2(-50, 0),  // Moving left
+      );
+      final physicsEngine = PhysicsEngine();
+
+      // When: Update physics
+      physicsEngine.updateBalls([ball], 1 / 60);
+
+      // Then: Ball should have bounced off board edge (x=0), not field boundary (x=15)
+      expect(ball.velocity.x, greaterThan(0));
+      expect(ball.position.x, greaterThanOrEqualTo(0));
     });
   });
 }

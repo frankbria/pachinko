@@ -10,21 +10,12 @@ import 'utils/constants.dart';
 import 'widgets/achievement_toast_overlay.dart';
 import 'models/achievement.dart';
 
-void main() async {
-  // Ensure Flutter bindings are initialized for async main()
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Preload audio assets before app starts
-  final audioService = AudioService();
-  await audioService.initialize();
-
-  runApp(PachinkoApp(audioService: audioService));
+void main() {
+  runApp(const PachinkoApp());
 }
 
 class PachinkoApp extends StatefulWidget {
-  final AudioService audioService;
-
-  const PachinkoApp({super.key, required this.audioService});
+  const PachinkoApp({super.key});
 
   @override
   State<PachinkoApp> createState() => _PachinkoAppState();
@@ -38,8 +29,9 @@ class _PachinkoAppState extends State<PachinkoApp> {
   @override
   void initState() {
     super.initState();
-    // Use preinitialized AudioService from widget
-    _audioService = widget.audioService;
+    // Create and initialize AudioService (non-blocking for Linux compatibility)
+    _audioService = AudioService();
+    _audioService.initialize(); // No await - UI renders immediately
 
     // Initialize StorageService and AchievementService asynchronously
     _initializeServices();
@@ -98,23 +90,23 @@ class _PachinkoAppState extends State<PachinkoApp> {
           ),
         ),
       ],
-      child: AchievementToastOverlay(
-        child: MaterialApp(
-          title: GameStrings.appName,
-          theme: ThemeData(
-            colorScheme: const ColorScheme.dark(
-              primary: GameConstants.primaryColor,
-              primaryContainer: GameConstants.primaryVariantColor,
-              secondary: GameConstants.secondaryColor,
-              surface: GameConstants.surfaceColor,
-              error: GameConstants.errorColor,
-            ),
-            useMaterial3: true,
-            fontFamily: 'Roboto',
+      child: MaterialApp(
+        title: GameStrings.appName,
+        theme: ThemeData(
+          colorScheme: const ColorScheme.dark(
+            primary: GameConstants.primaryColor,
+            primaryContainer: GameConstants.primaryVariantColor,
+            secondary: GameConstants.secondaryColor,
+            surface: GameConstants.surfaceColor,
+            error: GameConstants.errorColor,
           ),
-          home: const MenuScreen(),
-          debugShowCheckedModeBanner: false,
+          useMaterial3: true,
+          fontFamily: 'Roboto',
         ),
+        home: const AchievementToastOverlay(
+          child: MenuScreen(),
+        ),
+        debugShowCheckedModeBanner: false,
       ),
     );
   }

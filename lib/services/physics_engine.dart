@@ -38,36 +38,32 @@ class PhysicsEngine {
   }
 
   void _checkBoundaryCollisions(Ball ball) {
-    // Left boundary
-    if (ball.position.x - ball.radius <= 0) {
-      ball.position.x = ball.radius;
+    // Left boundary - CONDITIONAL based on ball Y position
+    // When y <= 110 (in top/launch area): left boundary at x=0 (board left edge)
+    // When y > 110 (in playfield): tighter left boundary to align with leftmost slot
+    final leftBoundaryX = ball.position.y <= 110.0
+        ? 0.0
+        : GameConstants.fieldLeftBoundaryX;
+
+    if (ball.position.x - ball.radius <= leftBoundaryX) {
+      ball.position.x = leftBoundaryX + ball.radius;
       ball.velocity.x = -ball.velocity.x * _damping;
     }
-    
-    // Left vertical FIELD barrier collision at x=30 (playfield boundary)
-    const leftFieldBarrierX = 30.0;
-    const leftFieldBarrierTopY = 110.0;  // Ends at y=110 where top boundary starts
-    final leftFieldBarrierBottomY = GameConstants.launchChannelStartY;
-    
-    if (ball.position.x - ball.radius <= leftFieldBarrierX && 
-        ball.position.y >= leftFieldBarrierTopY && 
-        ball.position.y <= leftFieldBarrierBottomY) {
-      ball.position.x = leftFieldBarrierX + ball.radius;
-      ball.velocity.x = -ball.velocity.x * _damping;
-    }
-    
-    // Right boundary - CONDITIONAL based on ball Y position
-    // When y <= 110 (above playfield): right boundary is at x=390 (board/launch tube right edge)
-    // When y > 110 (in playfield): right boundary is at x=360 (playfield right edge, blocks launch tube entry)
-    final rightBoundaryX = ball.position.y <= 110.0 ? 390.0 : GameConstants.launchChannelStartX;
-    
+
+    // Right field boundary - CONDITIONAL based on ball Y position
+    // When y <= 110 (in top/launch area): right boundary at x=390 (board right edge)
+    // When y > 110 (in playfield): tighter right boundary to make edge scoring harder
+    final rightBoundaryX = ball.position.y <= 110.0
+        ? 390.0
+        : GameConstants.fieldRightBoundaryX;
+
     if (ball.position.x + ball.radius >= rightBoundaryX) {
       ball.position.x = rightBoundaryX - ball.radius;
       ball.velocity.x = -ball.velocity.x * _damping;
     }
-    
-    // Top curved boundary collision - user's exact specification
-    // Quadratic bezier from (30, 110) -> control (210, -100) -> (390, 110)
+
+    // Top curved boundary collision - quadratic bezier curve
+    // Starts at x=30 to match visual rendering
     const topBoundaryStartX = 30.0;
     const topBoundaryStartY = 110.0;  // Matches left field barrier top
     const topBoundaryControlX = 210.0;

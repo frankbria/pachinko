@@ -31,7 +31,13 @@ class GameConstants {
   static const double launchChannelEndY = 110.0;
   static const double ballLaunchX = launchChannelStartX + launchChannelWidth / 2;
   static const double ballLaunchY = launchChannelStartY;
-  
+
+  // Field boundary constants (playfield area where balls interact with pegs/slots)
+  // Left boundary slightly inside the board to align near leftmost slot
+  static const double fieldLeftBoundaryX = 25.0;
+  // Right boundary at left edge of launch channel (blocks entry from playfield)
+  static const double fieldRightBoundaryX = launchChannelStartX; // 360.0
+
   // Game constants
   static const int ballsPerRound = 20;
   static const int minSpecialPegs = 2;
