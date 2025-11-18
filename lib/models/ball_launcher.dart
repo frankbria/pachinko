@@ -98,18 +98,24 @@ class BallLauncher {
   bool updateBallPath(double deltaTime) {
     if (_phase != LaunchPhase.traveling || _currentBall == null) return false;
     
-    // Speed based on launch power
-    final speed = 200.0 + (_launchPower / _maxPower) * 300.0; // 200-500 pixels/second
+    // Speed based on launch power (200-500 pixels/second)
+    final speed = 200.0 + (_launchPower / _maxPower) * 300.0;
+    
+    // Calculate total distance traveled
     _pathProgress += speed * deltaTime;
     
-    // Move along path segments
-    while (_pathProgress >= 20.0 && _pathIndex < _launchPath.length - 1) {
-      _pathProgress -= 20.0;
-      _pathIndex++;
+    // Calculate total path length and cumulative segment lengths
+    double totalDistance = 0.0;
+    final segmentLengths = <double>[];
+    
+    for (int i = 0; i < _launchPath.length - 1; i++) {
+      final segmentLength = (_launchPath[i + 1] - _launchPath[i]).length;
+      segmentLengths.add(segmentLength);
+      totalDistance += segmentLength;
     }
     
     // Check if we've reached the end of the path
-    if (_pathIndex >= _launchPath.length - 1) {
+    if (_pathProgress >= totalDistance) {
       // Ball is now free-falling in the peg field
       final finalVelocity = _calculateReleaseVelocity();
       _currentBall!.velocity = finalVelocity;
@@ -117,39 +123,69 @@ class BallLauncher {
       return true; // Ball is now released to physics
     }
     
-    // Interpolate position along current path segment
-    if (_pathIndex < _launchPath.length - 1) {
-      final current = _launchPath[_pathIndex];
-      final next = _launchPath[_pathIndex + 1];
-      final segmentProgress = (_pathProgress / 20.0).clamp(0.0, 1.0);
-      
-      final lerpedX = current.x + (next.x - current.x) * segmentProgress;
-      final lerpedY = current.y + (next.y - current.y) * segmentProgress;
-      _currentBall!.position = Vector2(lerpedX, lerpedY);
+    // Find which segment we're on and interpolate smoothly
+    double accumulatedDistance = 0.0;
+    int segmentIndex = 0;
+    
+    for (int i = 0; i < segmentLengths.length; i++) {
+      if (_pathProgress < accumulatedDistance + segmentLengths[i]) {
+        segmentIndex = i;
+        break;
+      }
+      accumulatedDistance += segmentLengths[i];
     }
+    
+    // Interpolate position within the current segment
+    final distanceInSegment = _pathProgress - accumulatedDistance;
+    final segmentProgress = distanceInSegment / segmentLengths[segmentIndex];
+    
+    final current = _launchPath[segmentIndex];
+    final next = _launchPath[segmentIndex + 1];
+    
+    final lerpedX = current.x + (next.x - current.x) * segmentProgress;
+    final lerpedY = current.y + (next.y - current.y) * segmentProgress;
+    _currentBall!.position = Vector2(lerpedX, lerpedY);
     
     return false; // Ball still traveling on guided path
   }
   
   Vector2 _calculateReleaseVelocity() {
-    // Calculate velocity based on final path segment direction
-    if (_launchPath.length < 3) {
+    // Calculate velocity based on the current path direction
+    if (_launchPath.length < 2) {
       return Vector2(0, 150); // Fallback for edge case
     }
 
-    // Use second-to-last and third-to-last points for direction
-    // (last point may be duplicate entry point)
-    final thirdToLast = _launchPath[_launchPath.length - 3];
+    // Find the segment we're currently on for accurate direction
+    int currentSegment = _launchPath.length - 2;
+    
+    // Use the last few segments to calculate smooth direction
+    // This ensures the velocity matches the curve direction
+    if (_launchPath.length >= 3) {
+      final thirdToLast = _launchPath[_launchPath.length - 3];
+      final secondToLast = _launchPath[_launchPath.length - 2];
+      final lastPoint = _launchPath[_launchPath.length - 1];
+      
+      // Calculate direction from the average of the last segments
+      // This creates a smoother transition
+      final dir1 = (secondToLast - thirdToLast).normalized();
+      final dir2 = (lastPoint - secondToLast).normalized();
+      final direction = ((dir1 + dir2) / 2).normalized();
+      
+      // Calculate speed based on launch power (150-350 pixels/second)
+      // Lower speeds for smoother entry into peg field
+      final powerMultiplier = 0.5 + (_launchPower / _maxPower) * 1.0; // 0.5 to 1.5
+      final baseSpeed = 200.0 * powerMultiplier;
+      
+      // Apply direction to create velocity vector
+      return direction * baseSpeed;
+    }
+
+    // Fallback: use last two points
     final secondToLast = _launchPath[_launchPath.length - 2];
-
-    // Calculate direction vector from path curve
-    final direction = (secondToLast - thirdToLast).normalized();
-
-    // Calculate speed based on launch power (100-300 pixels/second)
-    final powerMultiplier = 0.5 + (_launchPower / _maxPower) * 1.0; // 0.5 to 1.5
-    final baseSpeed = 200.0 * powerMultiplier;
-
-    // Apply direction to create velocity vector maintaining curve momentum
+    final lastPoint = _launchPath[_launchPath.length - 1];
+    final direction = (lastPoint - secondToLast).normalized();
+    final baseSpeed = 200.0;
+    
     return direction * baseSpeed;
   }
   

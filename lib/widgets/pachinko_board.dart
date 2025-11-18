@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:vector_math/vector_math_64.dart' as vm;
 import '../services/game_manager.dart';
 import '../models/game_state.dart';
 import '../models/peg.dart';
 import '../utils/constants.dart';
+import 'dart:math' as math;
 
 class PachinkoBoard extends StatefulWidget {
   const PachinkoBoard({super.key});
@@ -337,19 +339,48 @@ class _PachinkoBoardPainter extends CustomPainter {
       wallPaint,
     );
     
-    // Draw launch path visualization
-    final pathPaint = Paint()
-      ..color = GameConstants.primaryColor.withOpacity(0.3)
+    // Draw curved boundary at top of field
+    // This guides the ball naturally from the launch channel into the peg field
+    final curvePaint = Paint()
+      ..color = Colors.white.withOpacity(0.6)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
+      ..strokeWidth = 4.0;
     
-    final launchPath = gameManager.ballLauncher.getLaunchPath();
-    for (int i = 0; i < launchPath.length - 1; i++) {
-      canvas.drawLine(
-        Offset(launchPath[i].x, launchPath[i].y),
-        Offset(launchPath[i + 1].x, launchPath[i + 1].y),
-        pathPaint,
-      );
+    final curveStartX = GameConstants.launchChannelStartX + GameConstants.launchChannelWidth;
+    final curveEndY = GameConstants.launchChannelEndY;
+    const curveRadius = 40.0;
+    
+    // Draw the curve using an arc
+    final curveRect = Rect.fromLTWH(
+      curveStartX - curveRadius,
+      curveEndY - curveRadius,
+      curveRadius * 2,
+      curveRadius * 2,
+    );
+    
+    canvas.drawArc(
+      curveRect,
+      -math.pi / 2, // Start at top (270 degrees)
+      math.pi / 2,  // Sweep 90 degrees to the right
+      false,
+      curvePaint,
+    );
+    
+    // Draw launch path visualization
+    if (kDebugMode) {
+      final pathPaint = Paint()
+        ..color = GameConstants.primaryColor.withOpacity(0.3)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0;
+      
+      final launchPath = gameManager.ballLauncher.getLaunchPath();
+      for (int i = 0; i < launchPath.length - 1; i++) {
+        canvas.drawLine(
+          Offset(launchPath[i].x, launchPath[i].y),
+          Offset(launchPath[i + 1].x, launchPath[i + 1].y),
+          pathPaint,
+        );
+      }
     }
   }
 

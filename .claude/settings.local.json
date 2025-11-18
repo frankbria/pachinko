@@ -15,7 +15,18 @@
       "Bash(dart run build_runner build:*)",
       "Bash(flutter analyze:*)",
       "Bash(wget:*)",
-      "Bash(dart analyze:*)"
+      "Bash(dart analyze:*)",
+      "Bash(keytool:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(flutter build:*)",
+      "Bash(./gradlew clean:*)",
+      "Bash(flutter clean:*)",
+      "Bash(flutter pub upgrade:*)",
+      "Bash(tools/flutter/bin/flutter analyze:*)",
+      "Bash(./gradlew:*)",
+      "Bash(flutter --version:*)",
+      "Bash(jarsigner:*)",
+      "Bash(apksigner verify:*)"
     ],
     "deny": [],
     "ask": []

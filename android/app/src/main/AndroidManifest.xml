@@ -1,6 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Internet permission for potential future features (analytics, leaderboards) -->
+    <!-- Currently unused - game is fully offline -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
-        android:label="pachinko_game"
+        android:label="Pachinko"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

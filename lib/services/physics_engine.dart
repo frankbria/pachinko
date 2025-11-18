@@ -50,6 +50,46 @@ class PhysicsEngine {
       ball.velocity.x = -ball.velocity.x * _damping;
     }
     
+    // Top curved boundary collision detection
+    // This matches the visual curve at the top of the field
+    final curveStartX = GameConstants.launchChannelStartX + GameConstants.launchChannelWidth;
+    final curveEndY = GameConstants.launchChannelEndY;
+    const curveRadius = 40.0;
+    final curveCenterX = curveStartX - curveRadius;
+    final curveCenterY = curveEndY - curveRadius;
+    
+    // Check if ball is in the region of the curved boundary
+    if (ball.position.y <= curveEndY && 
+        ball.position.x >= curveCenterX - curveRadius &&
+        ball.position.x <= curveStartX) {
+      
+      // Calculate distance from curve center
+      final dx = ball.position.x - curveCenterX;
+      final dy = ball.position.y - curveCenterY;
+      final distanceFromCenter = math.sqrt(dx * dx + dy * dy);
+      
+      // Check if ball is colliding with the inner edge of the curve
+      if (distanceFromCenter < curveRadius + ball.radius && 
+          distanceFromCenter > curveRadius - ball.radius) {
+        
+        // Calculate collision normal (pointing away from curve center)
+        final normalX = dx / distanceFromCenter;
+        final normalY = dy / distanceFromCenter;
+        
+        // Push ball outside the curve boundary
+        final overlap = (curveRadius + ball.radius) - distanceFromCenter;
+        if (overlap > 0) {
+          ball.position.x += normalX * overlap;
+          ball.position.y += normalY * overlap;
+        }
+        
+        // Reflect velocity along the normal
+        final dotProduct = ball.velocity.x * normalX + ball.velocity.y * normalY;
+        ball.velocity.x = (ball.velocity.x - 2 * dotProduct * normalX) * _damping;
+        ball.velocity.y = (ball.velocity.y - 2 * dotProduct * normalY) * _damping;
+      }
+    }
+    
     // Bottom boundary (ball has left the board)
     if (ball.position.y > GameConstants.boardHeight + ball.radius) {
       ball.isActive = false;
