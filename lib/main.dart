@@ -8,12 +8,21 @@ import 'services/achievement_service.dart';
 import 'screens/menu_screen.dart';
 import 'utils/constants.dart';
 
-void main() {
-  runApp(const PachinkoApp());
+void main() async {
+  // Ensure Flutter bindings are initialized for async main()
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Preload audio assets before app starts
+  final audioService = AudioService();
+  await audioService.initialize();
+
+  runApp(PachinkoApp(audioService: audioService));
 }
 
 class PachinkoApp extends StatefulWidget {
-  const PachinkoApp({super.key});
+  final AudioService audioService;
+
+  const PachinkoApp({super.key, required this.audioService});
 
   @override
   State<PachinkoApp> createState() => _PachinkoAppState();
@@ -27,9 +36,8 @@ class _PachinkoAppState extends State<PachinkoApp> {
   @override
   void initState() {
     super.initState();
-    // Create and initialize AudioService
-    _audioService = AudioService();
-    _audioService.initialize();
+    // Use preinitialized AudioService from widget
+    _audioService = widget.audioService;
 
     // Initialize StorageService and AchievementService asynchronously
     _initializeServices();

@@ -835,4 +835,117 @@ void main() {
       expect(listenerCallCount, equals(initialCallCount));
     });
   });
+
+  group('Bonus Screen Auto-Dismiss -', () {
+    test('given bonus triggered, when 2.5 seconds elapse, then bonus flag resets', () async {
+      /// Validates bonus overlay auto-dismisses after 2.5 seconds
+
+      // Given
+      final gameState = GameState();
+      gameState.startNewGame();
+      gameState.triggerSpecialBonus();
+      expect(gameState.specialBonusTriggered, isTrue);
+      expect(gameState.bonusOverlayOpacity, equals(1.0));
+
+      // When - wait 2.6 seconds (past 2.5s timer)
+      await Future.delayed(const Duration(milliseconds: 2600));
+
+      // Then
+      expect(gameState.specialBonusTriggered, isFalse);
+      expect(gameState.bonusOverlayOpacity, equals(0.0));
+    });
+
+    test('given bonus triggered, when less than 2 seconds elapse, then bonus still visible', () async {
+      /// Validates bonus overlay stays visible during timer period
+
+      // Given
+      final gameState = GameState();
+      gameState.startNewGame();
+      gameState.triggerSpecialBonus();
+
+      // When - wait 1 second (less than 2.5s timer)
+      await Future.delayed(const Duration(milliseconds: 1000));
+
+      // Then - bonus still visible
+      expect(gameState.specialBonusTriggered, isTrue);
+      expect(gameState.bonusOverlayOpacity, equals(1.0));
+    });
+
+    test('given bonus triggered twice in quick succession, when timer runs, then only one dismissal occurs', () async {
+      /// Validates timer cancellation prevents multiple dismissals
+      /// Second trigger should cancel first timer and start new one
+
+      // Given
+      final gameState = GameState();
+      gameState.startNewGame();
+
+      gameState.triggerSpecialBonus();
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Reset bonus flag to allow second trigger
+      gameState.resetLevel();
+      gameState.startNewGame();
+
+      gameState.triggerSpecialBonus(); // Trigger again (should cancel first timer)
+
+      // When - wait 2.6 seconds from SECOND trigger
+      await Future.delayed(const Duration(milliseconds: 2600));
+
+      // Then - bonus dismissed only once
+      expect(gameState.specialBonusTriggered, isFalse);
+      expect(gameState.bonusOverlayOpacity, equals(0.0));
+    });
+
+    test('given bonus triggered, when resetLevel called, then timer cancelled and bonus cleared', () {
+      /// Validates resetLevel() cancels pending bonus timer
+
+      // Given
+      final gameState = GameState();
+      gameState.startNewGame();
+      gameState.triggerSpecialBonus();
+      expect(gameState.specialBonusTriggered, isTrue);
+
+      // When
+      gameState.resetLevel();
+
+      // Then - bonus cleared immediately
+      expect(gameState.specialBonusTriggered, isFalse);
+      expect(gameState.bonusOverlayOpacity, equals(0.0));
+    });
+
+    test('given bonus triggered, when GameState disposed, then timer cancelled without error', () {
+      /// Validates dispose() properly cleans up timer
+
+      // Given
+      final gameState = GameState();
+      gameState.startNewGame();
+      gameState.triggerSpecialBonus();
+
+      // When - dispose should not throw
+      expect(() => gameState.dispose(), returnsNormally);
+    });
+
+    test('given bonus triggered, when dismissed by timer, then notifyListeners triggered', () async {
+      /// Validates ChangeNotifier notification on auto-dismiss
+
+      // Given
+      final gameState = GameState();
+      gameState.startNewGame();
+      int listenerCallCount = 0;
+      gameState.addListener(() {
+        listenerCallCount++;
+      });
+
+      final callCountBeforeBonus = listenerCallCount;
+      gameState.triggerSpecialBonus();
+      final callCountAfterBonus = listenerCallCount;
+
+      // When - wait for auto-dismiss
+      await Future.delayed(const Duration(milliseconds: 2600));
+
+      // Then - listener called on both trigger and dismiss
+      expect(callCountAfterBonus, greaterThan(callCountBeforeBonus)); // Called on trigger
+      expect(listenerCallCount, greaterThan(callCountAfterBonus)); // Called on auto-dismiss
+    });
+  });
 }

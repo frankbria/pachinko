@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:vector_math/vector_math_64.dart';
 import 'package:flutter/material.dart';
@@ -25,7 +26,11 @@ class GameState extends ChangeNotifier {
   GamePhase _phase = GamePhase.loading;
   bool _specialBonusTriggered = false;
   int _bonusBallsToAdd = 0;
-  
+
+  // Bonus screen auto-dismiss timer
+  Timer? _bonusDisplayTimer;
+  double _bonusOverlayOpacity = 0.0;
+
   // Getters
   Level? get currentLevel => _currentLevel;
   int get currentLevelNumber => _currentLevelNumber;
@@ -35,6 +40,7 @@ class GameState extends ChangeNotifier {
   List<Ball> get activeBalls => List.unmodifiable(_activeBalls);
   GamePhase get phase => _phase;
   bool get specialBonusTriggered => _specialBonusTriggered;
+  double get bonusOverlayOpacity => _bonusOverlayOpacity;
   bool get canLaunchBall => _phase == GamePhase.ready && _ballsRemaining > 0;
   bool get isGameOver => _ballsRemaining <= 0 && _activeBalls.isEmpty;
   
@@ -89,10 +95,11 @@ class GameState extends ChangeNotifier {
 
   void triggerSpecialBonus() {
     if (_specialBonusTriggered) return;
-    
+
     _specialBonusTriggered = true;
+    _bonusOverlayOpacity = 1.0; // Show bonus overlay
     _bonusBallsToAdd = 5 + (_currentLevelNumber ~/ 2); // More bonus balls on higher levels
-    
+
     // Spawn bonus balls immediately
     final level = _currentLevel;
     if (level != null) {
@@ -108,7 +115,15 @@ class GameState extends ChangeNotifier {
       }
       _bonusBallsToAdd = 0; // Reset since we added them immediately
     }
-    
+
+    // Auto-dismiss bonus overlay after 2.5 seconds
+    _bonusDisplayTimer?.cancel();
+    _bonusDisplayTimer = Timer(const Duration(milliseconds: 2500), () {
+      _specialBonusTriggered = false;
+      _bonusOverlayOpacity = 0.0;
+      notifyListeners();
+    });
+
     notifyListeners();
   }
 
@@ -126,7 +141,9 @@ class GameState extends ChangeNotifier {
     _ballsRemaining = _totalBalls;
     _phase = GamePhase.ready;
     _specialBonusTriggered = false;
+    _bonusOverlayOpacity = 0.0;
     _bonusBallsToAdd = 0;
+    _bonusDisplayTimer?.cancel(); // Cancel any pending bonus timer
     notifyListeners();
   }
 
@@ -147,5 +164,11 @@ class GameState extends ChangeNotifier {
   void updatePhase(GamePhase newPhase) {
     _phase = newPhase;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _bonusDisplayTimer?.cancel();
+    super.dispose();
   }
 }

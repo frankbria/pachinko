@@ -482,23 +482,37 @@ class _PachinkoBoardPainter extends CustomPainter {
   }
 
   void _drawSpecialBonusEffect(Canvas canvas, Size size, double scale) {
+    final gameState = gameManager.gameState;
+    final opacity = gameState.bonusOverlayOpacity;
+
+    // Background overlay with opacity
     final paint = Paint()
-      ..color = GameConstants.bonusBallColor.withOpacity(0.3)
+      ..color = GameConstants.bonusBallColor.withOpacity(opacity * 0.3)
       ..style = PaintingStyle.fill;
-    
+
     canvas.drawRect(
       Rect.fromLTWH(0, 0, GameConstants.boardWidth, GameConstants.boardHeight),
       paint,
     );
-    
-    // Draw bonus text
+
+    // Calculate bonus balls amount
+    final bonusBalls = 5 + (gameState.currentLevelNumber ~/ 2);
+
+    // Draw bonus text with opacity and shadow
     final textPainter = TextPainter(
-      text: const TextSpan(
-        text: 'SPECIAL BONUS!',
+      text: TextSpan(
+        text: '+$bonusBalls BALLS!',
         style: TextStyle(
-          color: GameConstants.bonusBallColor,
-          fontSize: 24,
+          color: GameConstants.bonusBallColor.withOpacity(opacity),
+          fontSize: 36,
           fontWeight: FontWeight.bold,
+          shadows: [
+            Shadow(
+              color: Colors.black.withOpacity(opacity * 0.5),
+              blurRadius: 8,
+              offset: const Offset(2, 2),
+            ),
+          ],
         ),
       ),
       textDirection: TextDirection.ltr,

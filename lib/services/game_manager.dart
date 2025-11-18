@@ -85,12 +85,13 @@ class GameManager extends ChangeNotifier {
   void launchBall() {
     if (!_gameState.canLaunchBall) return;
 
+    // Play launch sound IMMEDIATELY - before any state changes
+    // This eliminates perceived delay between visual action and audio
+    _audioService?.playLaunch();
+
     final ball = _ballLauncher.launch();
     if (ball != null) {
       _gameState.launchBall(ball);
-
-      // Play launch sound
-      _audioService?.playLaunch();
 
       // Track ball launch achievement
       _achievementService?.trackBallLaunched();
