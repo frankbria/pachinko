@@ -81,3 +81,60 @@ Phase 2 successfully delivered comprehensive feature enhancements including audi
 **Known Issues:**
 - 6 golden test mismatches (expected after animation changes, can update baselines)
 - Git push blocked by pre-existing large file (tools/flutter.tar.xz requires Git LFS)
+
+**⚠️ PHASE 2 PLANNING GAP IDENTIFIED:**
+Manual gameplay testing during Phase 3 Task 3.2 revealed 5 partial test results requiring visual/audio polish (Tests 1, 3, 5, 7, 9). Phase 2 completion criteria focused on test metrics (96.4% coverage, 440 tests) without mandatory manual gameplay validation to catch UX issues. **Phase 2.5 Polish Phase initiated 2025-11-17 to refine gameplay UX before resuming Phase 3.**
+
+**CRITICAL CLARIFICATION:** Initial assessment that persistence/achievements were broken was INCORRECT. Follow-up testing (Tests 11-14) confirmed all core systems functional. Issues are visual/audio polish, not broken implementation.
+
+---
+
+## Phase 2.5 – Gameplay Polish & UX Refinement (POLISH PHASE)
+
+**Status:** 🚧 ACTIVE (Started 2025-11-17, revised same day)
+
+**Trigger:** Phase 3 Task 3.2 manual testing revealed 5 partial test results requiring polish.
+
+**Reclassification:** Originally marked as "Corrective Phase" but reclassified to "Polish Phase" after verifying all core systems functional (persistence, achievements, scoring all work correctly).
+
+**Partial Test Results Requiring Polish:**
+- **Test 1 (Partial):** Ball launch trajectory stutters, purple debug line visible, unnatural motion transitions
+- **Test 3 (Partial):** Pegs don't return to normal state after hit (confusing visual)
+- **Test 5 (Partial):** Launch sound delayed by few milliseconds
+- **Test 7 (Partial):** Bonus screen stays visible for entire level (should auto-dismiss)
+- **Test 9 (Partial):** No visual feedback for bonuses (points/balls), confetti effect missing
+
+**Verified Working (Tests 11-14):** High score persistence ✅, achievement progress ✅, achievement persistence ✅, achievement unlocks ✅
+
+**Objective:** Polish visual and audio UX to achieve 15/15 manual tests FULL PASS before resuming Phase 3.
+
+**Involved Agent:**
+- Agent_Gameplay_Polish (Tasks 2.5.1 - 2.5.6)
+
+**Task Breakdown:**
+- [Task 2.5.1 - Ball Launch Visual & Physics Polish](.apm/Memory/Phase_02_5_Critical_Gameplay_Fixes/Task_2_5_1_Ball_Launch_Polish.md) - PENDING
+- [Task 2.5.2 - Peg Animation Reset & Lifecycle](.apm/Memory/Phase_02_5_Critical_Gameplay_Fixes/Task_2_5_2_Peg_Animation_Reset.md) - PENDING
+- [Task 2.5.3 - Audio Timing & Bonus Screen Behavior](.apm/Memory/Phase_02_5_Critical_Gameplay_Fixes/Task_2_5_3_Audio_Bonus_Screen.md) - PENDING
+- [Task 2.5.4 - Visual Bonus Feedback & Confetti Effect](.apm/Memory/Phase_02_5_Critical_Gameplay_Fixes/Task_2_5_4_Visual_Bonus_Feedback.md) - PENDING
+- [Task 2.5.5 - Achievement Toast Notifications](.apm/Memory/Phase_02_5_Critical_Gameplay_Fixes/Task_2_5_5_Achievement_Toasts.md) - PENDING
+- [Task 2.5.6 - Field Boundary Enhancements & Manual Validation](.apm/Memory/Phase_02_5_Critical_Gameplay_Fixes/Task_2_5_6_Boundaries_Validation.md) - PENDING
+
+**Phase 2.5 Success Criteria:**
+- ✅ All 15 manual tests FULL PASS (no partial results)
+- ✅ No visual artifacts or debug overlays (purple trajectory line hidden)
+- ✅ All audio perfectly synchronized (no delays)
+- ✅ All animations smooth and complete (pegs reset, bonus screen dismisses)
+- ✅ Visual feedback for all game events (bonuses, achievements)
+- ✅ 60 FPS performance maintained
+- ✅ All 440+ tests still passing
+- ✅ User confirmation: "game ready for production"
+
+**Phase 2.5 → Phase 3 Gate:**
+Phase 3 will resume at Task 3.4 after Phase 2.5 completion and user approval.
+
+**Process Improvements from Phase 2.5:**
+- **NEW REQUIREMENT:** All phases must include manual gameplay validation (functional + UX polish)
+- **UPDATED PHASE GATE:** Test metrics + manual validation + polish quality
+- **UPDATED TESTING:** Manual testing catches UX issues unit tests miss
+- **QUALITY STANDARD:** Functional + Polished + User Approved = Phase Complete
+- **DEBUG ARTIFACTS:** Must be hidden/removed in production builds before phase completion
