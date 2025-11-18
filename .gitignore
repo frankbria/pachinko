@@ -42,6 +42,11 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Android signing credentials (NEVER commit these)
+android/key.properties
+*.jks
+*.keystore
+
 # Flutter SDK (local installation)
 /tools/flutter/
 
