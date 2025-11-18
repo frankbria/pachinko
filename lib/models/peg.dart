@@ -20,7 +20,8 @@ class Peg {
   bool isAnimating = false;
   double pulseProgress = 0.0; // 0.0 to 1.0 for pulse animation
   double shimmerIntensity = 0.0; // 0.0 to 1.0 for special peg shimmer
-  int _lastHitTime = 0;
+  double _hitAnimationTimer = 0.0; // Timer for hit animation (in seconds)
+  static const double _hitAnimationDuration = 0.8; // 800ms
 
   Peg({
     required this.position,
@@ -59,13 +60,16 @@ class Peg {
   }
 
   void onHit() {
-    hasBeenHit = true;
-    isAnimating = true;
-    pulseProgress = 0.0;
-    _lastHitTime = DateTime.now().millisecondsSinceEpoch;
+    // Only trigger animation on first hit
+    if (!hasBeenHit) {
+      hasBeenHit = true;
+      isAnimating = true;
+      pulseProgress = 0.0;
+      _hitAnimationTimer = _hitAnimationDuration; // Start timer at full duration
 
-    if (type == PegType.special) {
-      isHighlighted = false;
+      if (type == PegType.special && isHighlighted) {
+        isHighlighted = false;
+      }
     }
   }
 
@@ -74,6 +78,7 @@ class Peg {
     isAnimating = false;
     pulseProgress = 0.0;
     shimmerIntensity = 0.0;
+    _hitAnimationTimer = 0.0;
 
     if (type == PegType.special) {
       isHighlighted = true;
@@ -83,13 +88,18 @@ class Peg {
 
   /// Update animation state based on time
   void updateAnimation(double deltaTime) {
-    // Handle pulse animation (on hit)
-    if (pulseProgress < 1.0 && _lastHitTime > 0) {
-      final elapsed = DateTime.now().millisecondsSinceEpoch - _lastHitTime;
-      pulseProgress = (elapsed / 250.0).clamp(0.0, 1.0); // 250ms pulse duration
+    // Handle pulse animation (on hit) - 800ms fade-back duration
+    if (_hitAnimationTimer > 0.0) {
+      _hitAnimationTimer -= deltaTime;
 
-      if (pulseProgress >= 1.0) {
-        isAnimating = false; // Pulse complete
+      if (_hitAnimationTimer <= 0.0) {
+        // Animation complete - reset to normal
+        _hitAnimationTimer = 0.0;
+        pulseProgress = 1.0;
+        isAnimating = false;
+      } else {
+        // Calculate progress (0.0 -> 1.0 as timer counts down)
+        pulseProgress = 1.0 - (_hitAnimationTimer / _hitAnimationDuration);
       }
     }
 
@@ -103,11 +113,27 @@ class Peg {
   }
 
   Color get renderColor {
+    // Determine base color for this peg
+    Color baseColor = color;
+
+    // Special pegs show shimmer effect when highlighted and unhit
     if (type == PegType.special && isHighlighted) {
       // Apply shimmer intensity to yellow glow
-      return Color.lerp(color, const Color(0xFFFFFF00), 0.5 + shimmerIntensity)!;
+      baseColor = Color.lerp(color, const Color(0xFFFFFF00), 0.5 + shimmerIntensity)!;
     }
-    return hasBeenHit ? color.withOpacity(0.6) : color;
+
+    // Apply hit animation effect if animating
+    // pulseProgress: 0.0 (start) -> 1.0 (complete)
+    // Inverted for fade: 1.0 (bright white) -> 0.0 (normal color)
+    if (isAnimating && pulseProgress < 1.0) {
+      final fadeIntensity = 1.0 - pulseProgress; // 1.0 -> 0.0 over animation
+      const white = Color(0xFFFFFFFF);
+      final hitColor = Color.lerp(baseColor, white, fadeIntensity * 0.7);
+      return hitColor ?? baseColor;
+    }
+
+    // After animation completes, return to normal base color
+    return baseColor;
   }
 
   /// Get pulse glow radius for rendering
