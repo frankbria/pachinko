@@ -9,12 +9,15 @@ import 'package:provider/provider.dart';
 
 import 'package:pachinko_game/main.dart';
 import 'package:pachinko_game/services/game_manager.dart';
+import 'package:pachinko_game/services/audio_service.dart';
 import 'package:pachinko_game/screens/menu_screen.dart';
 
 void main() {
   testWidgets('Pachinko app launches with MenuScreen', (WidgetTester tester) async {
     // Build our app and trigger a frame
-    await tester.pumpWidget(const PachinkoApp());
+    final audioService = AudioService();
+    await audioService.initialize();
+    await tester.pumpWidget(PachinkoApp(audioService: audioService));
 
     // Verify that MenuScreen is displayed
     expect(find.byType(MenuScreen), findsOneWidget);
@@ -22,11 +25,15 @@ void main() {
     // Verify that GameManager Provider is available
     final BuildContext context = tester.element(find.byType(MenuScreen));
     expect(Provider.of<GameManager>(context, listen: false), isNotNull);
+
+    audioService.dispose();
   });
 
   testWidgets('PachinkoApp provides GameManager through Provider', (WidgetTester tester) async {
     // Build the app
-    await tester.pumpWidget(const PachinkoApp());
+    final audioService = AudioService();
+    await audioService.initialize();
+    await tester.pumpWidget(PachinkoApp(audioService: audioService));
 
     // Verify Provider setup by accessing GameManager
     final BuildContext context = tester.element(find.byType(MaterialApp));
@@ -34,5 +41,7 @@ void main() {
 
     expect(gameManager, isNotNull);
     expect(gameManager, isA<GameManager>());
+
+    audioService.dispose();
   });
 }

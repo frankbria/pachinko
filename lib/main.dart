@@ -7,6 +7,8 @@ import 'services/storage_service.dart';
 import 'services/achievement_service.dart';
 import 'screens/menu_screen.dart';
 import 'utils/constants.dart';
+import 'widgets/achievement_toast_overlay.dart';
+import 'models/achievement.dart';
 
 void main() async {
   // Ensure Flutter bindings are initialized for async main()
@@ -48,12 +50,26 @@ class _PachinkoAppState extends State<PachinkoApp> {
     final storageService = StorageService(prefs: prefs);
     final achievementService = await AchievementService.create(prefs);
 
+    // Set up achievement unlock callback
+    achievementService.onAchievementUnlocked = _onAchievementUnlocked;
+
     if (mounted) {
       setState(() {
         _storageService = storageService;
         _achievementService = achievementService;
       });
     }
+  }
+
+  /// Handle achievement unlock by showing toast notification
+  void _onAchievementUnlocked(Achievement achievement) {
+    // Use a post-frame callback to ensure the overlay is available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final overlay = AchievementToastOverlay.of(context);
+        overlay?.showAchievementToast(achievement);
+      }
+    });
   }
 
   @override
@@ -82,21 +98,23 @@ class _PachinkoAppState extends State<PachinkoApp> {
           ),
         ),
       ],
-      child: MaterialApp(
-        title: GameStrings.appName,
-        theme: ThemeData(
-          colorScheme: const ColorScheme.dark(
-            primary: GameConstants.primaryColor,
-            primaryContainer: GameConstants.primaryVariantColor,
-            secondary: GameConstants.secondaryColor,
-            surface: GameConstants.surfaceColor,
-            error: GameConstants.errorColor,
+      child: AchievementToastOverlay(
+        child: MaterialApp(
+          title: GameStrings.appName,
+          theme: ThemeData(
+            colorScheme: const ColorScheme.dark(
+              primary: GameConstants.primaryColor,
+              primaryContainer: GameConstants.primaryVariantColor,
+              secondary: GameConstants.secondaryColor,
+              surface: GameConstants.surfaceColor,
+              error: GameConstants.errorColor,
+            ),
+            useMaterial3: true,
+            fontFamily: 'Roboto',
           ),
-          useMaterial3: true,
-          fontFamily: 'Roboto',
+          home: const MenuScreen(),
+          debugShowCheckedModeBanner: false,
         ),
-        home: const MenuScreen(),
-        debugShowCheckedModeBanner: false,
       ),
     );
   }
