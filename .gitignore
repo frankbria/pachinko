@@ -52,3 +52,6 @@ android/key.properties
 
 # Linux build files
 /linux/flutter/ephemeral/.claude/settings.local.json
+*.tar*
+/tools/*.tar*
+tools/flutter.tar.xz
