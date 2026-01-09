@@ -1,5 +1,7 @@
 # Pachinko Game 🎮
 
+[![Follow on X](https://img.shields.io/twitter/follow/FrankBria18044?style=social)](https://x.com/FrankBria18044)
+
 A modern, graphical Pachinko idle game built with Flutter for Android. Features authentic pachinko machine mechanics with realistic ball physics, strategic scoring, and beautiful visual effects.
 
 ## 🚀 Project Status
