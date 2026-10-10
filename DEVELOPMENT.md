@@ -71,10 +71,10 @@ git checkout -b 003-feature-name
 
 ```bash
 # Run tests before committing
-flutter test
+flutter test --exclude-tags golden
 
 # Check code coverage
-flutter test --coverage
+flutter test --coverage --exclude-tags golden
 genhtml coverage/lcov.info -o coverage/html
 
 # Commit with conventional format
@@ -94,7 +94,7 @@ git push origin 003-feature-name
 ### Completing a Feature
 
 **Checklist before merging to master**:
-- [ ] All tests passing (`flutter test`)
+- [ ] All tests passing (`flutter test --exclude-tags golden`)
 - [ ] Code coverage ≥85% for new code
 - [ ] Code formatted (`dart format`)
 - [ ] Code analyzed (`flutter analyze`)
@@ -105,9 +105,9 @@ git push origin 003-feature-name
 
 ```bash
 # Final verification
-flutter test
+flutter test --exclude-tags golden
 flutter analyze
-dart format --set-exit-if-changed
+dart format --set-exit-if-changed lib/ test/
 
 # Merge to master
 git checkout master
@@ -209,16 +209,16 @@ test/
 
 ```bash
 # All tests
-flutter test
+flutter test --exclude-tags golden
 
 # Specific test file
 flutter test test/unit/particle_system_test.dart
 
 # With coverage
-flutter test --coverage
+flutter test --coverage --exclude-tags golden
 
 # Update golden files (visual regression)
-flutter test --update-goldens
+flutter test --tags golden --update-goldens
 
 # Watch mode (rerun on changes)
 flutter test --watch
@@ -286,7 +286,7 @@ lib/
 **Tests failing after changes**:
 ```bash
 # Check which tests are failing
-flutter test --reporter expanded
+flutter test --exclude-tags golden --reporter expanded
 
 # Update golden files if visual changes are intentional
 flutter test --update-goldens test/integration/visual_regression_test.dart
@@ -295,7 +295,7 @@ flutter test --update-goldens test/integration/visual_regression_test.dart
 **Coverage not meeting 85%**:
 ```bash
 # Generate detailed coverage report
-flutter test --coverage
+flutter test --coverage --exclude-tags golden
 genhtml coverage/lcov.info -o coverage/html
 # Open coverage/html/index.html in browser
 ```
