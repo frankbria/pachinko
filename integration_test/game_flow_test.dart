@@ -8,6 +8,7 @@ import 'package:pachinko_game/screens/menu_screen.dart';
 import 'package:pachinko_game/screens/game_screen.dart';
 import 'package:pachinko_game/services/game_manager.dart';
 import 'package:pachinko_game/models/game_state.dart';
+import 'package:pachinko_game/models/peg.dart';
 import 'package:pachinko_game/utils/constants.dart';
 
 /// Integration tests for complete game flow scenarios.

@@ -35,6 +35,9 @@ void main() {
     when(mockGameState.activeBalls).thenReturn([]);
     when(mockGameState.canLaunchBall).thenReturn(true);
     when(mockGameState.phase).thenReturn(GamePhase.ready);
+    when(mockGameState.floatingTexts).thenReturn([]);
+    when(mockGameState.confettiParticles).thenReturn([]);
+    when(mockGameState.ballCountHighlighted).thenReturn(false);
 
     // Stub BallLauncher properties
     when(mockBallLauncher.phase).thenReturn(LaunchPhase.ready);

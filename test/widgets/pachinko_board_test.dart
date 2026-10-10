@@ -46,6 +46,11 @@ void main() {
     when(mockGameState.score).thenReturn(0);
     when(mockGameState.ballsRemaining).thenReturn(20);
     when(mockGameState.currentLevelNumber).thenReturn(1);
+    when(mockGameState.floatingTexts).thenReturn([]);
+    when(mockGameState.confettiParticles).thenReturn([]);
+    when(mockGameState.ballCountHighlighted).thenReturn(false);
+    // Only read while the bonus overlay is shown; fully visible so bonus tests render it
+    when(mockGameState.bonusOverlayOpacity).thenReturn(1.0);
 
     // Stub BallLauncher properties
     when(mockBallLauncher.phase).thenReturn(LaunchPhase.ready);
@@ -505,7 +510,7 @@ void main() {
         find.byType(PachinkoBoard),
         matchesGoldenFile('goldens/pachinko_board_empty.png'),
       );
-    });
+    }, tags: ['golden']);
 
     /// GIVEN board with pegs and slots
     /// WHEN rendering board
@@ -535,7 +540,7 @@ void main() {
         find.byType(PachinkoBoard),
         matchesGoldenFile('goldens/pachinko_board_with_pegs_slots.png'),
       );
-    });
+    }, tags: ['golden']);
 
     /// GIVEN board with active balls
     /// WHEN rendering board
@@ -556,7 +561,7 @@ void main() {
         find.byType(PachinkoBoard),
         matchesGoldenFile('goldens/pachinko_board_with_balls.png'),
       );
-    });
+    }, tags: ['golden']);
 
     /// GIVEN user dragging with power indicator visible
     /// WHEN rendering board during drag
@@ -582,7 +587,7 @@ void main() {
 
       await gesture.up();
       await tester.pumpAndSettle();
-    });
+    }, tags: ['golden']);
 
     /// GIVEN specialBonusTriggered=true
     /// WHEN rendering board
@@ -598,7 +603,7 @@ void main() {
         find.byType(PachinkoBoard),
         matchesGoldenFile('goldens/pachinko_board_special_bonus.png'),
       );
-    });
+    }, tags: ['golden']);
 
     /// GIVEN board with launch channel and area visualization
     /// WHEN rendering board
@@ -619,7 +624,7 @@ void main() {
         find.byType(PachinkoBoard),
         matchesGoldenFile('goldens/pachinko_board_launch_channel.png'),
       );
-    });
+    }, tags: ['golden']);
   });
 
   group('PachinkoBoard Edge Cases', () {
@@ -906,7 +911,7 @@ void main() {
 
       await gesture.up();
       await tester.pumpAndSettle();
-    });
+    }, tags: ['golden']);
 
     /// GIVEN peg hit pulse effect
     /// WHEN rendered mid-animation
@@ -924,7 +929,7 @@ void main() {
         find.byType(PachinkoBoard),
         matchesGoldenFile('goldens/peg_hit_pulse.png'),
       );
-    });
+    }, tags: ['golden']);
 
     /// GIVEN special peg shimmer
     /// WHEN rendered
@@ -941,7 +946,7 @@ void main() {
         find.byType(PachinkoBoard),
         matchesGoldenFile('goldens/special_peg_shimmer.png'),
       );
-    });
+    }, tags: ['golden']);
 
     /// GIVEN bonus flash effect
     /// WHEN rendered
@@ -957,6 +962,6 @@ void main() {
         find.byType(PachinkoBoard),
         matchesGoldenFile('goldens/bonus_flash.png'),
       );
-    });
+    }, tags: ['golden']);
   });
 }

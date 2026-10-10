@@ -8,10 +8,12 @@ import 'dart:ui' as _i6;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:pachinko_game/models/ball.dart' as _i7;
 import 'package:pachinko_game/models/ball_launcher.dart' as _i4;
+import 'package:pachinko_game/models/confetti_particle.dart' as _i9;
 import 'package:pachinko_game/models/game_state.dart' as _i2;
 import 'package:pachinko_game/services/game_manager.dart' as _i5;
 import 'package:pachinko_game/services/physics_engine.dart' as _i3;
-import 'package:vector_math/vector_math_64.dart' as _i8;
+import 'package:pachinko_game/widgets/floating_text.dart' as _i8;
+import 'package:vector_math/vector_math_64.dart' as _i10;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -273,6 +275,12 @@ class MockGameState extends _i1.Mock implements _i2.GameState {
       ) as bool);
 
   @override
+  double get bonusOverlayOpacity => (super.noSuchMethod(
+        Invocation.getter(#bonusOverlayOpacity),
+        returnValue: 0.0,
+      ) as double);
+
+  @override
   bool get canLaunchBall => (super.noSuchMethod(
         Invocation.getter(#canLaunchBall),
         returnValue: false,
@@ -281,6 +289,24 @@ class MockGameState extends _i1.Mock implements _i2.GameState {
   @override
   bool get isGameOver => (super.noSuchMethod(
         Invocation.getter(#isGameOver),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  List<_i8.FloatingText> get floatingTexts => (super.noSuchMethod(
+        Invocation.getter(#floatingTexts),
+        returnValue: <_i8.FloatingText>[],
+      ) as List<_i8.FloatingText>);
+
+  @override
+  List<_i9.ConfettiParticle> get confettiParticles => (super.noSuchMethod(
+        Invocation.getter(#confettiParticles),
+        returnValue: <_i9.ConfettiParticle>[],
+      ) as List<_i9.ConfettiParticle>);
+
+  @override
+  bool get ballCountHighlighted => (super.noSuchMethod(
+        Invocation.getter(#ballCountHighlighted),
         returnValue: false,
       ) as bool);
 
@@ -346,6 +372,67 @@ class MockGameState extends _i1.Mock implements _i2.GameState {
       );
 
   @override
+  void addFloatingText(
+    String? text,
+    _i6.Offset? position,
+    _i6.Color? color,
+  ) =>
+      super.noSuchMethod(
+        Invocation.method(
+          #addFloatingText,
+          [
+            text,
+            position,
+            color,
+          ],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void updateFloatingTexts(double? deltaTime) => super.noSuchMethod(
+        Invocation.method(
+          #updateFloatingTexts,
+          [deltaTime],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void spawnConfetti(
+    _i10.Vector2? position,
+    int? count,
+  ) =>
+      super.noSuchMethod(
+        Invocation.method(
+          #spawnConfetti,
+          [
+            position,
+            count,
+          ],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void updateConfetti(double? deltaTime) => super.noSuchMethod(
+        Invocation.method(
+          #updateConfetti,
+          [deltaTime],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void updateBallCountHighlight(double? deltaTime) => super.noSuchMethod(
+        Invocation.method(
+          #updateBallCountHighlight,
+          [deltaTime],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
   void nextLevel() => super.noSuchMethod(
         Invocation.method(
           #nextLevel,
@@ -391,6 +478,15 @@ class MockGameState extends _i1.Mock implements _i2.GameState {
       );
 
   @override
+  void dispose() => super.noSuchMethod(
+        Invocation.method(
+          #dispose,
+          [],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
   void addListener(_i6.VoidCallback? listener) => super.noSuchMethod(
         Invocation.method(
           #addListener,
@@ -404,15 +500,6 @@ class MockGameState extends _i1.Mock implements _i2.GameState {
         Invocation.method(
           #removeListener,
           [listener],
-        ),
-        returnValueForMissingStub: null,
-      );
-
-  @override
-  void dispose() => super.noSuchMethod(
-        Invocation.method(
-          #dispose,
-          [],
         ),
         returnValueForMissingStub: null,
       );
@@ -490,11 +577,11 @@ class MockBallLauncher extends _i1.Mock implements _i4.BallLauncher {
       );
 
   @override
-  List<_i8.Vector2> getLaunchPath() => (super.noSuchMethod(
+  List<_i10.Vector2> getLaunchPath() => (super.noSuchMethod(
         Invocation.method(
           #getLaunchPath,
           [],
         ),
-        returnValue: <_i8.Vector2>[],
-      ) as List<_i8.Vector2>);
+        returnValue: <_i10.Vector2>[],
+      ) as List<_i10.Vector2>);
 }

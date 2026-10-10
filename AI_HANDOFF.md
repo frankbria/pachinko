@@ -118,7 +118,7 @@ lib/
 ## 🔧 DEVELOPMENT ENVIRONMENT
 
 ### **Flutter Setup (Local)**
-- **Flutter Version**: 3.24.5 stable
+- **Flutter Version**: 3.38.1 stable (Dart 3.10.0)
 - **Location**: `/home/frankbria/projects/pachinko/tools/flutter/`
 - **PATH Required**: `export PATH="/home/frankbria/projects/pachinko/tools/flutter/bin:$PATH"`
 - **Current Platform**: Linux desktop (working perfectly)

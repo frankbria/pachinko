@@ -13,8 +13,8 @@ A modern graphical Pachinko idle game for Android. Features authentic pachinko m
 - ✅ Cross-platform (Linux desktop, Android-ready)
 
 ## Technology Stack
-- **Framework:** Flutter 3.24.5
-- **Language:** Dart 3.5.4
+- **Framework:** Flutter 3.38.1
+- **Language:** Dart 3.10.0
 - **Physics:** Custom physics engine (60 FPS)
 - **State Management:** Provider pattern
 - **Storage:** Shared Preferences (ready)
@@ -49,7 +49,8 @@ lib/
 - `export PATH="/home/frankbria/projects/pachinko/tools/flutter/bin:$PATH"` - Set Flutter path
 - `flutter run` - Run the game
 - `flutter build apk` - Build Android APK
-- `flutter test` - Run tests
+- `flutter test --exclude-tags golden` - Run tests (the CI gate; golden image tests are tagged `golden` and run separately with `flutter test --tags golden`)
+- `dart run build_runner build --delete-conflicting-outputs` - Regenerate test mocks after changing the public API of a mocked class
 - `flutter analyze` - Check code quality
 - `flutter doctor` - Check Flutter installation
 
@@ -92,7 +93,7 @@ lib/
 - **Coverage Validation**: Run coverage reports before marking features complete:
   ```bash
   # Flutter
-  flutter test --coverage
+  flutter test --coverage --exclude-tags golden
   genhtml coverage/lcov.info -o coverage/html
   ```
 - **Test Quality**: Tests must validate behavior, not just achieve coverage metrics
@@ -155,10 +156,10 @@ Before moving to the next feature, ALL changes must be:
 
 Before marking ANY feature as complete, verify:
 
-- [ ] All tests pass (`flutter test`)
+- [ ] All tests pass (`flutter test --exclude-tags golden`)
 - [ ] Code coverage meets 85% minimum threshold
 - [ ] Coverage report reviewed for meaningful test quality
-- [ ] Code formatted and analyzed (`flutter format`, `flutter analyze`)
+- [ ] Code formatted and analyzed (`dart format`, `flutter analyze`)
 - [ ] All changes committed with conventional commit messages
 - [ ] All commits pushed to remote repository
 - [ ] Implementation documentation updated

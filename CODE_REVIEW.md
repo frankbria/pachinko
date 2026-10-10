@@ -630,7 +630,7 @@ class Ball {
 **Success Criteria:**
 
 - `flutter analyze` reports zero issues
-- `flutter format` makes no changes
+- `dart format` makes no changes
 - No TODO comments remain
 
 ---
