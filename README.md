@@ -242,10 +242,10 @@ open coverage/html/index.html
 flutter analyze
 
 # Format code
-flutter format lib/ test/
+dart format lib/ test/
 
 # Check for formatting issues
-flutter format --set-exit-if-changed lib/ test/
+dart format --set-exit-if-changed lib/ test/
 ```
 
 **Quality Gates** (enforced by CLAUDE.md):
@@ -337,7 +337,7 @@ Before any PR is merged:
 
 4. **Code Quality**:
    - Zero `flutter analyze` warnings
-   - Code formatted with `flutter format`
+   - Code formatted with `dart format`
    - No TODO comments in final code
 
 ### Contribution Workflow
