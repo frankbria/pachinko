@@ -3,17 +3,19 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:ui' as _i8;
+import 'dart:ui' as _i10;
 
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i11;
+import 'package:mockito/src/dummies.dart' as _i13;
 import 'package:pachinko_game/models/ball.dart' as _i4;
-import 'package:pachinko_game/models/ball_launcher.dart' as _i9;
+import 'package:pachinko_game/models/ball_launcher.dart' as _i11;
+import 'package:pachinko_game/models/confetti_particle.dart' as _i9;
 import 'package:pachinko_game/models/game_state.dart' as _i7;
-import 'package:pachinko_game/models/level.dart' as _i10;
+import 'package:pachinko_game/models/level.dart' as _i12;
 import 'package:pachinko_game/models/peg.dart' as _i5;
 import 'package:pachinko_game/models/slot.dart' as _i6;
 import 'package:pachinko_game/services/physics_engine.dart' as _i3;
+import 'package:pachinko_game/widgets/floating_text.dart' as _i8;
 import 'package:vector_math/vector_math_64.dart' as _i2;
 
 // ignore_for_file: type=lint
@@ -220,6 +222,12 @@ class MockGameState extends _i1.Mock implements _i7.GameState {
       ) as bool);
 
   @override
+  double get bonusOverlayOpacity => (super.noSuchMethod(
+        Invocation.getter(#bonusOverlayOpacity),
+        returnValue: 0.0,
+      ) as double);
+
+  @override
   bool get canLaunchBall => (super.noSuchMethod(
         Invocation.getter(#canLaunchBall),
         returnValue: false,
@@ -228,6 +236,24 @@ class MockGameState extends _i1.Mock implements _i7.GameState {
   @override
   bool get isGameOver => (super.noSuchMethod(
         Invocation.getter(#isGameOver),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  List<_i8.FloatingText> get floatingTexts => (super.noSuchMethod(
+        Invocation.getter(#floatingTexts),
+        returnValue: <_i8.FloatingText>[],
+      ) as List<_i8.FloatingText>);
+
+  @override
+  List<_i9.ConfettiParticle> get confettiParticles => (super.noSuchMethod(
+        Invocation.getter(#confettiParticles),
+        returnValue: <_i9.ConfettiParticle>[],
+      ) as List<_i9.ConfettiParticle>);
+
+  @override
+  bool get ballCountHighlighted => (super.noSuchMethod(
+        Invocation.getter(#ballCountHighlighted),
         returnValue: false,
       ) as bool);
 
@@ -293,6 +319,67 @@ class MockGameState extends _i1.Mock implements _i7.GameState {
       );
 
   @override
+  void addFloatingText(
+    String? text,
+    _i10.Offset? position,
+    _i10.Color? color,
+  ) =>
+      super.noSuchMethod(
+        Invocation.method(
+          #addFloatingText,
+          [
+            text,
+            position,
+            color,
+          ],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void updateFloatingTexts(double? deltaTime) => super.noSuchMethod(
+        Invocation.method(
+          #updateFloatingTexts,
+          [deltaTime],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void spawnConfetti(
+    _i2.Vector2? position,
+    int? count,
+  ) =>
+      super.noSuchMethod(
+        Invocation.method(
+          #spawnConfetti,
+          [
+            position,
+            count,
+          ],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void updateConfetti(double? deltaTime) => super.noSuchMethod(
+        Invocation.method(
+          #updateConfetti,
+          [deltaTime],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void updateBallCountHighlight(double? deltaTime) => super.noSuchMethod(
+        Invocation.method(
+          #updateBallCountHighlight,
+          [deltaTime],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
   void nextLevel() => super.noSuchMethod(
         Invocation.method(
           #nextLevel,
@@ -338,7 +425,16 @@ class MockGameState extends _i1.Mock implements _i7.GameState {
       );
 
   @override
-  void addListener(_i8.VoidCallback? listener) => super.noSuchMethod(
+  void dispose() => super.noSuchMethod(
+        Invocation.method(
+          #dispose,
+          [],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void addListener(_i10.VoidCallback? listener) => super.noSuchMethod(
         Invocation.method(
           #addListener,
           [listener],
@@ -347,19 +443,10 @@ class MockGameState extends _i1.Mock implements _i7.GameState {
       );
 
   @override
-  void removeListener(_i8.VoidCallback? listener) => super.noSuchMethod(
+  void removeListener(_i10.VoidCallback? listener) => super.noSuchMethod(
         Invocation.method(
           #removeListener,
           [listener],
-        ),
-        returnValueForMissingStub: null,
-      );
-
-  @override
-  void dispose() => super.noSuchMethod(
-        Invocation.method(
-          #dispose,
-          [],
         ),
         returnValueForMissingStub: null,
       );
@@ -377,16 +464,16 @@ class MockGameState extends _i1.Mock implements _i7.GameState {
 /// A class which mocks [BallLauncher].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockBallLauncher extends _i1.Mock implements _i9.BallLauncher {
+class MockBallLauncher extends _i1.Mock implements _i11.BallLauncher {
   MockBallLauncher() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i9.LaunchPhase get phase => (super.noSuchMethod(
+  _i11.LaunchPhase get phase => (super.noSuchMethod(
         Invocation.getter(#phase),
-        returnValue: _i9.LaunchPhase.ready,
-      ) as _i9.LaunchPhase);
+        returnValue: _i11.LaunchPhase.ready,
+      ) as _i11.LaunchPhase);
 
   @override
   double get launchPower => (super.noSuchMethod(
@@ -449,7 +536,7 @@ class MockBallLauncher extends _i1.Mock implements _i9.BallLauncher {
 /// A class which mocks [Level].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockLevel extends _i1.Mock implements _i10.Level {
+class MockLevel extends _i1.Mock implements _i12.Level {
   MockLevel() {
     _i1.throwOnMissingStub(this);
   }
@@ -463,7 +550,7 @@ class MockLevel extends _i1.Mock implements _i10.Level {
   @override
   String get name => (super.noSuchMethod(
         Invocation.getter(#name),
-        returnValue: _i11.dummyValue<String>(
+        returnValue: _i13.dummyValue<String>(
           this,
           Invocation.getter(#name),
         ),
