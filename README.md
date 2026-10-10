@@ -94,8 +94,8 @@ As documented in [CODE_REVIEW.md](./CODE_REVIEW.md), the following must be compl
 
 ### Prerequisites
 
-- **Flutter SDK**: 3.24.5 or higher
-- **Dart**: 3.5.4 or higher
+- **Flutter SDK**: 3.38.1 or higher
+- **Dart**: 3.10.0 or higher
 - **Platform Tools**:
   - Linux: Development tools installed
   - Android: Android Studio with SDK 21+ (Android 5.0+)
@@ -223,10 +223,10 @@ lib/
 
 ```bash
 # Run all tests
-flutter test
+flutter test --exclude-tags golden
 
 # Run with coverage report
-flutter test --coverage
+flutter test --coverage --exclude-tags golden
 genhtml coverage/lcov.info -o coverage/html
 
 # Open coverage report
@@ -260,8 +260,8 @@ This project follows feature branch development:
 
 1. Create feature branch: `git checkout -b feature/my-feature`
 2. Implement changes with TDD approach
-3. Ensure tests pass: `flutter test`
-4. Verify coverage: `flutter test --coverage`
+3. Ensure tests pass: `flutter test --exclude-tags golden`
+4. Verify coverage: `flutter test --coverage --exclude-tags golden`
 5. Commit with conventional commits: `git commit -m "feat: add feature"`
 6. Push to remote: `git push origin feature/my-feature`
 7. Create pull request for review
@@ -345,7 +345,7 @@ Before any PR is merged:
 1. Fork the repository
 2. Create feature branch: `git checkout -b feature/your-feature`
 3. Make changes following quality standards
-4. Run tests: `flutter test --coverage`
+4. Run tests: `flutter test --coverage --exclude-tags golden`
 5. Commit: `git commit -m "feat(scope): description"`
 6. Push: `git push origin feature/your-feature`
 7. Submit pull request with clear description

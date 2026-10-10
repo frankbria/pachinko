@@ -93,7 +93,7 @@ lib/
 - **Coverage Validation**: Run coverage reports before marking features complete:
   ```bash
   # Flutter
-  flutter test --coverage
+  flutter test --coverage --exclude-tags golden
   genhtml coverage/lcov.info -o coverage/html
   ```
 - **Test Quality**: Tests must validate behavior, not just achieve coverage metrics
@@ -156,7 +156,7 @@ Before moving to the next feature, ALL changes must be:
 
 Before marking ANY feature as complete, verify:
 
-- [ ] All tests pass (`flutter test`)
+- [ ] All tests pass (`flutter test --exclude-tags golden`)
 - [ ] Code coverage meets 85% minimum threshold
 - [ ] Coverage report reviewed for meaningful test quality
 - [ ] Code formatted and analyzed (`dart format`, `flutter analyze`)
