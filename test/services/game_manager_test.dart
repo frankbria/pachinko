@@ -34,6 +34,7 @@ void main() {
     when(mockGameState.currentLevel).thenReturn(null);
     when(mockGameState.canLaunchBall).thenReturn(true);
     when(mockGameState.specialBonusTriggered).thenReturn(false);
+    when(mockGameState.score).thenReturn(0);
     when(mockBallLauncher.phase).thenReturn(LaunchPhase.ready);
     when(mockBallLauncher.currentBall).thenReturn(null);
 
@@ -659,6 +660,7 @@ void main() {
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
+      when(mockLevel.levelNumber).thenReturn(1);
       when(mockGameState.activeBalls).thenReturn([]);
       when(mockGameState.ballsRemaining).thenReturn(0);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
