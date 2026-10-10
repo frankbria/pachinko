@@ -96,7 +96,7 @@ git push origin 003-feature-name
 **Checklist before merging to master**:
 - [ ] All tests passing (`flutter test`)
 - [ ] Code coverage ≥85% for new code
-- [ ] Code formatted (`flutter format`)
+- [ ] Code formatted (`dart format`)
 - [ ] Code analyzed (`flutter analyze`)
 - [ ] Documentation updated (CLAUDE.md, README.md)
 - [ ] All changes committed with conventional commits
@@ -107,7 +107,7 @@ git push origin 003-feature-name
 # Final verification
 flutter test
 flutter analyze
-flutter format --set-exit-if-changed
+dart format --set-exit-if-changed
 
 # Merge to master
 git checkout master
@@ -158,7 +158,7 @@ flutter run
 
 ### Dart/Flutter Conventions
 - Follow [Effective Dart](https://dart.dev/guides/language/effective-dart)
-- Use `flutter format` before committing
+- Use `dart format` before committing
 - Fix all `flutter analyze` warnings
 
 ### Commit Message Format
