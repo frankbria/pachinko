@@ -5,7 +5,8 @@ import 'constants.dart';
 
 class PegPatterns {
   /// Whether a ball can pass between a peg of [radius] at [position] and every
-  /// peg in [pegs], and between it and the field walls.
+  /// peg in [pegs], and between it and the field walls and the curved top
+  /// boundary.
   ///
   /// Every generator places pegs through this check. A gap narrower than a
   /// ball is a pocket: the ball comes to rest in it and the session soft-locks.
@@ -13,7 +14,36 @@ class PegPatterns {
     const gap = GameConstants.minPegGap;
     if (position.x - radius - GameConstants.fieldLeftBoundaryX < gap) return false;
     if (GameConstants.fieldRightBoundaryX - position.x - radius < gap) return false;
+    if (_distanceToTopCurve(position) - radius < gap) return false;
     return pegs.every((peg) => gapTo(peg, position, radius) >= gap);
+  }
+
+  /// Points along the curved top boundary, about 5 px apart. The straight
+  /// lines between them stay within a fiftieth of a pixel of the curve.
+  static final List<Vector2> _topCurve = [
+    for (int i = 0; i <= 90; i++) _topCurvePoint(i / 90),
+  ];
+
+  static Vector2 _topCurvePoint(double t) => Vector2(
+        (1 - t) * (1 - t) * GameConstants.topCurveStartX +
+            2 * (1 - t) * t * GameConstants.topCurveControlX +
+            t * t * GameConstants.topCurveEndX,
+        (1 - t) * (1 - t) * GameConstants.topCurveStartY +
+            2 * (1 - t) * t * GameConstants.topCurveControlY +
+            t * t * GameConstants.topCurveEndY,
+      );
+
+  /// The distance from [position] to the curved top boundary: the nearest
+  /// point on any of the straight pieces the curve is cut into.
+  static double _distanceToTopCurve(Vector2 position) {
+    double nearest = double.infinity;
+    for (int i = 0; i < _topCurve.length - 1; i++) {
+      final start = _topCurve[i];
+      final piece = _topCurve[i + 1] - start;
+      final along = ((position - start).dot(piece) / piece.length2).clamp(0.0, 1.0);
+      nearest = min(nearest, (position - (start + piece * along)).length);
+    }
+    return nearest;
   }
 
   /// The gap, edge to edge, between [peg] and a peg of [radius] at [position].

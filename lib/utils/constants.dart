@@ -42,6 +42,16 @@ class GameConstants {
   // Right boundary at left edge of launch channel (blocks entry from playfield)
   static const double fieldRightBoundaryX = launchChannelStartX; // 360.0
 
+  /// The curved top boundary of the board: a quadratic bezier from the start
+  /// point through the control point to the end point. The physics bounces
+  /// balls off it, the painter draws it, and the peg generators keep clear of it.
+  static const double topCurveStartX = 30.0;
+  static const double topCurveStartY = 110.0;
+  static const double topCurveControlX = 210.0;
+  static const double topCurveControlY = -100.0; // Above the board, so the curve bows upward
+  static const double topCurveEndX = 390.0;
+  static const double topCurveEndY = 110.0;
+
   // Game constants
   static const int ballsPerRound = 20;
   static const int minSpecialPegs = 2;

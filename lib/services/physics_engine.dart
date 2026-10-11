@@ -70,12 +70,12 @@ class PhysicsEngine {
 
     // Top curved boundary collision - quadratic bezier curve
     // Starts at x=30 to match visual rendering
-    const topBoundaryStartX = 30.0;
-    const topBoundaryStartY = 110.0;  // Matches left field barrier top
-    const topBoundaryControlX = 210.0;
-    const topBoundaryControlY = -100.0;
-    const topBoundaryEndX = 390.0;
-    const topBoundaryEndY = 110.0;
+    const topBoundaryStartX = GameConstants.topCurveStartX;
+    const topBoundaryStartY = GameConstants.topCurveStartY;  // Matches left field barrier top
+    const topBoundaryControlX = GameConstants.topCurveControlX;
+    const topBoundaryControlY = GameConstants.topCurveControlY;
+    const topBoundaryEndX = GameConstants.topCurveEndX;
+    const topBoundaryEndY = GameConstants.topCurveEndY;
 
     // Check if ball is in the region of the curved boundary
     if (ball.position.x >= topBoundaryStartX && ball.position.x <= topBoundaryEndX) {
