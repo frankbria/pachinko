@@ -232,6 +232,9 @@ flutter test --tags golden
 flutter test --coverage --exclude-tags golden
 genhtml coverage/lcov.info -o coverage/html
 
+# Coverage of the lines your branch changed (CI requires 85%)
+uvx diff-cover coverage/lcov.info --compare-branch=origin/master --fail-under=85
+
 # Open coverage report
 open coverage/html/index.html
 ```
