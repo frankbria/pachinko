@@ -283,6 +283,65 @@ void main() {
     });
 
     testWidgets(
+        'given the same achievement shown twice in a row, when the first is dismissed, then a second toast is visible and auto-dismisses',
+        (tester) async {
+      /// Each toast needs a fresh State. Keyed by the achievement's id, the
+      /// second toast would reuse the first one's State, which has already
+      /// dismissed: invisible, deaf to taps, never dismissing, and holding up
+      /// every toast queued behind it.
+      // Arrange
+      final achievement = Achievement(
+        id: 'repeat',
+        name: 'Repeat Achievement',
+        description: 'Shown twice',
+        icon: Icons.star,
+        pointValue: 100,
+      )..unlock();
+      final after = Achievement(
+        id: 'after',
+        name: 'After The Repeat',
+        description: 'Queued behind it',
+        icon: Icons.military_tech,
+        pointValue: 200,
+      )..unlock();
+      final overlayKey = GlobalKey<AchievementToastOverlayState>();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AchievementToastOverlay(
+            key: overlayKey,
+            child: const Scaffold(body: SizedBox()),
+          ),
+        ),
+      );
+
+      // Act - Show it twice with another behind, then dismiss the first by tapping it
+      overlayKey.currentState!.showAchievementToast(achievement);
+      overlayKey.currentState!.showAchievementToast(achievement);
+      overlayKey.currentState!.showAchievementToast(after);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.tap(find.text('Repeat Achievement'));
+      await tester.pumpAndSettle();
+
+      // Assert - The second toast for the same achievement is on screen and fully opaque
+      expect(find.text('Repeat Achievement'), findsOneWidget);
+      expect(toastOpacity(tester), 1.0);
+
+      // Assert - It dismisses itself, and the toast behind it gets its turn
+      await tester.pump(const Duration(milliseconds: 3500));
+      await tester.pumpAndSettle();
+      expect(find.text('Repeat Achievement'), findsNothing);
+      expect(find.text('After The Repeat'), findsOneWidget);
+      expect(toastOpacity(tester), 1.0);
+
+      // Cleanup - Let the last toast dismiss itself
+      await tester.pump(const Duration(milliseconds: 3500));
+      await tester.pumpAndSettle();
+      expect(find.byType(AchievementToast), findsNothing);
+    });
+
+    testWidgets(
         'given overlay installed in MaterialApp.builder, when toast shown over a pushed route, then toast is visible',
         (tester) async {
       // Arrange
