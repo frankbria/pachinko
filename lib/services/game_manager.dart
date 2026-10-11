@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:vector_math/vector_math_64.dart' as vm;
-import '../models/ball.dart';
 import '../models/ball_launcher.dart';
 import '../models/game_state.dart';
 import '../models/peg.dart';

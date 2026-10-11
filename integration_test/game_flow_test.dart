@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -7,7 +6,6 @@ import 'package:pachinko_game/main.dart' as app;
 import 'package:pachinko_game/screens/menu_screen.dart';
 import 'package:pachinko_game/screens/game_screen.dart';
 import 'package:pachinko_game/services/game_manager.dart';
-import 'package:pachinko_game/models/game_state.dart';
 import 'package:pachinko_game/models/peg.dart';
 import 'package:pachinko_game/utils/constants.dart';
 
@@ -92,9 +90,6 @@ void main() {
       final context = tester.element(find.byType(GameScreen));
       final gameManager = Provider.of<GameManager>(context, listen: false);
 
-      // Capture initial state
-      final initialPhase = gameManager.gameState.phase;
-
       // Simulate game time passing (1 second)
       await tester.pump(const Duration(seconds: 1));
 
@@ -130,8 +125,6 @@ void main() {
       // Verify can launch ball
       expect(gameManager.gameState.canLaunchBall, isTrue);
 
-      final initialBallCount = gameManager.gameState.activeBalls.length;
-
       // Simulate ball launch (drag in launch area)
       const launchX = GameConstants.launchChannelStartX;
       const launchY = GameConstants.launchChannelStartY;
@@ -160,9 +153,6 @@ void main() {
 
       await tester.tap(find.text(GameStrings.play));
       await tester.pumpAndSettle();
-
-      final context = tester.element(find.byType(GameScreen));
-      final gameManager = Provider.of<GameManager>(context, listen: false);
 
       // Launch a ball
       const launchX = GameConstants.launchChannelStartX;
@@ -320,8 +310,6 @@ void main() {
 
       // Verify starting on level 1
       expect(gameManager.gameState.currentLevelNumber, equals(1));
-
-      final level1PegCount = gameManager.gameState.currentLevel!.pegs.length;
 
       // Simulate level completion (set balls remaining to 0 and phase to gameOver)
       // Note: In real integration, this would happen through gameplay
@@ -491,11 +479,6 @@ void main() {
           await tester.pump(const Duration(milliseconds: 1000));
         }
       }
-
-      // Capture state before navigation
-      final scoreBeforeNav = gameManager.gameState.score;
-      final ballsBeforeNav = gameManager.gameState.ballsRemaining;
-      final levelBeforeNav = gameManager.gameState.currentLevelNumber;
 
       // Navigate back to menu
       await tester.tap(find.byIcon(Icons.arrow_back));

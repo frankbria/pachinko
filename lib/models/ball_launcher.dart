@@ -18,7 +18,6 @@ class BallLauncher {
   double _maxPower = 100.0;
   Ball? _currentBall;
   List<Vector2> _launchPath = [];
-  int _pathIndex = 0;
   double _pathProgress = 0.0;
   
   LaunchPhase get phase => _phase;
@@ -88,7 +87,6 @@ class BallLauncher {
       color: const Color(0xFFFFFFFF),
     );
     
-    _pathIndex = 0;
     _pathProgress = 0.0;
     _phase = LaunchPhase.traveling;
     
@@ -205,7 +203,6 @@ class BallLauncher {
     _phase = LaunchPhase.ready;
     _launchPower = 0.0;
     _currentBall = null;
-    _pathIndex = 0;
     _pathProgress = 0.0;
   }
   

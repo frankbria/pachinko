@@ -95,7 +95,6 @@ void main() {
         radius: GameConstants.ballRadius,
       );
       final deltaTime = GameConstants.physicsTimeStep;
-      final initialVelocityMagnitude = ball.velocity.length;
 
       // When: Update physics
       physicsEngine.updateBalls([ball], deltaTime);
@@ -369,8 +368,9 @@ void main() {
       // When: Check collisions
       physicsEngine.checkPegCollisions([ball], [mockPeg]);
 
-      // Then: Velocity direction should not be reversed (ball already separating)
-      // Note: There will be random perturbation applied, but direction generally preserved
+      // Then: Velocity is untouched (ball already separating, so no impulse
+      // and no deflection is applied)
+      expect(ball.velocity, initialVelocity);
       expect(ball.velocity.x, lessThan(0)); // Still moving left
     });
   });
