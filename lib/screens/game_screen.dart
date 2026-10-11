@@ -126,7 +126,7 @@ class _HUDItem extends StatelessWidget {
           Text(
             value,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: highlighted ? GameConstants.bonusBallColor : Colors.white,
+              color: highlighted ? GameConstants.bonusBallColor : GameConstants.inkColor,
               fontWeight: FontWeight.bold,
               fontSize: highlighted ? 22 : null,
             ),
@@ -134,7 +134,7 @@ class _HUDItem extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: highlighted ? GameConstants.bonusBallColor.withOpacity(0.9) : Colors.white70,
+              color: highlighted ? GameConstants.bonusBallColor.withOpacity(0.9) : GameConstants.mutedColor,
             ),
           ),
         ],
