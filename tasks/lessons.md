@@ -39,3 +39,7 @@ Patterns learned the hard way on this repo. Add an entry after any correction.
 - **A stale `.git/index.lock` in the main checkout can outlive a cross-family review.** The reviewer worked in its own copy under `/tmp/opencode` and left the worktree clean, but an empty lock dated inside its run blocked the post-merge `git pull`. Check `pgrep -x git` and the lock's mtime, then remove that one file.
 - **Search for a method's callers by bare name, not with parentheses.** `grep "nextLevel()"` found no UI caller, and issue #20 and PR #19 said so. The Next Level button uses a tear-off, `onPressed: gameManager.nextLevel`, which has no parentheses. Both texts were corrected on 2026-10-10. (Correction found during the graphics review, #22.)
 - **When an issue limits which files may change, documentation goes in the follow-up docs pull request.** The new rule for `CLAUDE.md` (transitions reset the launcher, effects are cleared in `_clearEffects()`) was held back from PR #19 and lands with these lessons, as in #15 and #18.
+
+## 2026-10-10 — graphics review (issue #22)
+
+- **Take a layout percentage from the pixels, and say what it measures.** Issue #22 first said the board uses about 57% of the screen height. Scanning one column of the screenshot for colour changes gave 68% for the board panel; 57% was the span from the dome to the top of the slots. The pegs span 24%. Name both ends of any measurement in the text.
