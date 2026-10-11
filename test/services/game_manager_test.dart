@@ -12,6 +12,7 @@ import 'package:pachinko_game/models/slot.dart';
 import 'package:pachinko_game/models/level.dart';
 import 'package:pachinko_game/services/game_manager.dart';
 import 'package:pachinko_game/services/physics_engine.dart';
+import 'package:pachinko_game/models/confetti_particle.dart';
 import 'package:pachinko_game/widgets/floating_text.dart';
 
 // Generate mocks for PhysicsEngine, GameState, and BallLauncher
@@ -971,6 +972,34 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 1700));
       expect(manager.gameState.floatingTexts, isEmpty);
       expect(manager.isRunning, isFalse);
+    });
+
+    // With mocks: each effect on its own is enough to keep the loop running
+    test('Given no ball but confetti still falling When ticks pass Then the loop keeps running', () async {
+      when(mockGameState.confettiParticles).thenReturn([
+        ConfettiParticle(position: Vector2(200, 300), velocity: Vector2(0, 50), color: const Color(0xFFFFD700)),
+      ]);
+
+      gameManager.startGame();
+      await ticks(3);
+
+      expect(gameManager.isRunning, isTrue);
+    });
+
+    test('Given no ball but the ball count still highlighted When ticks pass Then the loop keeps running', () async {
+      when(mockGameState.ballCountHighlighted).thenReturn(true);
+
+      gameManager.startGame();
+      await ticks(3);
+
+      expect(gameManager.isRunning, isTrue);
+    });
+
+    test('Given nothing in play and no effect showing When ticks pass Then the loop has stopped', () async {
+      gameManager.startGame();
+      await ticks(3);
+
+      expect(gameManager.isRunning, isFalse);
     });
 
     test('Given the last ball has landed When its popup has finished Then the result is saved and the loop stops', () async {

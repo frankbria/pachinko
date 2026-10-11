@@ -150,11 +150,11 @@ class GameManager extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Whether nothing the loop drives is changing: no ball in play or in the
-  /// launch channel, and no score popup, confetti or ball count highlight.
+  /// Whether nothing the loop drives is changing: no ball in play (a ball in
+  /// the launch channel counts as in play) and no score popup, confetti or
+  /// ball count highlight.
   bool get _isIdle =>
       _gameState.activeBalls.isEmpty &&
-      _ballLauncher.phase != LaunchPhase.traveling &&
       _gameState.floatingTexts.isEmpty &&
       _gameState.confettiParticles.isEmpty &&
       !_gameState.ballCountHighlighted;

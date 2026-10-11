@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
@@ -78,6 +79,14 @@ void main() {
   /// The [gameManager] parameter allows injection of a mocked GameManager for isolated
   /// widget testing. PachinkoBoard's Consumer will rebuild when GameManager calls
   /// notifyListeners().
+  /// The painter the board currently draws with.
+  CustomPainter boardPainter(WidgetTester tester) => tester
+      .widget<CustomPaint>(find.descendant(
+        of: find.byType(PachinkoBoard),
+        matching: find.byType(CustomPaint),
+      ))
+      .painter!;
+
   Widget createTestWidget({required GameManager gameManager}) {
     return ChangeNotifierProvider<GameManager>.value(
       value: gameManager,
@@ -405,21 +414,139 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    /// GIVEN PachinkoBoard painter
-    /// WHEN shouldRepaint is called
-    /// THEN returns true (always repaint for animation)
-    ///
-    /// Note: CustomPainter.shouldRepaint is tested indirectly by verifying
-    /// the board repaints on every frame. The painter's shouldRepaint always
-    /// returns true to support smooth ball animations.
-    testWidgets('givenPachinkoBoardPainter_whenShouldRepaint_thenReturnsTrue',
+    /// The game's own changes reach the painter through its repaint
+    /// listenable. A rebuilt painter asks for a repaint only when what it was
+    /// built with differs.
+    testWidgets('given the board rebuilt with nothing changed, when shouldRepaint is asked, then it says no',
       (WidgetTester tester) async {
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+      final before = boardPainter(tester);
+
+      // When: the board rebuilds for a reason of its own
+      tester.element(find.byType(PachinkoBoard)).markNeedsBuild();
+      await tester.pump();
+      final after = boardPainter(tester);
+
+      // Then
+      expect(identical(before, after), isFalse);
+      expect(after.shouldRepaint(before), isFalse);
+    });
+
+    testWidgets('given a drag in progress, when shouldRepaint is asked, then it says yes',
+      (WidgetTester tester) async {
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+      final before = boardPainter(tester);
+
+      // When
+      const launchX = GameConstants.launchChannelStartX;
+      const launchY = GameConstants.launchChannelStartY;
+      final gesture = await tester.startGesture(const Offset(launchX, launchY));
+      await gesture.moveTo(const Offset(launchX, launchY - 100));
+      await tester.pump();
+      final after = boardPainter(tester);
+
+      // Then
+      expect(after.shouldRepaint(before), isTrue);
+
+      await gesture.up();
+      await tester.pump();
+    });
+  });
+
+  group('PachinkoBoard Repaint Without Rebuild', () {
+    /// A real GameManager, so that it can notify. The board repaints from the
+    /// manager's notifications without being rebuilt by them.
+    testWidgets('given a real game, when the manager notifies, then the board is not rebuilt',
+      (WidgetTester tester) async {
+      final manager = GameManager();
+      addTearDown(manager.dispose);
+      await tester.pumpWidget(createTestWidget(gameManager: manager));
+      final before = boardPainter(tester);
+
+      // When: anything that makes the manager notify its listeners
+      manager.updateLaunchPower(10);
+      manager.updateLaunchPower(20);
+      await tester.pump();
+
+      // Then: the same painter object is still in the tree
+      expect(identical(boardPainter(tester), before), isTrue);
+    });
+  });
+
+  group('PachinkoBoard Repaint On Game State Changes', () {
+    /// The bonus overlay is taken down by a timer inside GameState, which
+    /// notifies GameState's own listeners and not the manager's. With the
+    /// game loop stopped (a pause during the bonus), nothing else would
+    /// repaint the board.
+    testWidgets('given the game loop is not running, when the game state notifies, then the board is marked for repaint',
+      (WidgetTester tester) async {
+      final realState = GameState();
+      addTearDown(realState.dispose);
+      when(mockGameManager.gameState).thenReturn(realState);
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+      await tester.pump();
+      final board = tester.renderObject(find.descendant(
+        of: find.byType(PachinkoBoard),
+        matching: find.byType(CustomPaint),
+      ));
+      expect(board.debugNeedsPaint, isFalse);
+
+      // When
+      realState.addScore(100);
+
+      // Then
+      expect(board.debugNeedsPaint, isTrue);
+      await tester.pump();
+    });
+  });
+
+  group('PachinkoBoard Peg Animation Clock', () {
+    /// Peg animation runs on the board's own ticker. The mocked manager never
+    /// notifies, so any change in a peg here comes from the ticker alone.
+    testWidgets('given an unhit prize peg, when time passes with no game loop, then its shimmer still moves',
+      (WidgetTester tester) async {
+      final prizePeg = Peg(position: Vector2(200, 200), type: PegType.special);
+      when(mockLevel.pegs).thenReturn([prizePeg]);
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+      await tester.pump();
+      final before = prizePeg.shimmerIntensity;
+
+      // When
+      await tester.pump(const Duration(milliseconds: 250));
+
+      // Then: 0.3 + 0.3 * sin(2t) a quarter of a second on
+      expect(prizePeg.shimmerIntensity, isNot(before));
+      expect(prizePeg.shimmerIntensity, closeTo(0.3 + 0.3 * math.sin(0.5), 0.02));
+      expect(tester.binding.hasScheduledFrame, isTrue, reason: 'the shimmer keeps the ticker running');
+    });
+
+    testWidgets('given a peg that has been hit, when its pulse has finished, then the board stops drawing frames',
+      (WidgetTester tester) async {
+      final peg = Peg(position: Vector2(200, 200));
+      peg.onHit();
+      when(mockLevel.pegs).thenReturn([peg]);
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+      await tester.pump();
+      expect(tester.binding.hasScheduledFrame, isTrue, reason: 'the pulse is running');
+
+      // When: the pulse lasts 0.8 seconds
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump();
+
+      // Then
+      expect(peg.isAnimating, isFalse);
+      expect(tester.binding.hasScheduledFrame, isFalse);
+    });
+
+    testWidgets('given no peg is animating, when the board is shown, then it draws no further frames',
+      (WidgetTester tester) async {
+      when(mockLevel.pegs).thenReturn([Peg(position: Vector2(200, 200))]);
+
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
       await tester.pump();
 
-      // Painter always returns true from shouldRepaint for smooth animations
-      // This is verified by the painter implementation, not through mock verification
-      expect(find.byType(PachinkoBoard), findsOneWidget);
+      expect(tester.binding.hasScheduledFrame, isFalse);
     });
   });
 
@@ -534,7 +661,9 @@ void main() {
       when(mockLevel.slots).thenReturn(testSlots);
 
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
-      await tester.pumpAndSettle();
+      // A fixed quarter second into the shimmer; a shimmering peg never settles
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
 
       await expectLater(
         find.byType(PachinkoBoard),
