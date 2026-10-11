@@ -225,6 +225,9 @@ lib/
 # Run all tests
 flutter test --exclude-tags golden
 
+# Run the golden image tests (baselines were generated on Linux)
+flutter test --tags golden
+
 # Run with coverage report
 flutter test --coverage --exclude-tags golden
 genhtml coverage/lcov.info -o coverage/html
