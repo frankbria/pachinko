@@ -64,6 +64,7 @@ class GameState extends ChangeNotifier {
     _phase = GamePhase.ready;
     _specialBonusTriggered = false;
     _bonusBallsToAdd = 0;
+    _clearEffects();
     notifyListeners();
   }
 
@@ -230,10 +231,19 @@ class GameState extends ChangeNotifier {
     _ballsRemaining = _totalBalls;
     _phase = GamePhase.ready;
     _specialBonusTriggered = false;
-    _bonusOverlayOpacity = 0.0;
     _bonusBallsToAdd = 0;
-    _bonusDisplayTimer?.cancel(); // Cancel any pending bonus timer
+    _clearEffects();
     notifyListeners();
+  }
+
+  /// Removes all transient visual effects (popups, confetti, bonus overlay).
+  void _clearEffects() {
+    _floatingTexts.clear();
+    _confettiParticles.clear();
+    _ballCountHighlighted = false;
+    _ballCountHighlightTimer = 0.0;
+    _bonusDisplayTimer?.cancel();
+    _bonusOverlayOpacity = 0.0;
   }
 
   void pauseGame() {

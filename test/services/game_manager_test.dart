@@ -703,4 +703,44 @@ void main() {
       verify(mockGameState.updatePhase(GamePhase.ready)).called(greaterThan(0));
     });
   });
+
+  group('Launcher Reset on Game Transitions', () {
+    /// Real objects (no mocks): reproduces the soft-lock where Restart during
+    /// the launch-channel travel left the launcher stuck in `traveling`.
+    test('Given ball on launch path When resetGame called Then the next launch works', () {
+      // Given: a real game with a ball travelling up the channel
+      final realManager = GameManager();
+      addTearDown(realManager.dispose);
+      realManager.startGame();
+      realManager.startLaunchCharging();
+      realManager.updateLaunchPower(50);
+      realManager.launchBall();
+      expect(realManager.ballLauncher.phase, LaunchPhase.traveling);
+
+      // When: Restart
+      realManager.resetGame();
+
+      // Then: launcher is ready and a new launch succeeds
+      expect(realManager.ballLauncher.phase, LaunchPhase.ready);
+      realManager.startLaunchCharging();
+      realManager.launchBall();
+      expect(realManager.gameState.activeBalls, hasLength(1));
+      expect(realManager.isRunning, isTrue);
+    });
+
+    test('Given any state When startGame called Then launcher reset', () {
+      gameManager.startGame();
+      verify(mockBallLauncher.reset()).called(1);
+    });
+
+    test('Given any state When nextLevel called Then launcher reset', () {
+      gameManager.nextLevel();
+      verify(mockBallLauncher.reset()).called(1);
+    });
+
+    test('Given any state When selectLevel called Then launcher reset', () {
+      gameManager.selectLevel(3);
+      verify(mockBallLauncher.reset()).called(1);
+    });
+  });
 }

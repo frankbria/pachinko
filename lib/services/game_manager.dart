@@ -48,6 +48,7 @@ class GameManager extends ChangeNotifier {
   bool get isRunning => _gameTimer?.isActive ?? false;
   
   void startGame({int level = 1}) {
+    _ballLauncher.reset();
     _gameState.startNewGame(level: level);
     _startGameLoop();
     notifyListeners();
@@ -66,6 +67,7 @@ class GameManager extends ChangeNotifier {
   }
 
   void resetGame() {
+    _ballLauncher.reset();
     _gameTimer?.cancel();
     _gameState.resetLevel();
     notifyListeners();
@@ -262,12 +264,14 @@ class GameManager extends ChangeNotifier {
   }
 
   void nextLevel() {
+    _ballLauncher.reset();
     _gameTimer?.cancel();
     _gameState.nextLevel();
     notifyListeners();
   }
 
   void selectLevel(int levelNumber) {
+    _ballLauncher.reset();
     _gameTimer?.cancel();
     _gameState.loadLevel(levelNumber);
     notifyListeners();

@@ -687,6 +687,42 @@ void main() {
       // Then
       expect(listenerCallCount, greaterThan(0));
     });
+
+    test('given GameState with floating texts and confetti, when resetLevel called, then effects are cleared', () {
+      // Given
+      final gameState = GameState();
+      addTearDown(gameState.dispose);
+      gameState.startNewGame(level: 1);
+      gameState.addFloatingText('+50', const Offset(100, 100), const Color(0xFFFFFFFF));
+      gameState.spawnConfetti(Vector2(200, 300), 10);
+      gameState.triggerSpecialBonus();
+      expect(gameState.floatingTexts, isNotEmpty);
+      expect(gameState.confettiParticles, isNotEmpty);
+      expect(gameState.ballCountHighlighted, isTrue);
+
+      // When
+      gameState.resetLevel();
+
+      // Then
+      expect(gameState.floatingTexts, isEmpty);
+      expect(gameState.confettiParticles, isEmpty);
+      expect(gameState.ballCountHighlighted, isFalse);
+      expect(gameState.bonusOverlayOpacity, 0.0);
+    });
+
+    test('given GameState with floating texts, when a new game starts, then effects are cleared', () {
+      // Given
+      final gameState = GameState();
+      addTearDown(gameState.dispose);
+      gameState.startNewGame(level: 1);
+      gameState.addFloatingText('+50', const Offset(100, 100), const Color(0xFFFFFFFF));
+
+      // When
+      gameState.startNewGame(level: 2);
+
+      // Then
+      expect(gameState.floatingTexts, isEmpty);
+    });
   });
 
   group('Phase Transitions -', () {
