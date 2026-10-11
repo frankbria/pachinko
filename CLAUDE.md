@@ -52,7 +52,7 @@ lib/
 - `flutter build apk` - Build Android APK
 - `flutter test --exclude-tags golden` - Run tests (the main CI gate)
 - `flutter test --tags golden` - Run the golden image tests (also gated in CI). The baselines in `test/widgets/goldens/` were generated on Linux and are only expected to match there. After an intended visual change or a Flutter upgrade, regenerate them with `flutter test --tags golden --update-goldens`, look at the images, and commit them. A golden that draws a prize peg captures its shimmer after however many frames the test pumps, so the picture depends on the frame count
-- `dart run build_runner build --delete-conflicting-outputs` - Regenerate test mocks after changing the public API of a mocked class
+- `dart run build_runner build --delete-conflicting-outputs` - Regenerate test mocks after changing the public API of a mocked class, and commit the result. CI regenerates them and fails if they differ from the committed ones
 - `flutter analyze --no-fatal-infos` - Check code quality (a CI gate: warnings and errors fail it, info-level lints are only reported). `analysis_options.yaml` excludes `tools/flutter/**`, so the SDK checkout there is not analyzed
 - `flutter doctor` - Check Flutter installation
 
@@ -104,7 +104,11 @@ lib/
   # Flutter
   flutter test --coverage --exclude-tags golden
   genhtml coverage/lcov.info -o coverage/html
+
+  # Coverage of the lines this branch changed, which is what CI gates at 85%
+  uvx diff-cover coverage/lcov.info --compare-branch=origin/master --fail-under=85
   ```
+- **CI Gates** (`.github/workflows/ci.yml`, in order): analyzer, generated mocks up to date, tests, coverage of changed lines at least 85% (pull requests only), golden tests. A failed golden step uploads the difference images as the `golden-failures` artifact. The integration tests in `integration_test/` are analyzed but not run: they need a device
 - **Test Quality**: Tests must validate behavior, not just achieve coverage metrics
 - **Test Documentation**: Complex test scenarios must include comments explaining the test strategy
 

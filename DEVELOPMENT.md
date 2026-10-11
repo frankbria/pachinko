@@ -218,6 +218,12 @@ flutter test test/unit/particle_system_test.dart
 # With coverage
 flutter test --coverage --exclude-tags golden
 
+# Coverage of the lines your branch changed; CI fails a pull request below 85%
+uvx diff-cover coverage/lcov.info --compare-branch=origin/master --fail-under=85
+
+# Regenerate mocks after changing a mocked class; CI fails if they are stale
+dart run build_runner build --delete-conflicting-outputs
+
 # Golden image tests (visual regression); CI runs these too.
 # The baselines were generated on Linux and are only expected to match there.
 flutter test --tags golden
