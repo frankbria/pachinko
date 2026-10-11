@@ -608,6 +608,24 @@ void main() {
       // When/Then: Dispose should not throw
       expect(() => gameManager.dispose(), returnsNormally);
     });
+
+    test('Given running game When stopLoop called Then loop stops without resetting the game', () {
+      // Given
+      gameManager.startGame();
+      expect(gameManager.isRunning, isTrue);
+      clearInteractions(mockGameState);
+      var notifications = 0;
+      gameManager.addListener(() => notifications++);
+
+      // When
+      gameManager.stopLoop();
+
+      // Then: no notification, because GameScreen calls this from dispose
+      expect(gameManager.isRunning, isFalse);
+      expect(notifications, 0);
+      verifyNever(mockGameState.resetLevel());
+      verifyNever(mockGameState.pauseGame());
+    });
   });
 
   group('Level Management and Phase Transitions', () {
@@ -744,6 +762,91 @@ void main() {
       // Then: Should update phase to ready
       verify(mockGameState.updatePhase(GamePhase.ready)).called(greaterThan(0));
     });
+
+    /// The loop keeps running after game over so the last popup and peg flashes finish animating.
+    test('Given game over detected When more loop ticks pass Then loop still runs and result is recorded once', () async {
+      // Given: no balls active and none remaining
+      final mockLevel = MockLevel();
+      when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.slots).thenReturn([]);
+      when(mockLevel.levelNumber).thenReturn(1);
+      when(mockGameState.currentLevel).thenReturn(mockLevel);
+      when(mockGameState.activeBalls).thenReturn([]);
+      when(mockGameState.ballsRemaining).thenReturn(0);
+      when(mockBallLauncher.launch()).thenReturn(Ball(
+        position: Vector2(100, 100),
+        velocity: Vector2(0, 0),
+        radius: 8.0,
+      ));
+
+      // When: several ticks pass (16 ms each)
+      gameManager.launchBall();
+      await Future.delayed(const Duration(milliseconds: 80));
+
+      // Then
+      expect(gameManager.isRunning, isTrue);
+      verify(mockGameState.updatePhase(GamePhase.gameOver)).called(1);
+    });
+
+    test('Given game over recorded When resetGame then game over again Then result is recorded again', () async {
+      // Given
+      final mockLevel = MockLevel();
+      when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.slots).thenReturn([]);
+      when(mockLevel.levelNumber).thenReturn(1);
+      when(mockGameState.currentLevel).thenReturn(mockLevel);
+      when(mockGameState.activeBalls).thenReturn([]);
+      when(mockGameState.ballsRemaining).thenReturn(0);
+      when(mockBallLauncher.launch()).thenReturn(Ball(
+        position: Vector2(100, 100),
+        velocity: Vector2(0, 0),
+        radius: 8.0,
+      ));
+      gameManager.launchBall();
+      await Future.delayed(const Duration(milliseconds: 40));
+
+      // When
+      gameManager.resetGame();
+      gameManager.launchBall();
+      await Future.delayed(const Duration(milliseconds: 40));
+
+      // Then
+      verify(mockGameState.updatePhase(GamePhase.gameOver)).called(2);
+    });
+
+    // A transition that left the flag set would never record the next game over,
+    // so the level could not end.
+    for (final transition in <String, void Function(GameManager)>{
+      'startGame': (manager) => manager.startGame(),
+      'nextLevel': (manager) => manager.nextLevel(),
+      'selectLevel': (manager) => manager.selectLevel(2),
+    }.entries) {
+      test('Given game over recorded When ${transition.key} then game over again Then result is recorded again', () async {
+        // Given
+        final mockLevel = MockLevel();
+        when(mockLevel.pegs).thenReturn([]);
+        when(mockLevel.slots).thenReturn([]);
+        when(mockLevel.levelNumber).thenReturn(1);
+        when(mockGameState.currentLevel).thenReturn(mockLevel);
+        when(mockGameState.activeBalls).thenReturn([]);
+        when(mockGameState.ballsRemaining).thenReturn(0);
+        when(mockBallLauncher.launch()).thenReturn(Ball(
+          position: Vector2(100, 100),
+          velocity: Vector2(0, 0),
+          radius: 8.0,
+        ));
+        gameManager.launchBall();
+        await Future.delayed(const Duration(milliseconds: 40));
+
+        // When
+        transition.value(gameManager);
+        gameManager.launchBall();
+        await Future.delayed(const Duration(milliseconds: 40));
+
+        // Then
+        verify(mockGameState.updatePhase(GamePhase.gameOver)).called(2);
+      });
+    }
   });
 
   group('Launcher Reset on Game Transitions', () {

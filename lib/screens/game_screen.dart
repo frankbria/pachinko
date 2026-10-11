@@ -5,8 +5,28 @@ import '../models/game_state.dart';
 import '../utils/constants.dart';
 import '../widgets/pachinko_board.dart';
 
-class GameScreen extends StatelessWidget {
+class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
+
+  @override
+  State<GameScreen> createState() => _GameScreenState();
+}
+
+class _GameScreenState extends State<GameScreen> {
+  late final GameManager _gameManager;
+
+  @override
+  void initState() {
+    super.initState();
+    _gameManager = context.read<GameManager>();
+  }
+
+  @override
+  void dispose() {
+    // Leaving the screen abandons the game in progress; stop it playing on in the background
+    _gameManager.stopLoop();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

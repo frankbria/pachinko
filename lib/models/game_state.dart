@@ -32,6 +32,13 @@ class GameState extends ChangeNotifier {
   bool _specialBonusTriggered = false;
   int _bonusBallsToAdd = 0;
 
+  /// Whether a ball can only be launched once no ball is in play.
+  ///
+  /// On by default. Pause puts the phase back to [GamePhase.ready] with the
+  /// ball still on the board, so without this a second ball could be launched
+  /// while paused. Turn it off to allow that.
+  bool singleBallLaunch = true;
+
   // Bonus screen auto-dismiss timer
   Timer? _bonusDisplayTimer;
   double _bonusOverlayOpacity = 0.0;
@@ -56,7 +63,10 @@ class GameState extends ChangeNotifier {
   GamePhase get phase => _phase;
   bool get specialBonusTriggered => _specialBonusTriggered;
   double get bonusOverlayOpacity => _bonusOverlayOpacity;
-  bool get canLaunchBall => _phase == GamePhase.ready && _ballsRemaining > 0;
+  bool get canLaunchBall {
+    if (_phase != GamePhase.ready || _ballsRemaining <= 0) return false;
+    return !singleBallLaunch || _activeBalls.isEmpty;
+  }
   bool get isGameOver => _ballsRemaining <= 0 && _activeBalls.isEmpty;
   List<FloatingText> get floatingTexts => List.unmodifiable(_floatingTexts);
   List<ConfettiParticle> get confettiParticles => List.unmodifiable(_confettiParticles);

@@ -22,6 +22,7 @@ class GameManager extends ChangeNotifier {
   final AchievementService? _achievementService;
   Timer? _gameTimer;
   DateTime _lastFrameTime = DateTime.now();
+  bool _levelResultSaved = false;
 
   /// Creates a GameManager with optional dependency injection.
   ///
@@ -49,6 +50,7 @@ class GameManager extends ChangeNotifier {
   
   void startGame({int level = 1}) {
     _ballLauncher.reset();
+    _levelResultSaved = false;
     _gameState.startNewGame(level: level);
     _startGameLoop();
     notifyListeners();
@@ -68,9 +70,17 @@ class GameManager extends ChangeNotifier {
 
   void resetGame() {
     _ballLauncher.reset();
+    _levelResultSaved = false;
     _gameTimer?.cancel();
     _gameState.resetLevel();
     notifyListeners();
+  }
+
+  /// Stops the game loop without changing game state or notifying listeners.
+  ///
+  /// Safe to call while widgets are being disposed.
+  void stopLoop() {
+    _gameTimer?.cancel();
   }
 
   void startLaunchCharging() {
@@ -237,11 +247,14 @@ class GameManager extends ChangeNotifier {
   void _checkGameState() {
     if (_gameState.activeBalls.isEmpty) {
       if (_gameState.ballsRemaining <= 0) {
-        _gameTimer?.cancel();
-        _gameState.updatePhase(GamePhase.gameOver);
+        // The loop keeps running so the last score popup and peg flashes finish animating
+        if (!_levelResultSaved) {
+          _levelResultSaved = true;
+          _gameState.updatePhase(GamePhase.gameOver);
 
-        // Save high score when level completes
-        _saveHighScore();
+          // Save high score when level completes
+          _saveHighScore();
+        }
       } else {
         _gameState.updatePhase(GamePhase.ready);
       }
@@ -265,6 +278,7 @@ class GameManager extends ChangeNotifier {
 
   void nextLevel() {
     _ballLauncher.reset();
+    _levelResultSaved = false;
     _gameTimer?.cancel();
     _gameState.nextLevel();
     notifyListeners();
@@ -272,6 +286,7 @@ class GameManager extends ChangeNotifier {
 
   void selectLevel(int levelNumber) {
     _ballLauncher.reset();
+    _levelResultSaved = false;
     _gameTimer?.cancel();
     _gameState.loadLevel(levelNumber);
     notifyListeners();

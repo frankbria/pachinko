@@ -180,6 +180,21 @@ class MockGameState extends _i1.Mock implements _i7.GameState {
   }
 
   @override
+  bool get singleBallLaunch => (super.noSuchMethod(
+        Invocation.getter(#singleBallLaunch),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  set singleBallLaunch(bool? _singleBallLaunch) => super.noSuchMethod(
+        Invocation.setter(
+          #singleBallLaunch,
+          _singleBallLaunch,
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
   int get currentLevelNumber => (super.noSuchMethod(
         Invocation.getter(#currentLevelNumber),
         returnValue: 0,

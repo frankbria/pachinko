@@ -143,6 +143,15 @@ class MockGameManager extends _i1.Mock implements _i5.GameManager {
       );
 
   @override
+  void stopLoop() => super.noSuchMethod(
+        Invocation.method(
+          #stopLoop,
+          [],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
   void startLaunchCharging() => super.noSuchMethod(
         Invocation.method(
           #startLaunchCharging,
@@ -231,6 +240,21 @@ class MockGameState extends _i1.Mock implements _i2.GameState {
   MockGameState() {
     _i1.throwOnMissingStub(this);
   }
+
+  @override
+  bool get singleBallLaunch => (super.noSuchMethod(
+        Invocation.getter(#singleBallLaunch),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  set singleBallLaunch(bool? _singleBallLaunch) => super.noSuchMethod(
+        Invocation.setter(
+          #singleBallLaunch,
+          _singleBallLaunch,
+        ),
+        returnValueForMissingStub: null,
+      );
 
   @override
   int get currentLevelNumber => (super.noSuchMethod(

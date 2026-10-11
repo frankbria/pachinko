@@ -217,6 +217,7 @@ void main() {
       // Given
       final gameState = GameState();
       gameState.startNewGame();
+      gameState.singleBallLaunch = false; // these launches overlap
 
       // When
       gameState.launchBall(Ball(position: Vector2(200, 300)));
@@ -273,6 +274,7 @@ void main() {
       // Given
       final gameState = GameState();
       gameState.startNewGame();
+      gameState.singleBallLaunch = false; // these launches overlap
       // Launch all 20 balls
       for (int i = 0; i < 20; i++) {
         gameState.launchBall(Ball(position: Vector2(200.0 + i, 300)));
@@ -577,6 +579,7 @@ void main() {
       // Given
       final gameState = GameState();
       gameState.startNewGame();
+      gameState.singleBallLaunch = false; // these launches overlap
       // Launch and remove all balls
       for (int i = 0; i < 20; i++) {
         final ball = Ball(position: Vector2(200.0 + i, 300));
@@ -600,6 +603,7 @@ void main() {
       // Given
       final gameState = GameState();
       gameState.startNewGame();
+      gameState.singleBallLaunch = false; // these launches overlap
       // Exhaust all balls
       for (int i = 0; i < 20; i++) {
         final ball = Ball(position: Vector2(200.0 + i, 300));
@@ -641,6 +645,7 @@ void main() {
       // Given
       final gameState = GameState();
       gameState.startNewGame();
+      gameState.singleBallLaunch = false; // these launches overlap
       gameState.launchBall(Ball(position: Vector2(200, 300)));
       gameState.updatePhase(GamePhase.ready);
       gameState.launchBall(Ball(position: Vector2(210, 300)));
@@ -774,6 +779,36 @@ void main() {
 
       // Then
       expect(gameState.phase, equals(GamePhase.ready));
+    });
+
+    test('given GameState paused with a ball in play, when canLaunchBall checked, then returns false', () {
+      // Given
+      final gameState = GameState();
+      addTearDown(gameState.dispose);
+      gameState.startNewGame();
+      gameState.launchBall(Ball(position: Vector2(200, 300)));
+
+      // When
+      gameState.pauseGame();
+
+      // Then: phase is ready (paused) but a ball is still active
+      expect(gameState.phase, equals(GamePhase.ready));
+      expect(gameState.canLaunchBall, isFalse);
+    });
+
+    test('given single-ball launch turned off and GameState paused with a ball in play, when canLaunchBall checked, then returns true', () {
+      // Given
+      final gameState = GameState();
+      addTearDown(gameState.dispose);
+      gameState.singleBallLaunch = false;
+      gameState.startNewGame();
+      gameState.launchBall(Ball(position: Vector2(200, 300)));
+
+      // When
+      gameState.pauseGame();
+
+      // Then
+      expect(gameState.canLaunchBall, isTrue);
     });
 
     test('given GameState paused with active balls, when resumeGame called, then phase changes to playing', () {
