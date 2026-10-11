@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pachinko_game/models/ball_launcher.dart';
 import 'package:pachinko_game/utils/constants.dart';
-import 'package:vector_math/vector_math_64.dart';
 import 'dart:math' as math;
 
 void main() {

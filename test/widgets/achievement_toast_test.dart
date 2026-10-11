@@ -8,7 +8,6 @@ void main() {
     testWidgets('given achievement toast, when rendered, then shows achievement name',
         (tester) async {
       // Arrange
-      bool dismissed = false;
       final achievement = Achievement(
         id: 'test',
         name: 'Test Achievement',
@@ -24,7 +23,7 @@ void main() {
           home: Scaffold(
             body: AchievementToast(
               achievement: achievement,
-              onDismissed: () => dismissed = true,
+              onDismissed: () {},
             ),
           ),
         ),
@@ -111,7 +110,6 @@ void main() {
     testWidgets('given achievement toast, when rendered, then shows trophy icon',
         (tester) async {
       // Arrange
-      bool dismissed = false;
       final achievement = Achievement(
         id: 'test',
         name: 'Test Achievement',
@@ -127,7 +125,7 @@ void main() {
           home: Scaffold(
             body: AchievementToast(
               achievement: achievement,
-              onDismissed: () => dismissed = true,
+              onDismissed: () {},
             ),
           ),
         ),
@@ -147,7 +145,6 @@ void main() {
     testWidgets('given achievement toast, when rendered, then has gold border',
         (tester) async {
       // Arrange
-      bool dismissed = false;
       final achievement = Achievement(
         id: 'test',
         name: 'Test Achievement',
@@ -163,7 +160,7 @@ void main() {
           home: Scaffold(
             body: AchievementToast(
               achievement: achievement,
-              onDismissed: () => dismissed = true,
+              onDismissed: () {},
             ),
           ),
         ),

@@ -9,6 +9,14 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  exclude:
+    # The Flutter SDK checkout that CLAUDE.md tells contributors to use. It is
+    # git-ignored, so CI never sees it, but a local `flutter analyze` would
+    # analyze all of it. Only the SDK is excluded: Dart code added elsewhere
+    # under tools/ is still analyzed.
+    - tools/flutter/**
+
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`

@@ -11,7 +11,6 @@ import 'package:pachinko_game/models/slot.dart';
 import 'package:pachinko_game/models/level.dart';
 import 'package:pachinko_game/services/game_manager.dart';
 import 'package:pachinko_game/services/physics_engine.dart';
-import 'package:pachinko_game/utils/constants.dart';
 
 // Generate mocks for PhysicsEngine, GameState, and BallLauncher
 @GenerateMocks([PhysicsEngine, GameState, BallLauncher, Level])

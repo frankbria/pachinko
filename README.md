@@ -241,8 +241,8 @@ open coverage/html/index.html
 ### Code Quality
 
 ```bash
-# Analyze code for issues
-flutter analyze
+# Analyze code for issues (warnings and errors fail; this is what CI runs)
+flutter analyze --no-fatal-infos
 
 # Format code
 dart format lib/ test/
