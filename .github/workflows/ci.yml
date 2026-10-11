@@ -10,10 +10,12 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0 # the coverage step compares against the base branch
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version: 3.38.1
@@ -21,5 +23,24 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter analyze --no-fatal-infos
-      - run: flutter test --exclude-tags golden
+      - name: Generated mocks are up to date
+        run: |
+          dart run build_runner build --delete-conflicting-outputs
+          if ! git diff --exit-code -- test; then
+            echo "::error::Generated mocks are stale. Run 'dart run build_runner build --delete-conflicting-outputs' and commit the result."
+            exit 1
+          fi
+      - run: flutter test --coverage --exclude-tags golden
+      - name: Coverage of changed lines is at least 85%
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: pipx run --spec diff-cover==10.6.0 diff-cover coverage/lcov.info --compare-branch="origin/$BASE_REF" --fail-under=85
       - run: flutter test --tags golden
+      - name: Upload golden failure images
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: golden-failures
+          path: test/**/failures/
+          if-no-files-found: ignore
