@@ -192,6 +192,12 @@ class MockGameState extends _i1.Mock implements _i7.GameState {
       ) as int);
 
   @override
+  int get levelScore => (super.noSuchMethod(
+        Invocation.getter(#levelScore),
+        returnValue: 0,
+      ) as int);
+
+  @override
   int get ballsRemaining => (super.noSuchMethod(
         Invocation.getter(#ballsRemaining),
         returnValue: 0,
