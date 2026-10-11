@@ -51,7 +51,7 @@ lib/
 - `flutter run` - Run the game
 - `flutter build apk` - Build Android APK
 - `flutter test --exclude-tags golden` - Run tests (the main CI gate)
-- `flutter test --tags golden` - Run the golden image tests (also gated in CI). The baselines in `test/widgets/goldens/` were generated on Linux and are only expected to match there. After an intended visual change, regenerate them with `flutter test --tags golden --update-goldens`, look at the images, and commit them
+- `flutter test --tags golden` - Run the golden image tests (also gated in CI). The baselines in `test/widgets/goldens/` were generated on Linux and are only expected to match there. After an intended visual change or a Flutter upgrade, regenerate them with `flutter test --tags golden --update-goldens`, look at the images, and commit them. A golden that draws a prize peg captures its shimmer after however many frames the test pumps, so the picture depends on the frame count
 - `dart run build_runner build --delete-conflicting-outputs` - Regenerate test mocks after changing the public API of a mocked class
 - `flutter analyze` - Check code quality
 - `flutter doctor` - Check Flutter installation
