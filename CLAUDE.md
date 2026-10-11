@@ -77,6 +77,7 @@ lib/
 - **Special Pegs**: 2-4 highlighted pegs per level trigger 5+ bonus balls
 - **Inverse Scoring**: Edge slots = 2000pts, center = 1000pts, sides = 50-200pts
 - **Power System**: Drag-to-charge launcher with visual power meter
+- **Achievement Toasts**: `AchievementToastOverlay` is installed through `MaterialApp.builder` (above the Navigator) and reached with a `GlobalKey`, so toasts show over every screen; anything else that must appear above every route belongs in that builder, not in `home:`
 
 ## Feature Development Quality Standards
 
