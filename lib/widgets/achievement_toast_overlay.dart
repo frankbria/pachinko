@@ -61,6 +61,7 @@ class AchievementToastOverlayState extends State<AchievementToastOverlay> {
 
   final List<Achievement> _toastQueue = [];
   Achievement? _currentToast;
+  int _toastsDismissed = 0; // Keys each toast, so no two share a State
 
   /// Show achievement toast notification
   ///
@@ -79,6 +80,7 @@ class AchievementToastOverlayState extends State<AchievementToastOverlay> {
 
   void _onToastDismissed() {
     setState(() {
+      _toastsDismissed++;
       if (_toastQueue.isNotEmpty) {
         // Show next toast from queue
         _currentToast = _toastQueue.removeAt(0);
@@ -102,9 +104,11 @@ class AchievementToastOverlayState extends State<AchievementToastOverlay> {
             // Transparent Material: above the Navigator there is no Scaffold
             child: Material(
               type: MaterialType.transparency,
-              // Keyed so each queued toast gets a fresh State (animation + timer)
+              // Keyed so each queued toast gets a fresh State (animation + timer).
+              // The key counts toasts and is not the achievement's id: the same
+              // achievement twice in a row must still be two toasts
               child: AchievementToast(
-                key: ValueKey(_currentToast!.id),
+                key: ValueKey(_toastsDismissed),
                 achievement: _currentToast!,
                 onDismissed: _onToastDismissed,
               ),
