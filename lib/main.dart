@@ -25,6 +25,7 @@ class _PachinkoAppState extends State<PachinkoApp> {
   late final AudioService _audioService;
   StorageService? _storageService;
   AchievementService? _achievementService;
+  final GlobalKey<AchievementToastOverlayState> _toastOverlayKey = GlobalKey();
 
   @override
   void initState() {
@@ -57,10 +58,7 @@ class _PachinkoAppState extends State<PachinkoApp> {
   void _onAchievementUnlocked(Achievement achievement) {
     // Use a post-frame callback to ensure the overlay is available
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        final overlay = AchievementToastOverlay.of(context);
-        overlay?.showAchievementToast(achievement);
-      }
+      _toastOverlayKey.currentState?.showAchievementToast(achievement);
     });
   }
 
@@ -103,9 +101,12 @@ class _PachinkoAppState extends State<PachinkoApp> {
           useMaterial3: true,
           fontFamily: 'Roboto',
         ),
-        home: const AchievementToastOverlay(
-          child: MenuScreen(),
+        // Overlay sits above the Navigator so toasts show over every route
+        builder: (context, child) => AchievementToastOverlay(
+          key: _toastOverlayKey,
+          child: child!,
         ),
+        home: const MenuScreen(),
         debugShowCheckedModeBanner: false,
       ),
     );

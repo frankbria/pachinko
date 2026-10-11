@@ -5,6 +5,17 @@ import 'package:pachinko_game/widgets/achievement_toast.dart';
 import 'package:pachinko_game/models/achievement.dart';
 
 void main() {
+  /// Opacity of the toast's fade animation (1.0 = fully visible).
+  double toastOpacity(WidgetTester tester) => tester
+      .widget<FadeTransition>(find
+          .descendant(
+            of: find.byType(AchievementToast),
+            matching: find.byType(FadeTransition),
+          )
+          .first)
+      .opacity
+      .value;
+
   group('AchievementToastOverlay', () {
     testWidgets(
         'given toast overlay, when showAchievementToast called, then toast appears',
@@ -222,6 +233,137 @@ void main() {
 
       // Assert
       expect(foundState, isNull);
+    });
+
+    testWidgets(
+        'given two queued achievements, when first is dismissed, then second is visible and auto-dismisses',
+        (tester) async {
+      // Arrange
+      final first = Achievement(
+        id: 'test1',
+        name: 'First Achievement',
+        description: 'Test 1',
+        icon: Icons.star,
+        pointValue: 100,
+      )..unlock();
+      final second = Achievement(
+        id: 'test2',
+        name: 'Second Achievement',
+        description: 'Test 2',
+        icon: Icons.military_tech,
+        pointValue: 200,
+      )..unlock();
+      final overlayKey = GlobalKey<AchievementToastOverlayState>();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AchievementToastOverlay(
+            key: overlayKey,
+            child: const Scaffold(body: SizedBox()),
+          ),
+        ),
+      );
+
+      // Act - Show both, then dismiss the first by tapping it
+      overlayKey.currentState!.showAchievementToast(first);
+      overlayKey.currentState!.showAchievementToast(second);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.tap(find.text('First Achievement'));
+      await tester.pumpAndSettle();
+
+      // Assert - Second toast is on screen and fully opaque
+      expect(find.text('Second Achievement'), findsOneWidget);
+      expect(toastOpacity(tester), 1.0);
+
+      // Assert - It dismisses itself after 3.5 seconds
+      await tester.pump(const Duration(milliseconds: 3500));
+      await tester.pumpAndSettle();
+      expect(find.byType(AchievementToast), findsNothing);
+    });
+
+    testWidgets(
+        'given overlay installed in MaterialApp.builder, when toast shown over a pushed route, then toast is visible',
+        (tester) async {
+      // Arrange
+      final achievement = Achievement(
+        id: 'test',
+        name: 'Test Achievement',
+        description: 'Test',
+        icon: Icons.star,
+        pointValue: 100,
+      )..unlock();
+      final overlayKey = GlobalKey<AchievementToastOverlayState>();
+      final navigatorKey = GlobalKey<NavigatorState>();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: navigatorKey,
+          builder: (context, child) =>
+              AchievementToastOverlay(key: overlayKey, child: child!),
+          home: const Scaffold(body: Text('home')),
+        ),
+      );
+      navigatorKey.currentState!.push(MaterialPageRoute(
+          builder: (_) => const Scaffold(body: Text('second'))));
+      await tester.pumpAndSettle();
+
+      // Act
+      overlayKey.currentState!.showAchievementToast(achievement);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      // Assert
+      expect(find.text('second'), findsOneWidget);
+      expect(find.text('Test Achievement'), findsOneWidget);
+      expect(toastOpacity(tester), 1.0);
+
+      // Cleanup - Wait for auto-dismiss
+      await tester.pump(const Duration(milliseconds: 3500));
+      await tester.pumpAndSettle();
+      expect(find.byType(AchievementToast), findsNothing);
+    });
+
+    testWidgets(
+        'given queued achievements, when first is tapped twice, then next toast is not skipped',
+        (tester) async {
+      // Arrange
+      final overlayKey = GlobalKey<AchievementToastOverlayState>();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AchievementToastOverlay(
+            key: overlayKey,
+            child: const Scaffold(body: SizedBox()),
+          ),
+        ),
+      );
+
+      for (final name in ['First', 'Second', 'Third']) {
+        overlayKey.currentState!.showAchievementToast(Achievement(
+          id: name,
+          name: name,
+          description: 'Test',
+          icon: Icons.star,
+          pointValue: 100,
+        )..unlock());
+      }
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      // Act - Second tap lands while the dismiss animation is still running
+      await tester.tap(find.text('First'));
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tap(find.text('First'));
+      await tester.pumpAndSettle();
+
+      // Assert - The queue advanced by exactly one toast
+      expect(find.text('Second'), findsOneWidget);
+      expect(find.text('Third'), findsNothing);
+
+      // Cleanup - Wait for remaining toasts to auto-dismiss
+      await tester.pump(const Duration(milliseconds: 15000));
+      await tester.pumpAndSettle();
     });
   });
 }

@@ -65,9 +65,15 @@ class AchievementToastOverlayState extends State<AchievementToastOverlay> {
             top: MediaQuery.of(context).padding.top + 16,
             left: 0,
             right: 0,
-            child: AchievementToast(
-              achievement: _currentToast!,
-              onDismissed: _onToastDismissed,
+            // Transparent Material: above the Navigator there is no Scaffold
+            child: Material(
+              type: MaterialType.transparency,
+              // Keyed so each queued toast gets a fresh State (animation + timer)
+              child: AchievementToast(
+                key: ValueKey(_currentToast!.id),
+                achievement: _currentToast!,
+                onDismissed: _onToastDismissed,
+              ),
             ),
           ),
       ],
