@@ -70,7 +70,7 @@ As documented in [CODE_REVIEW.md](./CODE_REVIEW.md), the following must be compl
 
 - **Authentic Pachinko Launch**: Ball launches from bottom-right corner, travels up a 35-segment curved channel, enters peg field from top
 - **Advanced Physics Engine**: 60 FPS simulation with gravity (980.0 px/s²), air resistance (0.999 damping), and realistic collision detection
-- **Smart Peg Patterns**: Three distinct layouts with 35px minimum spacing to prevent overlap
+- **Smart Peg Patterns**: Three distinct layouts, with every gap between pegs wider than the ball so a ball cannot come to rest
   - **Hexagonal**: Organized grid pattern
   - **Triangle**: Pyramid arrangement
   - **Random**: Chaotic distribution (50 placement attempts per peg)

@@ -8,13 +8,19 @@ import 'audio_service.dart';
 
 class PhysicsEngine {
   final AudioService? _audioService;
+  final math.Random _random;
 
   static const double _gravity = GameConstants.gravity;
   static const double _damping = GameConstants.bounceDamping;
   static const double _airResistance = GameConstants.airResistance;
 
-  /// Creates a PhysicsEngine with optional AudioService for sound effects
-  PhysicsEngine({AudioService? audioService}) : _audioService = audioService;
+  /// Creates a PhysicsEngine with optional AudioService for sound effects.
+  ///
+  /// [random] drives the small deflection added to each peg bounce; pass a
+  /// seeded one for a repeatable simulation.
+  PhysicsEngine({AudioService? audioService, math.Random? random})
+      : _audioService = audioService,
+        _random = random ?? math.Random();
   
   void updateBalls(List<Ball> balls, double deltaTime) {
     for (final ball in balls) {
@@ -175,7 +181,7 @@ class PhysicsEngine {
     ball.velocity.add(impulse);
     
     // Add some randomness to prevent perfect patterns
-    final randomAngle = (math.Random().nextDouble() - 0.5) * 0.2;
+    final randomAngle = (_random.nextDouble() - 0.5) * 0.2;
     final rotationMatrix = Matrix2.rotation(randomAngle);
     ball.velocity = rotationMatrix * ball.velocity;
   }

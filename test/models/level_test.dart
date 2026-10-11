@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pachinko_game/models/level.dart';
 import 'package:pachinko_game/models/peg.dart';
 import 'package:pachinko_game/models/slot.dart';
+import 'package:pachinko_game/utils/constants.dart';
 import 'package:vector_math/vector_math_64.dart';
 
 void main() {
@@ -306,6 +307,69 @@ void main() {
           final distance = (level.pegs[i].position - level.pegs[j].position).length;
           // Allow tolerance due to 50-attempt limit in peg placement
           expect(distance, greaterThan(minDistance - 5.0));
+        }
+      }
+    });
+
+    test('given levels 1 to 100, when generated, then each has 2 to 4 prize pegs', () {
+      /// A dense field can leave no free spot for a prize peg. A level without
+      /// one has no bonus, so the generator clears room when it has to.
+      for (int n = 1; n <= 100; n++) {
+        final level = Level.generate(n, 400.0, 600.0);
+        expect(level.specialPegs.length, inInclusiveRange(2, 4), reason: 'level $n');
+        expect(level.pegs.where((peg) => peg.type == PegType.special), level.specialPegs, reason: 'level $n');
+      }
+    });
+
+    test('given levels 1 to 100, when prize pegs are placed, then each level keeps at least 24 regular pegs', () {
+      /// Making room for a prize peg removes the regular pegs around it. The
+      /// generator takes the least crowded of its candidates, which usually
+      /// costs one peg; taking any candidate thins a triangle level to 19.
+      for (int n = 1; n <= 100; n++) {
+        final level = Level.generate(n, 400.0, 600.0);
+        expect(level.pegs.length - level.specialPegs.length, greaterThanOrEqualTo(24), reason: 'level $n');
+      }
+    });
+
+    test('given levels 1 to 100, when generated, then a ball fits between any two pegs and between a peg and a wall', () {
+      /// A gap narrower than a ball is a pocket: the ball comes to rest in it
+      /// and the session soft-locks (issue #16).
+      for (int n = 1; n <= 100; n++) {
+        final pegs = Level.generate(n, 400.0, 600.0).pegs;
+        for (int i = 0; i < pegs.length; i++) {
+          final peg = pegs[i];
+          expect(
+            peg.position.x - peg.radius - GameConstants.fieldLeftBoundaryX,
+            greaterThan(GameConstants.ballRadius * 2),
+            reason: 'level $n: peg $i and the left wall',
+          );
+          expect(
+            GameConstants.fieldRightBoundaryX - peg.position.x - peg.radius,
+            greaterThan(GameConstants.ballRadius * 2),
+            reason: 'level $n: peg $i and the right wall',
+          );
+          for (int j = i + 1; j < pegs.length; j++) {
+            final gap = (peg.position - pegs[j].position).length - peg.radius - pegs[j].radius;
+            expect(
+              gap,
+              greaterThan(GameConstants.ballRadius * 2),
+              reason: 'level $n: pegs $i and $j',
+            );
+          }
+        }
+      }
+    });
+
+    test('given a board wider than the field, when generated, then every peg still leaves room at the right wall', () {
+      /// The field walls are fixed by the physics, whatever width the generator
+      /// is asked for, so the generators must not rely on their own x ranges.
+      for (int n = 1; n <= 30; n++) {
+        for (final peg in Level.generate(n, 800.0, 600.0).pegs) {
+          expect(
+            GameConstants.fieldRightBoundaryX - peg.position.x - peg.radius,
+            greaterThan(GameConstants.ballRadius * 2),
+            reason: 'level $n: ${peg.type.name} peg at x=${peg.position.x.round()}',
+          );
         }
       }
     });

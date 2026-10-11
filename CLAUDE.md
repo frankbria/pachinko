@@ -72,10 +72,10 @@ lib/
 
 ## Key Game Mechanics (IMPLEMENTED)
 - **Authentic Launch**: Ball starts bottom-right, travels up channel, curves into peg field
-- **Smart Peg Spacing**: 35px minimum spacing prevents overlap, ensures smooth ball flow
+- **Peg Spacing**: no gap between two pegs, or between a peg and a field wall, is narrower than `GameConstants.minPegGap` (the ball's diameter plus 2 px). A narrower gap is a pocket: the ball comes to rest in it, never leaves play, and the session soft-locks. Every generator places pegs through `PegPatterns.leavesRoomForBall`, and a new generator must too. `test/models/level_test.dart` checks the rule on levels 1 to 100 and `test/services/stuck_ball_simulation_test.dart` plays seeded balls through levels 1 to 30
 - **Pattern Variety**: Hexagonal, Triangle, and Random patterns cycle through levels
 - **Physics Simulation**: 60 FPS with gravity, air resistance, realistic bouncing
-- **Special Pegs**: 2-4 highlighted pegs per level trigger 5+ bonus balls, which drop from the top of the playfield
+- **Special Pegs**: 2-4 highlighted pegs per level trigger 5+ bonus balls, which drop from the top of the playfield. They are placed after the regular pegs; when a dense field has no free spot, `Level.generate` removes the regular pegs around the least crowded candidate, so no level is left without its bonus
 - **Inverse Scoring**: Edge slots = 2000pts, center = 1000pts, sides = 50-200pts
 - **Power System**: Drag-to-charge launcher with visual power meter
 - **Achievement Toasts**: `AchievementToastOverlay` is installed through `MaterialApp.builder` (above the Navigator) and reached with a `GlobalKey`, so toasts show over every screen; anything else that must appear above every route belongs in that builder, not in `home:`

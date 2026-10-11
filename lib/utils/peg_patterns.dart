@@ -4,16 +4,32 @@ import '../models/peg.dart';
 import 'constants.dart';
 
 class PegPatterns {
+  /// Whether a ball can pass between a peg of [radius] at [position] and every
+  /// peg in [pegs], and between it and the field walls.
+  ///
+  /// Every generator places pegs through this check. A gap narrower than a
+  /// ball is a pocket: the ball comes to rest in it and the session soft-locks.
+  static bool leavesRoomForBall(Iterable<Peg> pegs, Vector2 position, double radius) {
+    const gap = GameConstants.minPegGap;
+    if (position.x - radius - GameConstants.fieldLeftBoundaryX < gap) return false;
+    if (GameConstants.fieldRightBoundaryX - position.x - radius < gap) return false;
+    return pegs.every((peg) => gapTo(peg, position, radius) >= gap);
+  }
+
+  /// The gap, edge to edge, between [peg] and a peg of [radius] at [position].
+  static double gapTo(Peg peg, Vector2 position, double radius) =>
+      (position - peg.position).length - radius - peg.radius;
+
   static List<Peg> generateRandomPattern(Random random, int levelNumber, double boardWidth, double boardHeight) {
     final pegs = <Peg>[];
     final pegCount = 30 + (levelNumber * 3);
-    const minSpacing = 35.0;
-    
+
     for (int i = 0; i < pegCount; i++) {
       double x = 0, y = 0;
+      final pegRadius = 8.0 + random.nextDouble() * 4.0;
       bool validPosition = false;
       int attempts = 0;
-      
+
       while (!validPosition && attempts < 50) {
         x = 60 + random.nextDouble() * (boardWidth - 120);
         y = 120 + random.nextDouble() * (boardHeight - 320);
@@ -28,24 +44,11 @@ class PegPatterns {
           continue;
         }
         
-        // Check spacing
-        bool hasProperSpacing = true;
-        for (final existingPeg in pegs) {
-          final distance = (Vector2(x, y) - existingPeg.position).length;
-          if (distance < minSpacing) {
-            hasProperSpacing = false;
-            break;
-          }
-        }
-        
-        if (hasProperSpacing) {
-          validPosition = true;
-        }
+        validPosition = leavesRoomForBall(pegs, Vector2(x, y), pegRadius);
         attempts++;
       }
-      
+
       if (validPosition) {
-        final pegRadius = 8.0 + random.nextDouble() * 4.0;
         final peg = Peg(
           position: Vector2(x, y),
           radius: pegRadius,
@@ -85,16 +88,7 @@ class PegPatterns {
                                y < GameConstants.launchChannelStartY + 30;
         
         if (!inLaunchChannel) {
-          // Add some randomness to prevent perfect grid
-          final offsetX = x + (random.nextDouble() - 0.5) * 10;
-          final offsetY = y + (random.nextDouble() - 0.5) * 10;
-          
-          final pegRadius = 9.0 + random.nextDouble() * 2.0;
-          final peg = Peg(
-            position: Vector2(offsetX, offsetY),
-            radius: pegRadius,
-          );
-          pegs.add(peg);
+          _addJitteredPeg(pegs, random, x, y, 10);
         }
       }
     }
@@ -127,16 +121,7 @@ class PegPatterns {
                                  currentY < GameConstants.launchChannelStartY + 30;
           
           if (!inLaunchChannel) {
-            // Add slight randomness
-            final offsetX = x + (random.nextDouble() - 0.5) * 8;
-            final offsetY = currentY + (random.nextDouble() - 0.5) * 8;
-            
-            final pegRadius = 9.0 + random.nextDouble() * 2.0;
-            final peg = Peg(
-              position: Vector2(offsetX, offsetY),
-              radius: pegRadius,
-            );
-            pegs.add(peg);
+            _addJitteredPeg(pegs, random, x, currentY, 8);
           }
         }
       }
@@ -146,6 +131,23 @@ class PegPatterns {
     }
     
     return pegs;
+  }
+
+  /// Adds a peg near grid point ([x], [y]), moved by up to half of [jitter] on
+  /// each axis so the grid does not look perfect. The offset is drawn again if
+  /// it would close a gap, and the peg is left out if no draw fits.
+  static void _addJitteredPeg(List<Peg> pegs, Random random, double x, double y, double jitter) {
+    for (int attempt = 0; attempt < 10; attempt++) {
+      final position = Vector2(
+        x + (random.nextDouble() - 0.5) * jitter,
+        y + (random.nextDouble() - 0.5) * jitter,
+      );
+      final pegRadius = 9.0 + random.nextDouble() * 2.0;
+      if (leavesRoomForBall(pegs, position, pegRadius)) {
+        pegs.add(Peg(position: position, radius: pegRadius));
+        return;
+      }
+    }
   }
 
   static List<Peg> getPatternForLevel(Random random, int levelNumber, double boardWidth, double boardHeight) {

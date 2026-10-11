@@ -375,6 +375,25 @@ void main() {
     });
   });
 
+  group('Seeded Bounce Deflection', () {
+    /// The small deflection added to each peg bounce comes from the injected
+    /// Random, which is what lets a simulation be seeded and repeated.
+    test('Given two engines with the same seed When a ball bounces off a peg Then both bounces are identical', () {
+      Vector2 bounce(PhysicsEngine engine) {
+        final ball = Ball(position: Vector2(200, 185), velocity: Vector2(30, 200));
+        engine.checkPegCollisions([ball], [Peg(position: Vector2(200, 200), radius: 10)]);
+        return ball.velocity;
+      }
+
+      final first = bounce(PhysicsEngine(random: math.Random(7)));
+      final second = bounce(PhysicsEngine(random: math.Random(7)));
+      final otherSeed = bounce(PhysicsEngine(random: math.Random(8)));
+
+      expect(first, second);
+      expect(otherSeed, isNot(first));
+    });
+  });
+
   group('Slot Collision Detection (AABB)', () {
     /// Tests axis-aligned bounding box (AABB) collision detection for slots
     /// Verifies ball landing in slot deactivates ball and increments slot count
