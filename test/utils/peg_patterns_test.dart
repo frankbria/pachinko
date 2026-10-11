@@ -45,6 +45,35 @@ void main() {
       expect(PegPatterns.leavesRoomForBall(const [], Vector2(x, y - 0.5), 10), isFalse);
     });
 
+    test('given pegs just inside and just outside the limit all along the curve, then the limit holds to a fiftieth of a pixel', () {
+      /// The check walks the curve in steps. A peg whose nearest point on the
+      /// curve lies between two steps must be measured as exactly as one whose
+      /// nearest point is on a step.
+      const p0 = (GameConstants.topCurveStartX, GameConstants.topCurveStartY);
+      const p1 = (GameConstants.topCurveControlX, GameConstants.topCurveControlY);
+      const p2 = (GameConstants.topCurveEndX, GameConstants.topCurveEndY);
+      const radius = 10.0;
+      // Away from the ends, where the side walls would decide instead
+      for (double t = 0.2; t <= 0.8; t += 0.0137) {
+        final onCurve = Vector2(
+          (1 - t) * (1 - t) * p0.$1 + 2 * (1 - t) * t * p1.$1 + t * t * p2.$1,
+          (1 - t) * (1 - t) * p0.$2 + 2 * (1 - t) * t * p1.$2 + t * t * p2.$2,
+        );
+        final tangent = Vector2(
+          2 * (1 - t) * (p1.$1 - p0.$1) + 2 * t * (p2.$1 - p1.$1),
+          2 * (1 - t) * (p1.$2 - p0.$2) + 2 * t * (p2.$2 - p1.$2),
+        ).normalized();
+        // Into the board: perpendicular to the curve, pointing down
+        final inward = Vector2(-tangent.y, tangent.x);
+        expect(inward.y, greaterThan(0));
+
+        final tooClose = onCurve + inward * (radius + GameConstants.minPegGap - 0.02);
+        final justClear = onCurve + inward * (radius + GameConstants.minPegGap + 0.02);
+        expect(PegPatterns.leavesRoomForBall(const [], tooClose, radius), isFalse, reason: 't=$t');
+        expect(PegPatterns.leavesRoomForBall(const [], justClear, radius), isTrue, reason: 't=$t');
+      }
+    });
+
     test('given the largest peg in the top corner of the random pattern, then false', () {
       // (60, 120) with radius 12 is the closest the random pattern can come to
       // the curve: about 17 px, more than a ball and less than the minimum gap

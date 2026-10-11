@@ -18,20 +18,30 @@ class PegPatterns {
     return pegs.every((peg) => gapTo(peg, position, radius) >= gap);
   }
 
-  /// The distance from [position] to the nearest point of the curved top
-  /// boundary, found by walking along the curve.
+  /// Points along the curved top boundary, about 5 px apart. The straight
+  /// lines between them stay within a fiftieth of a pixel of the curve.
+  static final List<Vector2> _topCurve = [
+    for (int i = 0; i <= 90; i++) _topCurvePoint(i / 90),
+  ];
+
+  static Vector2 _topCurvePoint(double t) => Vector2(
+        (1 - t) * (1 - t) * GameConstants.topCurveStartX +
+            2 * (1 - t) * t * GameConstants.topCurveControlX +
+            t * t * GameConstants.topCurveEndX,
+        (1 - t) * (1 - t) * GameConstants.topCurveStartY +
+            2 * (1 - t) * t * GameConstants.topCurveControlY +
+            t * t * GameConstants.topCurveEndY,
+      );
+
+  /// The distance from [position] to the curved top boundary: the nearest
+  /// point on any of the straight pieces the curve is cut into.
   static double _distanceToTopCurve(Vector2 position) {
-    const steps = 90; // The curve is 360 px wide: a point every 4 px
     double nearest = double.infinity;
-    for (int i = 0; i <= steps; i++) {
-      final t = i / steps;
-      final x = (1 - t) * (1 - t) * GameConstants.topCurveStartX +
-          2 * (1 - t) * t * GameConstants.topCurveControlX +
-          t * t * GameConstants.topCurveEndX;
-      final y = (1 - t) * (1 - t) * GameConstants.topCurveStartY +
-          2 * (1 - t) * t * GameConstants.topCurveControlY +
-          t * t * GameConstants.topCurveEndY;
-      nearest = min(nearest, sqrt((position.x - x) * (position.x - x) + (position.y - y) * (position.y - y)));
+    for (int i = 0; i < _topCurve.length - 1; i++) {
+      final start = _topCurve[i];
+      final piece = _topCurve[i + 1] - start;
+      final along = ((position - start).dot(piece) / piece.length2).clamp(0.0, 1.0);
+      nearest = min(nearest, (position - (start + piece * along)).length);
     }
     return nearest;
   }
