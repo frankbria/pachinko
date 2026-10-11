@@ -7,6 +7,7 @@ import 'services/storage_service.dart';
 import 'services/achievement_service.dart';
 import 'screens/menu_screen.dart';
 import 'utils/constants.dart';
+import 'utils/game_theme.dart';
 import 'widgets/achievement_toast_overlay.dart';
 import 'models/achievement.dart';
 
@@ -90,17 +91,7 @@ class _PachinkoAppState extends State<PachinkoApp> {
       ],
       child: MaterialApp(
         title: GameStrings.appName,
-        theme: ThemeData(
-          colorScheme: const ColorScheme.dark(
-            primary: GameConstants.primaryColor,
-            primaryContainer: GameConstants.primaryVariantColor,
-            secondary: GameConstants.secondaryColor,
-            surface: GameConstants.surfaceColor,
-            error: GameConstants.errorColor,
-          ),
-          useMaterial3: true,
-          fontFamily: 'Roboto',
-        ),
+        theme: buildGameTheme(),
         // Overlay sits above the Navigator so toasts show over every route
         builder: (context, child) => AchievementToastOverlay(
           key: _toastOverlayKey,

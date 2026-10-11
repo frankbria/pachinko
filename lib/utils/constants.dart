@@ -48,26 +48,39 @@ class GameConstants {
   static const double bonusBallSpawnMinX = 120.0;
   static const double bonusBallSpawnMaxX = 300.0;
   
-  // Colors
-  static const Color backgroundColor = Color(0xFF1A1A2E);
-  static const Color boardColor = Color(0xFF16213E);
-  static const Color ballColor = Color(0xFFFFFFFF);
-  static const Color normalPegColor = Color(0xFF4CAF50);
-  static const Color specialPegColor = Color(0xFFFF9800);
-  static const Color bonusPegColor = Color(0xFFE91E63);
-  static const Color bonusBallColor = Color(0xFFFFD700);
-  
-  // Slot colors based on point values
-  static const Color highPointSlotColor = Color(0xFFFF5722);
-  static const Color mediumHighPointSlotColor = Color(0xFFFF9800);
-  static const Color mediumPointSlotColor = Color(0xFFFFC107);
-  static const Color lowPointSlotColor = Color(0xFF4CAF50);
-  
+  // Palette: every colour in the game comes from this set
+  static const Color goldColor = Color(0xFFFFD34D);
+  static const Color magentaColor = Color(0xFFFF3D9A);
+  static const Color violetColor = Color(0xFFA77BFF);
+  static const Color blueColor = Color(0xFF3FA9FF);
+  static const Color slateColor = Color(0xFF7C89B8);
+  static const Color cyanColor = Color(0xFF2DE2E6);
+  static const Color brassColor = Color(0xFFD9A441);
+  static const Color chromeColor = Color(0xFFE9EEF8);
+  static const Color cabinetColor = Color(0xFF0A0C16);
+  static const Color feltColor = Color(0xFF1D2760);
+  static const Color inkColor = Color(0xFFF2F5FB);
+  static const Color mutedColor = Color(0xFF8E98B3);
+
+  // Roles: what each colour means on screen. Gold is score and bonus only,
+  // brass never glows (a glowing peg is always a prize), and slot tiers run
+  // cool to hot.
+  static const Color backgroundColor = cabinetColor;
+  static const Color boardColor = feltColor;
+  static const Color ballColor = chromeColor;
+  static const Color normalPegColor = brassColor;
+  static const Color specialPegColor = goldColor;
+  static const Color bonusBallColor = goldColor;
+  static const Color slot2000Color = magentaColor;
+  static const Color slot1000Color = violetColor;
+  static const Color slot200Color = blueColor;
+  static const Color slot50Color = slateColor;
+
   // UI Colors
-  static const Color primaryColor = Color(0xFF6200EE);
-  static const Color primaryVariantColor = Color(0xFF3700B3);
-  static const Color secondaryColor = Color(0xFF03DAC6);
-  static const Color surfaceColor = Color(0xFF2D2D2D);
+  static const Color primaryColor = cyanColor;
+  static const Color onPrimaryColor = Color(0xFF06262A);
+  static const Color secondaryColor = goldColor;
+  static const Color surfaceColor = Color(0xFF171C36);
   static const Color errorColor = Color(0xFFCF6679);
   
   // Animation durations (in milliseconds)

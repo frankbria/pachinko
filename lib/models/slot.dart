@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:vector_math/vector_math_64.dart';
+import '../utils/constants.dart';
 
 class Slot {
   Vector2 position;
@@ -19,14 +20,14 @@ class Slot {
   }) : color = color ?? _getColorForPoints(pointValue);
 
   static Color _getColorForPoints(int points) {
-    if (points >= 1000) {
-      return const Color(0xFFFF5722); // Red for high points
-    } else if (points >= 500) {
-      return const Color(0xFFFF9800); // Orange for medium-high points
+    if (points >= 2000) {
+      return GameConstants.slot2000Color;
+    } else if (points >= 1000) {
+      return GameConstants.slot1000Color;
     } else if (points >= 100) {
-      return const Color(0xFFFFC107); // Amber for medium points
+      return GameConstants.slot200Color;
     } else {
-      return const Color(0xFF4CAF50); // Green for low points
+      return GameConstants.slot50Color;
     }
   }
 

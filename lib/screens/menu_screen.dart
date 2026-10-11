@@ -29,19 +29,25 @@ class MenuScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Game Title
-                Text(
-                  GameStrings.appName,
-                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    shadows: [
-                      const Shadow(
-                        blurRadius: 10.0,
-                        color: GameConstants.primaryColor,
-                        offset: Offset(2.0, 2.0),
+                // Game Title, scaled down to stay on one line with its glow
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      GameStrings.appName,
+                      style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        shadows: [
+                          const Shadow(
+                            blurRadius: 10.0,
+                            color: GameConstants.primaryColor,
+                            offset: Offset(2.0, 2.0),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
                 
@@ -164,7 +170,7 @@ class MenuScreen extends StatelessWidget {
                     child: Text(
                       '$levelNumber',
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: GameConstants.onPrimaryColor,
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
                       ),
@@ -230,7 +236,7 @@ class MenuScreen extends StatelessWidget {
                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
               Text(
-                '• Orange pegs are special - hit all special pegs to get bonus balls!\n'
+                '• Gold pegs are special - hit all special pegs to get bonus balls!\n'
                 '• Edge slots give highest points but are hardest to reach\n'
                 '• Center slot gives good points with medium difficulty\n',
                 style: TextStyle(color: Colors.white70),
@@ -301,7 +307,9 @@ class _MenuButton extends StatelessWidget {
           backgroundColor: isPrimary 
               ? GameConstants.primaryColor 
               : GameConstants.surfaceColor,
-          foregroundColor: Colors.white,
+          foregroundColor: isPrimary
+              ? GameConstants.onPrimaryColor
+              : GameConstants.inkColor,
           elevation: isPrimary ? 8 : 4,
           shadowColor: isPrimary 
               ? GameConstants.primaryColor.withOpacity(0.5) 

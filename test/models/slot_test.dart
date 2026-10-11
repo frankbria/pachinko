@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pachinko_game/models/slot.dart';
+import 'package:pachinko_game/utils/constants.dart';
 import 'package:vector_math/vector_math_64.dart';
 import 'dart:ui';
 
@@ -61,7 +62,7 @@ void main() {
       );
 
       // Then
-      expect(slot.color, equals(const Color(0xFFFF5722))); // Red for ≥1000 points
+      expect(slot.color, equals(GameConstants.slot1000Color));
     });
 
     test('given custom ballCount, when slot created, then initializes with custom count', () {
@@ -291,125 +292,41 @@ void main() {
   group('Color Assignment by Point Value -', () {
     /// Tests point-based color derivation logic.
     ///
-    /// Color thresholds (from _getColorForPoints):
-    /// - ≥1000 points: Red (0xFFFF5722)
-    /// - 500-999 points: Orange (0xFFFF9800)
-    /// - 100-499 points: Amber (0xFFFFC107)
-    /// - <100 points: Green (0xFF4CAF50)
-    test('given high points (≥1000), when slot created without color, then uses red color', () {
-      // Given
-      const pointValue = 2000;
+    /// One colour per slot tier, cool to hot (see GameConstants):
+    /// ≥2000 magenta, ≥1000 violet, ≥100 blue, below that slate.
+    Slot slotWorth(int pointValue) => Slot(
+          position: Vector2(100.0, 200.0),
+          width: 50.0,
+          height: 30.0,
+          pointValue: pointValue,
+        );
 
-      // When
-      final slot = Slot(
-        position: Vector2(100.0, 200.0),
-        width: 50.0,
-        height: 30.0,
-        pointValue: pointValue,
-      );
-
-      // Then
-      expect(slot.color, equals(const Color(0xFFFF5722))); // Red
+    test('given each slot value on the board, when slot created without color, then uses its tier color', () {
+      expect(slotWorth(2000).color, equals(GameConstants.slot2000Color));
+      expect(slotWorth(1000).color, equals(GameConstants.slot1000Color));
+      expect(slotWorth(200).color, equals(GameConstants.slot200Color));
+      expect(slotWorth(50).color, equals(GameConstants.slot50Color));
     });
 
-    test('given medium-high points (500-999), when slot created without color, then uses orange color', () {
-      // Given
-      const pointValue = 750;
-
-      // When
-      final slot = Slot(
-        position: Vector2(100.0, 200.0),
-        width: 50.0,
-        height: 30.0,
-        pointValue: pointValue,
-      );
-
-      // Then
-      expect(slot.color, equals(const Color(0xFFFF9800))); // Orange
+    test('given the 2000 and 1000 slots, when created without color, then their colors differ', () {
+      expect(slotWorth(2000).color, isNot(equals(slotWorth(1000).color)));
     });
 
-    test('given medium points (100-499), when slot created without color, then uses amber color', () {
-      // Given
-      const pointValue = 250;
-
-      // When
-      final slot = Slot(
-        position: Vector2(100.0, 200.0),
-        width: 50.0,
-        height: 30.0,
-        pointValue: pointValue,
-      );
-
-      // Then
-      expect(slot.color, equals(const Color(0xFFFFC107))); // Amber
+    test('given the four tier colors, then no two are the same', () {
+      final tiers = {
+        GameConstants.slot2000Color,
+        GameConstants.slot1000Color,
+        GameConstants.slot200Color,
+        GameConstants.slot50Color,
+      };
+      expect(tiers, hasLength(4));
     });
 
-    test('given low points (<100), when slot created without color, then uses green color', () {
-      // Given
-      const pointValue = 50;
-
-      // When
-      final slot = Slot(
-        position: Vector2(100.0, 200.0),
-        width: 50.0,
-        height: 30.0,
-        pointValue: pointValue,
-      );
-
-      // Then
-      expect(slot.color, equals(const Color(0xFF4CAF50))); // Green
-    });
-
-    /// Tests exact threshold boundary for color assignment.
-    ///
-    /// At exactly 1000 points, should use >= comparison to assign red color.
-    /// This prevents off-by-one errors in threshold comparisons.
-    test('given exactly 1000 points, when slot created without color, then uses red color', () {
-      // Given
-      const pointValue = 1000;
-
-      // When
-      final slot = Slot(
-        position: Vector2(100.0, 200.0),
-        width: 50.0,
-        height: 30.0,
-        pointValue: pointValue,
-      );
-
-      // Then
-      expect(slot.color, equals(const Color(0xFFFF5722))); // Red (≥1000)
-    });
-
-    test('given exactly 500 points, when slot created without color, then uses orange color', () {
-      // Given
-      const pointValue = 500;
-
-      // When
-      final slot = Slot(
-        position: Vector2(100.0, 200.0),
-        width: 50.0,
-        height: 30.0,
-        pointValue: pointValue,
-      );
-
-      // Then
-      expect(slot.color, equals(const Color(0xFFFF9800))); // Orange (≥500)
-    });
-
-    test('given exactly 100 points, when slot created without color, then uses amber color', () {
-      // Given
-      const pointValue = 100;
-
-      // When
-      final slot = Slot(
-        position: Vector2(100.0, 200.0),
-        width: 50.0,
-        height: 30.0,
-        pointValue: pointValue,
-      );
-
-      // Then
-      expect(slot.color, equals(const Color(0xFFFFC107))); // Amber (≥100)
+    test('given values at the tier boundaries, when slot created without color, then falls in the lower tier below each threshold', () {
+      expect(slotWorth(1999).color, equals(GameConstants.slot1000Color));
+      expect(slotWorth(999).color, equals(GameConstants.slot200Color));
+      expect(slotWorth(100).color, equals(GameConstants.slot200Color));
+      expect(slotWorth(99).color, equals(GameConstants.slot50Color));
     });
   });
 

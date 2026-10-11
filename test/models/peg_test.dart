@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vector_math/vector_math_64.dart';
 import 'package:pachinko_game/models/peg.dart';
+import 'package:pachinko_game/utils/constants.dart';
 
 void main() {
   group('Peg Initialization -', () {
@@ -60,7 +61,7 @@ void main() {
       expect(peg.hasBeenHit, isTrue);
     });
 
-    test('given normal type, when peg is created, then color defaults to green', () {
+    test('given normal type, when peg is created, then color defaults to the brass pin color', () {
       // Given
       final position = Vector2(100, 100);
 
@@ -68,10 +69,10 @@ void main() {
       final peg = Peg(position: position, type: PegType.normal);
 
       // Then
-      expect(peg.color, equals(const Color(0xFF4CAF50))); // Green
+      expect(peg.color, equals(GameConstants.normalPegColor));
     });
 
-    test('given special type, when peg is created, then color defaults to orange', () {
+    test('given special type, when peg is created, then color defaults to the gold prize color', () {
       // Given
       final position = Vector2(100, 100);
 
@@ -79,7 +80,7 @@ void main() {
       final peg = Peg(position: position, type: PegType.special);
 
       // Then
-      expect(peg.color, equals(const Color(0xFFFF9800))); // Orange
+      expect(peg.color, equals(GameConstants.specialPegColor));
     });
 
     test('given bonus type, when peg is created, then color defaults to pink', () {
@@ -107,7 +108,7 @@ void main() {
 
       // Then
       expect(peg.color, equals(customColor));
-      expect(peg.color, isNot(equals(const Color(0xFF4CAF50)))); // Not default green
+      expect(peg.color, isNot(equals(GameConstants.normalPegColor)));
     });
   });
 
@@ -427,7 +428,7 @@ void main() {
 
       // Then
       expect(renderColor.opacity, equals(1.0)); // Full opacity
-      expect(renderColor, equals(const Color(0xFF4CAF50))); // Green
+      expect(renderColor, equals(GameConstants.normalPegColor));
     });
 
     test('given hit peg with completed animation, when renderColor accessed, then returns normal color', () {
@@ -448,7 +449,7 @@ void main() {
 
       // Then
       // After animation completes, peg returns to normal color (not dimmed)
-      expect(renderColor, equals(const Color(0xFF4CAF50))); // Normal green
+      expect(renderColor, equals(GameConstants.normalPegColor));
       expect(renderColor.opacity, equals(1.0)); // Full opacity
     });
 
@@ -469,9 +470,9 @@ void main() {
       final renderColor = peg.renderColor;
 
       // Then
-      // Color.lerp between orange (0xFFFF9800) and yellow (0xFFFFFF00) at 0.5
-      // Should produce a yellow-tinted orange
-      expect(renderColor, isNot(equals(const Color(0xFFFF9800)))); // Not pure orange
+      // Color.lerp between the prize gold and yellow (0xFFFFFF00) at 0.5
+      // Should produce a yellow-tinted gold
+      expect(renderColor, isNot(equals(GameConstants.specialPegColor)));
       expect(renderColor.opacity, equals(1.0)); // Full opacity
     });
 
@@ -491,7 +492,7 @@ void main() {
       final renderColor = peg.renderColor;
 
       // Then
-      expect(renderColor, equals(const Color(0xFFFF9800))); // Orange, no glow
+      expect(renderColor, equals(GameConstants.specialPegColor));
       expect(renderColor.opacity, equals(1.0));
     });
 
@@ -514,8 +515,8 @@ void main() {
       final renderColor = peg.renderColor;
 
       // Then
-      // After animation completes, returns to normal orange color (not dimmed)
-      expect(renderColor, equals(const Color(0xFFFF9800))); // Normal orange
+      // After animation completes, returns to the normal prize color (not dimmed)
+      expect(renderColor, equals(GameConstants.specialPegColor));
       expect(renderColor.opacity, equals(1.0)); // Full opacity
       expect(peg.isHighlighted, isFalse); // No longer highlighted
       expect(peg.hasBeenHit, isTrue); // Marked as hit
@@ -589,11 +590,11 @@ void main() {
       // When - Check color immediately after hit (should be brightest)
       final renderColorStart = peg.renderColor;
 
-      // Then - Should be lighter than base green due to white lerp
-      expect(renderColorStart, isNot(equals(const Color(0xFF4CAF50))));
+      // Then - Should be lighter than the base color due to white lerp
+      expect(renderColorStart, isNot(equals(GameConstants.normalPegColor)));
       // Color should have more white content (higher R, G values)
-      expect(renderColorStart.red, greaterThan(0x4C)); // Brighter than base
-      expect(renderColorStart.green, greaterThan(0xAF)); // Brighter than base
+      expect(renderColorStart.r, greaterThan(GameConstants.normalPegColor.r));
+      expect(renderColorStart.g, greaterThan(GameConstants.normalPegColor.g));
     });
 
     test('given special peg hit, when animation completes, then returns to normal color not special', () {
@@ -614,7 +615,7 @@ void main() {
 
       // Then
       expect(peg.isHighlighted, isFalse); // No longer highlighted
-      expect(peg.renderColor, equals(const Color(0xFFFF9800))); // Normal orange (not yellow glow)
+      expect(peg.renderColor, equals(GameConstants.specialPegColor));
       expect(peg.hasBeenHit, isTrue);
     });
 

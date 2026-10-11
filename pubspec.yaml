@@ -98,6 +98,15 @@ flutter:
     - assets/sounds/
     - assets/icon/
 
+  # Display face for the title, numerals and labels (SIL Open Font License,
+  # see assets/fonts/OFL.txt). Static instances cut from the variable font.
+  fonts:
+    - family: Oxanium
+      fonts:
+        - asset: assets/fonts/Oxanium-Regular.ttf
+        - asset: assets/fonts/Oxanium-Bold.ttf
+          weight: 700
+
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 
