@@ -5,6 +5,27 @@ import 'package:pachinko_game/models/slot.dart';
 import 'package:pachinko_game/utils/constants.dart';
 import 'package:vector_math/vector_math_64.dart';
 
+/// Distance from [point] to the nearest of 400 points along the curved top
+/// boundary, worked out here on its own so that the test does not lean on the
+/// generator's arithmetic.
+double distanceToTopCurve(Vector2 point) {
+  double nearest = double.infinity;
+  for (int i = 0; i <= 400; i++) {
+    final t = i / 400;
+    final curve = Vector2(
+      (1 - t) * (1 - t) * GameConstants.topCurveStartX +
+          2 * (1 - t) * t * GameConstants.topCurveControlX +
+          t * t * GameConstants.topCurveEndX,
+      (1 - t) * (1 - t) * GameConstants.topCurveStartY +
+          2 * (1 - t) * t * GameConstants.topCurveControlY +
+          t * t * GameConstants.topCurveEndY,
+    );
+    final distance = (point - curve).length;
+    if (distance < nearest) nearest = distance;
+  }
+  return nearest;
+}
+
 void main() {
   group('Level Initialization -', () {
     test('given level constructor, when created with values, then initializes correctly', () {
@@ -331,7 +352,7 @@ void main() {
       }
     });
 
-    test('given levels 1 to 100, when generated, then a ball fits between any two pegs and between a peg and a wall', () {
+    test('given levels 1 to 100, when generated, then a ball fits between any two pegs and between a peg and a wall or the top curve', () {
       /// A gap narrower than a ball is a pocket: the ball comes to rest in it
       /// and the session soft-locks (issue #16).
       for (int n = 1; n <= 100; n++) {
@@ -347,6 +368,11 @@ void main() {
             GameConstants.fieldRightBoundaryX - peg.position.x - peg.radius,
             greaterThan(GameConstants.ballRadius * 2),
             reason: 'level $n: peg $i and the right wall',
+          );
+          expect(
+            distanceToTopCurve(peg.position) - peg.radius,
+            greaterThan(GameConstants.ballRadius * 2),
+            reason: 'level $n: peg $i and the curved top boundary',
           );
           for (int j = i + 1; j < pegs.length; j++) {
             final gap = (peg.position - pegs[j].position).length - peg.radius - pegs[j].radius;

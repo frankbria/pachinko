@@ -409,12 +409,12 @@ class _PachinkoBoardPainter extends CustomPainter {
 
     // Top curved boundary: quadratic bezier from left to right
     // Starts at x=30 to connect with left launch channel wall
-    const topBoundaryStartX = 30.0;
-    const topBoundaryStartY = 110.0;
-    const topBoundaryControlX = 210.0;
-    const topBoundaryControlY = -100.0; // Control point above screen for downward bow
-    const topBoundaryEndX = 390.0;
-    const topBoundaryEndY = 110.0;
+    const topBoundaryStartX = GameConstants.topCurveStartX;
+    const topBoundaryStartY = GameConstants.topCurveStartY;
+    const topBoundaryControlX = GameConstants.topCurveControlX;
+    const topBoundaryControlY = GameConstants.topCurveControlY;
+    const topBoundaryEndX = GameConstants.topCurveEndX;
+    const topBoundaryEndY = GameConstants.topCurveEndY;
 
     final boundaryPath = Path();
     boundaryPath.moveTo(topBoundaryStartX, topBoundaryStartY);
@@ -427,7 +427,7 @@ class _PachinkoBoardPainter extends CustomPainter {
     // Left vertical launch channel wall at x=30 (existing visual element)
     canvas.drawLine(
       Offset(30.0, GameConstants.launchChannelStartY),
-      Offset(30.0, 110.0),  // Ends at y=110, where top boundary starts
+      Offset(GameConstants.topCurveStartX, GameConstants.topCurveStartY),  // Ends where the top boundary starts
       boundaryPaint,
     );
 

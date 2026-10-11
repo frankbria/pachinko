@@ -5,7 +5,8 @@ import 'constants.dart';
 
 class PegPatterns {
   /// Whether a ball can pass between a peg of [radius] at [position] and every
-  /// peg in [pegs], and between it and the field walls.
+  /// peg in [pegs], and between it and the field walls and the curved top
+  /// boundary.
   ///
   /// Every generator places pegs through this check. A gap narrower than a
   /// ball is a pocket: the ball comes to rest in it and the session soft-locks.
@@ -13,7 +14,26 @@ class PegPatterns {
     const gap = GameConstants.minPegGap;
     if (position.x - radius - GameConstants.fieldLeftBoundaryX < gap) return false;
     if (GameConstants.fieldRightBoundaryX - position.x - radius < gap) return false;
+    if (_distanceToTopCurve(position) - radius < gap) return false;
     return pegs.every((peg) => gapTo(peg, position, radius) >= gap);
+  }
+
+  /// The distance from [position] to the nearest point of the curved top
+  /// boundary, found by walking along the curve.
+  static double _distanceToTopCurve(Vector2 position) {
+    const steps = 90; // The curve is 360 px wide: a point every 4 px
+    double nearest = double.infinity;
+    for (int i = 0; i <= steps; i++) {
+      final t = i / steps;
+      final x = (1 - t) * (1 - t) * GameConstants.topCurveStartX +
+          2 * (1 - t) * t * GameConstants.topCurveControlX +
+          t * t * GameConstants.topCurveEndX;
+      final y = (1 - t) * (1 - t) * GameConstants.topCurveStartY +
+          2 * (1 - t) * t * GameConstants.topCurveControlY +
+          t * t * GameConstants.topCurveEndY;
+      nearest = min(nearest, sqrt((position.x - x) * (position.x - x) + (position.y - y) * (position.y - y)));
+    }
+    return nearest;
   }
 
   /// The gap, edge to edge, between [peg] and a peg of [radius] at [position].

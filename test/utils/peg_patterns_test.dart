@@ -34,6 +34,24 @@ void main() {
       expect(PegPatterns.leavesRoomForBall(const [], Vector2(x + 0.5, 300), 10), isFalse);
     });
 
+    test('given a peg too close to the curved top boundary, then false', () {
+      // Straight below the top of the curve the nearest point of the curve is its apex
+      const apexY = 0.25 * GameConstants.topCurveStartY +
+          0.5 * GameConstants.topCurveControlY +
+          0.25 * GameConstants.topCurveEndY;
+      const x = (GameConstants.topCurveStartX + GameConstants.topCurveEndX) / 2;
+      const y = apexY + 10 + GameConstants.minPegGap;
+      expect(PegPatterns.leavesRoomForBall(const [], Vector2(x, y + 0.5), 10), isTrue);
+      expect(PegPatterns.leavesRoomForBall(const [], Vector2(x, y - 0.5), 10), isFalse);
+    });
+
+    test('given the largest peg in the top corner of the random pattern, then false', () {
+      // (60, 120) with radius 12 is the closest the random pattern can come to
+      // the curve: about 17 px, more than a ball and less than the minimum gap
+      expect(PegPatterns.leavesRoomForBall(const [], Vector2(60, 120), 12), isFalse);
+      expect(PegPatterns.leavesRoomForBall(const [], Vector2(60, 124), 12), isTrue);
+    });
+
     test('the minimum gap is wider than a ball', () {
       expect(GameConstants.minPegGap, greaterThan(ballDiameter));
     });
