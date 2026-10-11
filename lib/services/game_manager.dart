@@ -143,8 +143,21 @@ class GameManager extends ChangeNotifier {
 
     _checkGameState();
 
+    // Nothing left for the loop to move: stop until the next launch. The board
+    // animates its own pegs, so it does not need these ticks
+    if (_isIdle) _gameTimer?.cancel();
+
     notifyListeners();
   }
+
+  /// Whether nothing the loop drives is changing: no ball in play (a ball in
+  /// the launch channel counts as in play) and no score popup, confetti or
+  /// ball count highlight.
+  bool get _isIdle =>
+      _gameState.activeBalls.isEmpty &&
+      _gameState.floatingTexts.isEmpty &&
+      _gameState.confettiParticles.isEmpty &&
+      !_gameState.ballCountHighlighted;
 
   void _updatePhysics(double deltaTime) {
     final balls = _gameState.activeBalls;
@@ -283,6 +296,12 @@ class GameManager extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Jumps to [levelNumber] within the current run.
+  ///
+  /// No screen calls this: the level picker starts a new game with
+  /// [startGame]. It keeps the running score, including points from the level
+  /// that is left, so whoever gives it a caller should first decide whether a
+  /// jump starts a new run (raised in the reviews of #5 and #20).
   void selectLevel(int levelNumber) {
     _ballLauncher.reset();
     _levelResultSaved = false;

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show Color, Offset;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
@@ -11,6 +12,8 @@ import 'package:pachinko_game/models/slot.dart';
 import 'package:pachinko_game/models/level.dart';
 import 'package:pachinko_game/services/game_manager.dart';
 import 'package:pachinko_game/services/physics_engine.dart';
+import 'package:pachinko_game/models/confetti_particle.dart';
+import 'package:pachinko_game/widgets/floating_text.dart';
 
 // Generate mocks for PhysicsEngine, GameState, and BallLauncher
 @GenerateMocks([PhysicsEngine, GameState, BallLauncher, Level])
@@ -37,6 +40,9 @@ void main() {
     when(mockGameState.specialBonusTriggered).thenReturn(false);
     when(mockGameState.score).thenReturn(0);
     when(mockGameState.levelScore).thenReturn(0);
+    when(mockGameState.floatingTexts).thenReturn([]);
+    when(mockGameState.confettiParticles).thenReturn([]);
+    when(mockGameState.ballCountHighlighted).thenReturn(false);
     when(mockBallLauncher.phase).thenReturn(LaunchPhase.ready);
     when(mockBallLauncher.currentBall).thenReturn(null);
 
@@ -762,9 +768,11 @@ void main() {
       verify(mockGameState.updatePhase(GamePhase.ready)).called(greaterThan(0));
     });
 
-    /// The loop keeps running after game over so the last popup and peg flashes finish animating.
-    test('Given game over detected When more loop ticks pass Then loop still runs and result is recorded once', () async {
-      // Given: no balls active and none remaining
+    /// The loop keeps running after game over while the last popup is still
+    /// on screen, so it finishes animating. (It used to keep running for ever;
+    /// since #42 it stops once nothing is left to animate.)
+    test('Given game over detected with a popup still showing When more loop ticks pass Then loop still runs and result is recorded once', () async {
+      // Given: no balls active and none remaining, and the last ball's popup on screen
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
@@ -772,6 +780,9 @@ void main() {
       when(mockGameState.currentLevel).thenReturn(mockLevel);
       when(mockGameState.activeBalls).thenReturn([]);
       when(mockGameState.ballsRemaining).thenReturn(0);
+      when(mockGameState.floatingTexts).thenReturn([
+        FloatingText(text: '+50', startPosition: const Offset(200, 560)),
+      ]);
       when(mockBallLauncher.launch()).thenReturn(Ball(
         position: Vector2(100, 100),
         velocity: Vector2(0, 0),
@@ -913,6 +924,107 @@ void main() {
     test('Given any state When selectLevel called Then launcher reset', () {
       gameManager.selectLevel(3);
       verify(mockBallLauncher.reset()).called(1);
+    });
+  });
+  group('Idle Loop', () {
+    /// Real objects (no mocks). The loop only needs to run while something
+    /// it drives is changing: a ball, a score popup, confetti or the ball
+    /// count highlight. Peg animation is the board's own business.
+    Future<void> ticks(int count) => Future<void>.delayed(Duration(milliseconds: 16 * count + 8));
+
+    test('Given a new game with nothing in play When a few ticks pass Then the loop has stopped', () async {
+      final manager = GameManager();
+      addTearDown(manager.dispose);
+
+      manager.startGame();
+      await ticks(3);
+
+      expect(manager.isRunning, isFalse);
+    });
+
+    test('Given a stopped loop When a ball is launched Then the loop runs while the ball is in play', () async {
+      final manager = GameManager();
+      addTearDown(manager.dispose);
+      manager.startGame();
+      await ticks(3);
+      expect(manager.isRunning, isFalse);
+
+      manager.startLaunchCharging();
+      manager.updateLaunchPower(50);
+      manager.launchBall();
+      await ticks(5);
+
+      expect(manager.gameState.activeBalls, hasLength(1));
+      expect(manager.isRunning, isTrue);
+    });
+
+    test('Given no ball but a score popup on screen When ticks pass Then the loop runs until the popup is gone', () async {
+      final manager = GameManager();
+      addTearDown(manager.dispose);
+      manager.startGame();
+      manager.gameState.addFloatingText('+2000', const Offset(200, 560), const Color(0xFFFFD700));
+
+      await ticks(5);
+      expect(manager.gameState.floatingTexts, hasLength(1));
+      expect(manager.isRunning, isTrue);
+
+      // A popup lasts 1.5 seconds
+      await Future<void>.delayed(const Duration(milliseconds: 1700));
+      expect(manager.gameState.floatingTexts, isEmpty);
+      expect(manager.isRunning, isFalse);
+    });
+
+    // With mocks: each effect on its own is enough to keep the loop running
+    test('Given no ball but confetti still falling When ticks pass Then the loop keeps running', () async {
+      when(mockGameState.confettiParticles).thenReturn([
+        ConfettiParticle(position: Vector2(200, 300), velocity: Vector2(0, 50), color: const Color(0xFFFFD700)),
+      ]);
+
+      gameManager.startGame();
+      await ticks(3);
+
+      expect(gameManager.isRunning, isTrue);
+    });
+
+    test('Given no ball but the ball count still highlighted When ticks pass Then the loop keeps running', () async {
+      when(mockGameState.ballCountHighlighted).thenReturn(true);
+
+      gameManager.startGame();
+      await ticks(3);
+
+      expect(gameManager.isRunning, isTrue);
+    });
+
+    test('Given nothing in play and no effect showing When ticks pass Then the loop has stopped', () async {
+      gameManager.startGame();
+      await ticks(3);
+
+      expect(gameManager.isRunning, isFalse);
+    });
+
+    test('Given the last ball has landed When its popup has finished Then the result is saved and the loop stops', () async {
+      final manager = GameManager();
+      addTearDown(manager.dispose);
+      manager.startGame();
+      final state = manager.gameState;
+      for (int i = 0; i < 19; i++) {
+        final ball = Ball(position: Vector2(200, 300));
+        state.launchBall(ball);
+        state.removeBall(ball);
+      }
+      final last = Ball(position: Vector2(200, 300));
+      state.launchBall(last);
+      state.addFloatingText('+50', const Offset(200, 560), const Color(0xFFFFFFFF));
+      state.removeBall(last);
+      manager.resumeGame(); // any call that starts the loop
+
+      await ticks(5);
+      expect(state.phase, GamePhase.gameOver);
+      expect(manager.isRunning, isTrue, reason: 'the popup is still on screen');
+
+      await Future<void>.delayed(const Duration(milliseconds: 1700));
+      expect(manager.isRunning, isFalse);
+      expect(state.phase, GamePhase.gameOver);
     });
   });
 }

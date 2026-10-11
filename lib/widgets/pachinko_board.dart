@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 import 'package:vector_math/vector_math_64.dart' as vm;
 import '../services/game_manager.dart';
@@ -13,40 +14,95 @@ class PachinkoBoard extends StatefulWidget {
   State<PachinkoBoard> createState() => _PachinkoBoardState();
 }
 
-class _PachinkoBoardState extends State<PachinkoBoard> {
+class _PachinkoBoardState extends State<PachinkoBoard>
+    with SingleTickerProviderStateMixin {
   vm.Vector2? _dragStart;
   vm.Vector2? _dragEnd;
   bool _isDragging = false;
   double _currentScale = 1.0; // Store current scale for touch handling
 
+  late final GameManager _gameManager;
+
+  // Peg animation (the prize peg shimmer and the hit pulse) runs on the
+  // board's own ticker, so it does not depend on the game loop ticking
+  late final Ticker _pegTicker;
+  Duration _lastPegTick = Duration.zero;
+  final ValueNotifier<int> _pegFrame = ValueNotifier<int>(0);
+
+  // What makes the board repaint. It repaints without rebuilding
+  late final Listenable _repaint;
+
+  @override
+  void initState() {
+    super.initState();
+    _gameManager = context.read<GameManager>();
+    _pegTicker = createTicker(_onPegTick);
+    _repaint = Listenable.merge([_gameManager, _gameManager.gameState, _pegFrame]);
+    _gameManager.addListener(_syncPegTicker);
+    _syncPegTicker();
+  }
+
+  @override
+  void dispose() {
+    _gameManager.removeListener(_syncPegTicker);
+    _pegTicker.dispose();
+    _pegFrame.dispose();
+    super.dispose();
+  }
+
+  bool get _pegsAnimating =>
+      _gameManager.gameState.currentLevel?.pegs.any((peg) => peg.isAnimating) ?? false;
+
+  /// Runs the peg ticker while a peg is animating and stops it otherwise, so
+  /// a board with nothing to animate draws no frames.
+  void _syncPegTicker() {
+    if (_pegsAnimating) {
+      if (!_pegTicker.isActive) {
+        _lastPegTick = Duration.zero;
+        _pegTicker.start();
+      }
+    } else if (_pegTicker.isActive) {
+      _pegTicker.stop();
+    }
+  }
+
+  void _onPegTick(Duration elapsed) {
+    final deltaTime = (elapsed - _lastPegTick).inMicroseconds / Duration.microsecondsPerSecond;
+    _lastPegTick = elapsed;
+    final pegs = _gameManager.gameState.currentLevel?.pegs ?? const <Peg>[];
+    for (final peg in pegs) {
+      peg.updateAnimation(deltaTime);
+    }
+    _pegFrame.value++;
+    _syncPegTicker();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Consumer<GameManager>(
-      builder: (context, gameManager, child) {
-        return GestureDetector(
-          onPanStart: (details) => _onPanStart(details, gameManager),
-          onPanUpdate: (details) => _onPanUpdate(details, gameManager),
-          onPanEnd: (details) => _onPanEnd(details, gameManager),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              // Calculate scale for touch handling
-              final scaleX = constraints.maxWidth / GameConstants.boardWidth;
-              final scaleY = constraints.maxHeight / GameConstants.boardHeight;
-              _currentScale = scaleX < scaleY ? scaleX : scaleY;
+    final gameManager = _gameManager;
+    return GestureDetector(
+      onPanStart: (details) => _onPanStart(details, gameManager),
+      onPanUpdate: (details) => _onPanUpdate(details, gameManager),
+      onPanEnd: (details) => _onPanEnd(details, gameManager),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Calculate scale for touch handling
+          final scaleX = constraints.maxWidth / GameConstants.boardWidth;
+          final scaleY = constraints.maxHeight / GameConstants.boardHeight;
+          _currentScale = scaleX < scaleY ? scaleX : scaleY;
 
-              return CustomPaint(
-                painter: _PachinkoBoardPainter(
-                  gameManager: gameManager,
-                  dragStart: _dragStart,
-                  dragEnd: _dragEnd,
-                  isDragging: _isDragging,
-                ),
-                size: Size.infinite,
-              );
-            },
-          ),
-        );
-      },
+          return CustomPaint(
+            painter: _PachinkoBoardPainter(
+              gameManager: gameManager,
+              repaint: _repaint,
+              dragStart: _dragStart,
+              dragEnd: _dragEnd,
+              isDragging: _isDragging,
+            ),
+            size: Size.infinite,
+          );
+        },
+      ),
     );
   }
 
@@ -112,10 +168,11 @@ class _PachinkoBoardPainter extends CustomPainter {
 
   _PachinkoBoardPainter({
     required this.gameManager,
+    required Listenable repaint,
     this.dragStart,
     this.dragEnd,
     this.isDragging = false,
-  });
+  }) : super(repaint: repaint);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -257,9 +314,6 @@ class _PachinkoBoardPainter extends CustomPainter {
 
   void _drawPegs(Canvas canvas, level) {
     for (final peg in level.pegs) {
-      // Update peg animation
-      peg.updateAnimation(1/60); // Assuming 60 FPS
-
       // Draw pulse glow effect (on hit)
       if (peg.pulseGlowRadius > 0.0) {
         final pulsePaint = Paint()
@@ -589,6 +643,12 @@ class _PachinkoBoardPainter extends CustomPainter {
     );
   }
 
+  /// The game's own changes reach the painter through its repaint listenable.
+  /// A new painter only needs a repaint when what it was built with differs.
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant _PachinkoBoardPainter oldDelegate) =>
+      oldDelegate.gameManager != gameManager ||
+      oldDelegate.dragStart != dragStart ||
+      oldDelegate.dragEnd != dragEnd ||
+      oldDelegate.isDragging != isDragging;
 }
