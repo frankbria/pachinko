@@ -89,7 +89,8 @@ void main() {
       // Then
       expect(find.textContaining('50%'), findsOneWidget); // Completion percentage
       expect(find.text('200'), findsWidgets); // Total points (also appears in chip)
-      expect(find.textContaining('1/2'), findsOneWidget); // Unlocked count
+      // Exact match: textContaining('1/2') also matches unlock dates such as 10/11/2026
+      expect(find.text('1/2'), findsOneWidget); // Unlocked count
     });
   });
 

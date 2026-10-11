@@ -28,6 +28,7 @@ class _AchievementToastState extends State<AchievementToast>
   late Animation<Offset> _slideAnimation;
   late Animation<double> _opacityAnimation;
   Timer? _autoDismissTimer;
+  bool _dismissing = false;
 
   @override
   void initState() {
@@ -74,6 +75,10 @@ class _AchievementToastState extends State<AchievementToast>
   }
 
   void _dismiss() async {
+    // Dismiss once: onDismissed advances the overlay's queue
+    if (_dismissing) return;
+    _dismissing = true;
+
     // Cancel auto-dismiss timer if it's still pending
     _autoDismissTimer?.cancel();
 
