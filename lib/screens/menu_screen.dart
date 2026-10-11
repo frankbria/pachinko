@@ -236,7 +236,7 @@ class MenuScreen extends StatelessWidget {
                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
               Text(
-                '• Orange pegs are special - hit all special pegs to get bonus balls!\n'
+                '• Gold pegs are special - hit all special pegs to get bonus balls!\n'
                 '• Edge slots give highest points but are hardest to reach\n'
                 '• Center slot gives good points with medium difficulty\n',
                 style: TextStyle(color: Colors.white70),

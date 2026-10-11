@@ -105,8 +105,9 @@ void main() {
 
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
+      // getRect applies the FittedBox scale, so this is the painted extent.
       final title = find.text(GameStrings.appName);
-      final box = tester.getRect(find.ancestor(of: title, matching: find.byType(FittedBox)));
+      final box = tester.getRect(title);
       expect(box.left, greaterThanOrEqualTo(24.0));
       expect(box.right, lessThanOrEqualTo(360.0 - 24.0));
       // Two lines of the 57px display style would be at least 114px tall.

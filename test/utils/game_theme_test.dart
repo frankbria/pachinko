@@ -33,10 +33,21 @@ void main() {
       expect(theme.scaffoldBackgroundColor, equals(GameConstants.backgroundColor));
     });
 
-    test('given a dialog, then its action text is readable on the dialog surface', () {
-      // Material 3 dialogs sit on surfaceContainerHigh and colour their
-      // TextButton actions with primary.
-      expect(contrast(scheme.primary, scheme.surfaceContainerHigh), greaterThanOrEqualTo(4.5));
+    testWidgets('given a dialog, then its action text is readable on the dialog surface', (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        theme: theme,
+        home: AlertDialog(
+          content: const Text('Body'),
+          actions: [TextButton(onPressed: () {}, child: const Text('Got it!'))],
+        ),
+      ));
+
+      final surface = tester
+          .widget<Material>(find.descendant(of: find.byType(AlertDialog), matching: find.byType(Material)).first)
+          .color!;
+      final action = tester.widget<RichText>(find.descendant(of: find.byType(TextButton), matching: find.byType(RichText)));
+
+      expect(contrast(action.text.style!.color!, surface), greaterThanOrEqualTo(4.5));
     });
 
     test('given a control on the primary colour, then its content is readable', () {
@@ -76,6 +87,8 @@ void main() {
         expect(File('assets/fonts/$name').existsSync(), isTrue, reason: name);
         expect(pubspec, contains('assets/fonts/$name'));
       }
+      // Without its weight the bold file would never be picked for FontWeight.bold.
+      expect(pubspec, matches(RegExp(r'Oxanium-Bold\.ttf\s+weight: 700')));
       expect(File('assets/fonts/OFL.txt').existsSync(), isTrue);
     });
   });
