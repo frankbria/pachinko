@@ -43,6 +43,10 @@ class GameConstants {
   static const int minSpecialPegs = 2;
   static const int maxSpecialPegs = 4;
   static const int bonusBallsBase = 5;
+  // Bonus balls drop from the top of the playfield, above the first peg row
+  static const double bonusBallSpawnY = 70.0;
+  static const double bonusBallSpawnMinX = 120.0;
+  static const double bonusBallSpawnMaxX = 300.0;
   
   // Colors
   static const Color backgroundColor = Color(0xFF1A1A2E);

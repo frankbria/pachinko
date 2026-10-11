@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:pachinko_game/models/game_state.dart';
 import 'package:pachinko_game/models/ball.dart';
+import 'package:pachinko_game/utils/constants.dart';
 import 'package:vector_math/vector_math_64.dart';
 
 /// Comprehensive unit tests for GameState model
@@ -418,6 +419,46 @@ void main() {
 
       // Then
       expect(listenerCallCount, greaterThan(0));
+    });
+
+    test('given level 1, when triggerSpecialBonus called, then bonus balls spawn above the peg field inside the playfield', () {
+      // Given
+      final gameState = GameState();
+      addTearDown(gameState.dispose);
+      gameState.startNewGame(level: 1);
+
+      // When
+      gameState.triggerSpecialBonus();
+
+      // Then
+      expect(gameState.activeBalls, hasLength(5));
+      for (final ball in gameState.activeBalls) {
+        // Above the first peg row (pegs start below launchChannelEndY)
+        expect(ball.position.y, lessThan(GameConstants.launchChannelEndY));
+        // Inside the playfield walls, not in the launch channel
+        expect(ball.position.x, greaterThan(GameConstants.fieldLeftBoundaryX + ball.radius));
+        expect(ball.position.x, lessThan(GameConstants.fieldRightBoundaryX - ball.radius));
+      }
+    });
+
+    test('given level 20, when triggerSpecialBonus called, then all 15 bonus balls spawn at distinct positions inside the playfield', () {
+      // Given
+      final gameState = GameState();
+      addTearDown(gameState.dispose);
+      gameState.startNewGame(level: 20);
+
+      // When
+      gameState.triggerSpecialBonus();
+
+      // Then
+      final xs = gameState.activeBalls.map((b) => b.position.x).toSet();
+      expect(gameState.activeBalls, hasLength(15));
+      expect(xs, hasLength(15));
+      for (final ball in gameState.activeBalls) {
+        expect(ball.position.y, lessThan(GameConstants.launchChannelEndY));
+        expect(ball.position.x, greaterThan(GameConstants.fieldLeftBoundaryX + ball.radius));
+        expect(ball.position.x, lessThan(GameConstants.fieldRightBoundaryX - ball.radius));
+      }
     });
   });
 

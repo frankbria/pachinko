@@ -74,7 +74,7 @@ lib/
 - **Smart Peg Spacing**: 35px minimum spacing prevents overlap, ensures smooth ball flow
 - **Pattern Variety**: Hexagonal, Triangle, and Random patterns cycle through levels
 - **Physics Simulation**: 60 FPS with gravity, air resistance, realistic bouncing
-- **Special Pegs**: 2-4 highlighted pegs per level trigger 5+ bonus balls
+- **Special Pegs**: 2-4 highlighted pegs per level trigger 5+ bonus balls, which drop from the top of the playfield
 - **Inverse Scoring**: Edge slots = 2000pts, center = 1000pts, sides = 50-200pts
 - **Power System**: Drag-to-charge launcher with visual power meter
 - **Achievement Toasts**: `AchievementToastOverlay` is installed through `MaterialApp.builder` (above the Navigator) and reached with a `GlobalKey`, so toasts show over every screen; anything else that must appear above every route belongs in that builder, not in `home:`

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'ball.dart';
 import 'level.dart';
 import 'confetti_particle.dart';
+import '../utils/constants.dart';
 import '../widgets/floating_text.dart';
 
 enum GamePhase {
@@ -116,11 +117,15 @@ class GameState extends ChangeNotifier {
     // Spawn bonus balls immediately
     final level = _currentLevel;
     if (level != null) {
-      for (int i = 0; i < _bonusBallsToAdd; i++) {
+      // Spread evenly across the top of the playfield so each ball plays through the pegs
+      final count = _bonusBallsToAdd;
+      const spawnWidth =
+          GameConstants.bonusBallSpawnMaxX - GameConstants.bonusBallSpawnMinX;
+      for (int i = 0; i < count; i++) {
         final bonusBall = Ball(
           position: Vector2(
-            level.launchX + (i - _bonusBallsToAdd / 2) * 20,
-            level.launchY,
+            GameConstants.bonusBallSpawnMinX + spawnWidth * i / (count - 1),
+            GameConstants.bonusBallSpawnY,
           ),
           color: const Color(0xFFFFD700), // Gold color for bonus balls
         );
