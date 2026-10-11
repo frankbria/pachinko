@@ -471,6 +471,26 @@ void main() {
       // Then: the same painter object is still in the tree
       expect(identical(boardPainter(tester), before), isTrue);
     });
+
+    testWidgets('given a real game, when the manager notifies, then the board is marked for repaint',
+      (WidgetTester tester) async {
+      final manager = GameManager();
+      addTearDown(manager.dispose);
+      await tester.pumpWidget(createTestWidget(gameManager: manager));
+      await tester.pump();
+      final board = tester.renderObject(find.descendant(
+        of: find.byType(PachinkoBoard),
+        matching: find.byType(CustomPaint),
+      ));
+      expect(board.debugNeedsPaint, isFalse);
+
+      // When
+      manager.updateLaunchPower(10);
+
+      // Then
+      expect(board.debugNeedsPaint, isTrue);
+      await tester.pump();
+    });
   });
 
   group('PachinkoBoard Repaint On Game State Changes', () {
