@@ -17,12 +17,14 @@ class _GameScreenState extends State<GameScreen> {
   late final GameManager _gameManager;
   final GlobalKey _headerKey = GlobalKey();
   AchievementToastOverlayState? _toasts;
+  late final AppLifecycleListener _lifecycleListener;
 
   @override
   void initState() {
     super.initState();
     _gameManager = context.read<GameManager>();
     _toasts = AchievementToastOverlay.of(context);
+    _lifecycleListener = AppLifecycleListener(onHide: _pauseWhileHidden);
     // The header has no size until the first frame has been laid out
     WidgetsBinding.instance.addPostFrameCallback((_) => _anchorToastsBelowHeader());
   }
@@ -35,8 +37,18 @@ class _GameScreenState extends State<GameScreen> {
     if (headerHeight != null) _toasts?.anchorToasts(this, headerHeight);
   }
 
+  /// Pauses a ball in play when the app is no longer visible (Home, the app
+  /// switcher). Timers keep firing for a while after that, so without this
+  /// the ball would play on unseen. The player resumes with the Resume button.
+  void _pauseWhileHidden() {
+    if (_gameManager.gameState.phase == GamePhase.playing) {
+      _gameManager.pauseGame();
+    }
+  }
+
   @override
   void dispose() {
+    _lifecycleListener.dispose();
     // Leaving the screen abandons the game in progress; stop it playing on in the background
     _gameManager.stopLoop();
     // The overlay is an ancestor, and an ancestor cannot be rebuilt while this

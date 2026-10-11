@@ -359,6 +359,88 @@ void main() {
     });
   });
 
+  group('GameScreen App Lifecycle', () {
+    /// Sends the app to the background the way Android does when the player
+    /// presses Home, and brings it back.
+    Future<void> sendToBackground(WidgetTester tester) async {
+      for (final state in [
+        AppLifecycleState.inactive,
+        AppLifecycleState.hidden,
+        AppLifecycleState.paused,
+      ]) {
+        tester.binding.handleAppLifecycleStateChanged(state);
+      }
+      await tester.pump();
+    }
+
+    Future<void> bringBack(WidgetTester tester) async {
+      for (final state in [
+        AppLifecycleState.hidden,
+        AppLifecycleState.inactive,
+        AppLifecycleState.resumed,
+      ]) {
+        tester.binding.handleAppLifecycleStateChanged(state);
+      }
+      await tester.pump();
+    }
+
+    testWidgets('given a ball in play, when the app goes to the background, then the game is paused once',
+      (WidgetTester tester) async {
+      // Given
+      when(mockGameState.phase).thenReturn(GamePhase.playing);
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+      addTearDown(() => bringBack(tester));
+
+      // When
+      await sendToBackground(tester);
+
+      // Then
+      verify(mockGameManager.pauseGame()).called(1);
+    });
+
+    testWidgets('given a game paused by going to the background, when the app returns, then it does not resume by itself',
+      (WidgetTester tester) async {
+      // Given
+      when(mockGameState.phase).thenReturn(GamePhase.playing);
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+      await sendToBackground(tester);
+
+      // When
+      await bringBack(tester);
+
+      // Then: resuming is the player's choice
+      verifyNever(mockGameManager.resumeGame());
+    });
+
+    testWidgets('given no ball in play, when the app goes to the background, then nothing is paused',
+      (WidgetTester tester) async {
+      // Given: phase is ready (the default stub)
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+      addTearDown(() => bringBack(tester));
+
+      // When
+      await sendToBackground(tester);
+
+      // Then
+      verifyNever(mockGameManager.pauseGame());
+    });
+
+    testWidgets('given the game screen has been left, when the app goes to the background, then nothing is paused',
+      (WidgetTester tester) async {
+      // Given
+      when(mockGameState.phase).thenReturn(GamePhase.playing);
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+      await tester.pumpWidget(const SizedBox());
+      addTearDown(() => bringBack(tester));
+
+      // When
+      await sendToBackground(tester);
+
+      // Then: the screen's listener went with it
+      verifyNever(mockGameManager.pauseGame());
+    });
+  });
+
   group('GameScreen Consumer State Display', () {
     /// GIVEN GameScreen is rendered with different state values
     /// WHEN Consumer rebuilds with new mock state
