@@ -78,6 +78,7 @@ lib/
 - **Inverse Scoring**: Edge slots = 2000pts, center = 1000pts, sides = 50-200pts
 - **Power System**: Drag-to-charge launcher with visual power meter
 - **Achievement Toasts**: `AchievementToastOverlay` is installed through `MaterialApp.builder` (above the Navigator) and reached with a `GlobalKey`, so toasts show over every screen; anything else that must appear above every route belongs in that builder, not in `home:`
+- **Game Transitions**: `GameManager.startGame`, `resetGame`, `nextLevel` and `selectLevel` each call `_ballLauncher.reset()` first, because cancelling the loop strands a launcher that is mid-`traveling`; any new method that restarts play or changes level must do the same. `GameState.resetLevel()` and `loadLevel()` call `_clearEffects()`; any new transient visual effect must be cleared there
 
 ## Feature Development Quality Standards
 
