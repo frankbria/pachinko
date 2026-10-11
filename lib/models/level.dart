@@ -36,7 +36,9 @@ class Level {
     
     // Generate special pegs (2-4 per level) with proper spacing
     final specialPegCount = 2 + random.nextInt(3);
-    const specialMinSpacing = 50.0; // Centre to centre, between special pegs
+    // Centre to centre, between special pegs. It leaves a 20 px gap, which is
+    // more than minPegGap, so making room for one never removes another.
+    const specialMinSpacing = 50.0;
     
     for (int i = 0; i < specialPegCount; i++) {
       Vector2? position;
@@ -48,14 +50,10 @@ class Level {
         final x = 80 + random.nextDouble() * (boardWidth - 160);
         final y = 150 + random.nextDouble() * (boardHeight - 400);
 
-        // Check if position is in launch channel area
-        final inLaunchChannel = x > GameConstants.launchChannelStartX - 40 &&
-                               y > GameConstants.launchChannelEndY &&
-                               y < GameConstants.launchChannelStartY + 30;
-
-        if (inLaunchChannel) continue;
-
         final candidate = Vector2(x, y);
+        // Field walls only, which also keeps it out of the launch channel beyond
+        // the right wall; the pegs in the way are counted below
+        if (!PegPatterns.leavesRoomForBall(const [], candidate, GameConstants.specialPegRadius)) continue;
         if (specialPegs.any((peg) => (candidate - peg.position).length < specialMinSpacing)) continue;
 
         // A ball must fit past every peg

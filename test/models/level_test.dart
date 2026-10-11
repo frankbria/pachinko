@@ -360,6 +360,20 @@ void main() {
       }
     });
 
+    test('given a board wider than the field, when generated, then every peg still leaves room at the right wall', () {
+      /// The field walls are fixed by the physics, whatever width the generator
+      /// is asked for, so the generators must not rely on their own x ranges.
+      for (int n = 1; n <= 30; n++) {
+        for (final peg in Level.generate(n, 800.0, 600.0).pegs) {
+          expect(
+            GameConstants.fieldRightBoundaryX - peg.position.x - peg.radius,
+            greaterThan(GameConstants.ballRadius * 2),
+            reason: 'level $n: ${peg.type.name} peg at x=${peg.position.x.round()}',
+          );
+        }
+      }
+    });
+
     test('given generated level, when pegs placed, then all within board bounds', () {
       /// Ensures all pegs are positioned within the playable board area
       /// Prevents pegs from being placed outside visible area
