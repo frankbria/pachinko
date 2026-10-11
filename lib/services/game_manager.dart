@@ -296,6 +296,12 @@ class GameManager extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Jumps to [levelNumber] within the current run.
+  ///
+  /// No screen calls this: the level picker starts a new game with
+  /// [startGame]. It keeps the running score, including points from the level
+  /// that is left, so whoever gives it a caller should first decide whether a
+  /// jump starts a new run (raised in the reviews of #5 and #20).
   void selectLevel(int levelNumber) {
     _ballLauncher.reset();
     _levelResultSaved = false;
