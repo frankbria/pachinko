@@ -37,6 +37,26 @@ void main() {
       verify(mockPrefs.setString(key, any)).called(1);
     });
 
+    test('givenTenStoredScores_whenHigherScoreSaved_thenOnlyTopTenKept', () async {
+      // Given: ten stored scores, 100..1000
+      const level = 1;
+      const key = 'highscores_level_$level';
+      final existing = List.generate(
+          10, (i) => HighScore(level: level, score: (i + 1) * 100).toJson());
+      when(mockPrefs.getString(key)).thenReturn(jsonEncode(existing));
+      when(mockPrefs.setString(any, any)).thenAnswer((_) async => true);
+
+      // When
+      await storageService.saveHighScore(level, 5000);
+
+      // Then: still ten entries, new best first, lowest dropped
+      final saved = jsonDecode(
+          verify(mockPrefs.setString(key, captureAny)).captured.single as String) as List;
+      expect(saved, hasLength(10));
+      expect(saved.first['score'], equals(5000));
+      expect(saved.map((s) => s['score']), isNot(contains(100)));
+    });
+
     test('givenMultipleScores_whenSavedSameLevel_thenAllPreserved', () async {
       // Given
       const level = 2;

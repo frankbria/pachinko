@@ -24,6 +24,7 @@ class GameState extends ChangeNotifier {
   Level? _currentLevel;
   int _currentLevelNumber = 1;
   int _score = 0;
+  int _levelStartScore = 0;
   int _ballsRemaining = 20;
   int _totalBalls = 20;
   List<Ball> _activeBalls = [];
@@ -46,6 +47,9 @@ class GameState extends ChangeNotifier {
   Level? get currentLevel => _currentLevel;
   int get currentLevelNumber => _currentLevelNumber;
   int get score => _score;
+
+  /// Points won on the current level only. [score] is the running total across levels.
+  int get levelScore => _score - _levelStartScore;
   int get ballsRemaining => _ballsRemaining;
   int get totalBalls => _totalBalls;
   List<Ball> get activeBalls => List.unmodifiable(_activeBalls);
@@ -59,6 +63,7 @@ class GameState extends ChangeNotifier {
   bool get ballCountHighlighted => _ballCountHighlighted;
   
   void loadLevel(int levelNumber) {
+    _levelStartScore = _score;
     _currentLevelNumber = levelNumber;
     _currentLevel = Level.generate(levelNumber, 400, 600);
     _phase = GamePhase.ready;
@@ -226,6 +231,7 @@ class GameState extends ChangeNotifier {
   }
 
   void resetLevel() {
+    _score = _levelStartScore;
     _currentLevel?.reset();
     _activeBalls.clear();
     _ballsRemaining = _totalBalls;

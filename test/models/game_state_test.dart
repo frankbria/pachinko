@@ -1222,4 +1222,73 @@ void main() {
       expect(listenerCallCount, greaterThan(0));
     });
   });
+
+  group('Level Score Accounting -', () {
+    test('given a new game, when points are scored, then levelScore equals score', () {
+      // Given
+      final gameState = GameState();
+      addTearDown(gameState.dispose);
+      gameState.startNewGame(level: 1);
+
+      // When
+      gameState.addScore(500);
+
+      // Then
+      expect(gameState.score, equals(500));
+      expect(gameState.levelScore, equals(500));
+    });
+
+    test('given points scored on level 1, when nextLevel called, then score carries over and levelScore restarts at 0', () {
+      // Given
+      final gameState = GameState();
+      addTearDown(gameState.dispose);
+      gameState.startNewGame(level: 1);
+      gameState.addScore(12000);
+
+      // When
+      gameState.nextLevel();
+
+      // Then
+      expect(gameState.score, equals(12000));
+      expect(gameState.levelScore, equals(0));
+
+      // And when more points are scored on level 2
+      gameState.addScore(9000);
+      expect(gameState.score, equals(21000));
+      expect(gameState.levelScore, equals(9000));
+    });
+
+    test('given points scored on level 2 of a run, when resetLevel called, then score returns to the level-start total', () {
+      // Given
+      final gameState = GameState();
+      addTearDown(gameState.dispose);
+      gameState.startNewGame(level: 1);
+      gameState.addScore(12000);
+      gameState.nextLevel();
+      gameState.addScore(9000);
+
+      // When
+      gameState.resetLevel();
+
+      // Then
+      expect(gameState.score, equals(12000));
+      expect(gameState.levelScore, equals(0));
+    });
+
+    test('given a finished run, when startNewGame called, then score and levelScore are 0', () {
+      // Given
+      final gameState = GameState();
+      addTearDown(gameState.dispose);
+      gameState.startNewGame(level: 1);
+      gameState.addScore(12000);
+      gameState.nextLevel();
+
+      // When
+      gameState.startNewGame(level: 3);
+
+      // Then
+      expect(gameState.score, equals(0));
+      expect(gameState.levelScore, equals(0));
+    });
+  });
 }

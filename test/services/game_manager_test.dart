@@ -16,6 +16,8 @@ import 'package:pachinko_game/utils/constants.dart';
 // Generate mocks for PhysicsEngine, GameState, and BallLauncher
 @GenerateMocks([PhysicsEngine, GameState, BallLauncher, Level])
 import 'game_manager_test.mocks.dart';
+import '../screens/achievements_screen_test.mocks.dart' show MockAchievementService;
+import '../screens/high_scores_screen_test.mocks.dart' show MockStorageService;
 
 void main() {
   late GameManager gameManager;
@@ -35,6 +37,7 @@ void main() {
     when(mockGameState.canLaunchBall).thenReturn(true);
     when(mockGameState.specialBonusTriggered).thenReturn(false);
     when(mockGameState.score).thenReturn(0);
+    when(mockGameState.levelScore).thenReturn(0);
     when(mockBallLauncher.phase).thenReturn(LaunchPhase.ready);
     when(mockBallLauncher.currentBall).thenReturn(null);
 
@@ -608,6 +611,45 @@ void main() {
   });
 
   group('Level Management and Phase Transitions', () {
+    /// The running score carries across levels; the saved high score and the
+    /// achievement total take this level's points only.
+    test('Given a level finished mid-run When game over detected Then only this level\'s points are saved and tracked', () async {
+      // Given: level 2 of a run, running total 21000, of which 9000 on this level
+      final mockStorage = MockStorageService();
+      final mockAchievements = MockAchievementService();
+      when(mockStorage.saveHighScore(any, any)).thenAnswer((_) async {});
+      final mockLevel = MockLevel();
+      when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.slots).thenReturn([]);
+      when(mockLevel.levelNumber).thenReturn(2);
+      when(mockGameState.currentLevel).thenReturn(mockLevel);
+      when(mockGameState.activeBalls).thenReturn([]);
+      when(mockGameState.ballsRemaining).thenReturn(0);
+      when(mockGameState.score).thenReturn(21000);
+      when(mockGameState.levelScore).thenReturn(9000);
+      final manager = GameManager(
+        gameState: mockGameState,
+        physicsEngine: mockPhysicsEngine,
+        ballLauncher: mockBallLauncher,
+        storageService: mockStorage,
+        achievementService: mockAchievements,
+      );
+      addTearDown(manager.dispose);
+      when(mockBallLauncher.launch()).thenReturn(Ball(
+        position: Vector2(100, 100),
+        velocity: Vector2(0, 0),
+        radius: 8.0,
+      ));
+
+      // When: the loop ticks once and detects game over
+      manager.launchBall();
+      await Future.delayed(const Duration(milliseconds: 20));
+
+      // Then
+      verify(mockStorage.saveHighScore(2, 9000)).called(1);
+      verify(mockAchievements.trackLevelScore(2, 9000)).called(1);
+    });
+
     /// Tests next level stops current game loop
     test('Given running game When nextLevel called Then timer cancelled', () {
       // Given: Running game

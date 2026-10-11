@@ -7,6 +7,9 @@ import '../models/high_score.dart';
 /// Uses SharedPreferences for local-only storage (no network transmission).
 /// Implements dependency injection pattern for testability.
 class StorageService {
+  /// Maximum number of scores kept per level.
+  static const int maxScoresPerLevel = 10;
+
   final SharedPreferences _prefs;
 
   /// Creates a StorageService with dependency injection for testability.
@@ -26,7 +29,8 @@ class StorageService {
 
   /// Saves a high score for a specific level.
   ///
-  /// Appends the new score to existing scores for this level and sorts descending.
+  /// Adds the new score to this level's scores, sorts descending and keeps the
+  /// top [maxScoresPerLevel].
   /// Handles storage errors gracefully by logging without throwing exceptions.
   ///
   /// [level]: The level number (1-20)
@@ -36,6 +40,9 @@ class StorageService {
       final scores = await getHighScores(level);
       scores.add(HighScore(level: level, score: score));
       scores.sort((a, b) => b.score.compareTo(a.score)); // Sort descending
+      if (scores.length > maxScoresPerLevel) {
+        scores.removeRange(maxScoresPerLevel, scores.length);
+      }
 
       final key = 'highscores_level_$level';
       final jsonList = scores.map((s) => s.toJson()).toList();

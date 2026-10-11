@@ -248,11 +248,11 @@ class GameManager extends ChangeNotifier {
     }
   }
 
-  /// Saves the current score as a high score for the current level.
+  /// Saves the points won on the current level as that level's high score.
   void _saveHighScore() {
     final storageService = _storageService;
     final level = _gameState.currentLevel?.levelNumber ?? 1;
-    final score = _gameState.score;
+    final score = _gameState.levelScore;
 
     if (storageService != null) {
       storageService.saveHighScore(level, score);
