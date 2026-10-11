@@ -614,12 +614,15 @@ void main() {
       gameManager.startGame();
       expect(gameManager.isRunning, isTrue);
       clearInteractions(mockGameState);
+      var notifications = 0;
+      gameManager.addListener(() => notifications++);
 
       // When
       gameManager.stopLoop();
 
-      // Then
+      // Then: no notification, because GameScreen calls this from dispose
       expect(gameManager.isRunning, isFalse);
+      expect(notifications, 0);
       verifyNever(mockGameState.resetLevel());
       verifyNever(mockGameState.pauseGame());
     });
