@@ -17,6 +17,10 @@ class GameConstants {
   static const double pegRadiusMin = 8.0;
   static const double pegRadiusMax = 15.0;
   static const double specialPegRadius = 15.0;
+
+  /// Smallest gap, edge to edge, between two pegs or between a peg and a
+  /// field wall. A gap narrower than a ball is a pocket the ball rests in.
+  static const double minPegGap = ballRadius * 2 + 2.0;
   
   // Board constants
   static const double boardWidth = 400.0;

@@ -36,50 +36,51 @@ class Level {
     
     // Generate special pegs (2-4 per level) with proper spacing
     final specialPegCount = 2 + random.nextInt(3);
-    const minSpacing = 35.0; // Base spacing for regular pegs
-    const specialMinSpacing = 50.0; // Larger spacing for special pegs
+    const specialMinSpacing = 50.0; // Centre to centre, between special pegs
     
     for (int i = 0; i < specialPegCount; i++) {
-      double x = 0, y = 0;
-      bool validPosition = false;
-      int attempts = 0;
-      
+      Vector2? position;
+      Vector2? crowdedSpot; // The candidate with the fewest regular pegs in its way
+      int fewestInTheWay = pegs.length + 1;
+
       // Try to find a valid position with proper spacing
-      while (!validPosition && attempts < 50) {
-        x = 80 + random.nextDouble() * (boardWidth - 160);
-        y = 150 + random.nextDouble() * (boardHeight - 400);
-        
+      for (int attempts = 0; position == null && attempts < 50; attempts++) {
+        final x = 80 + random.nextDouble() * (boardWidth - 160);
+        final y = 150 + random.nextDouble() * (boardHeight - 400);
+
         // Check if position is in launch channel area
-        final inLaunchChannel = x > GameConstants.launchChannelStartX - 40 && 
-                               y > GameConstants.launchChannelEndY && 
+        final inLaunchChannel = x > GameConstants.launchChannelStartX - 40 &&
+                               y > GameConstants.launchChannelEndY &&
                                y < GameConstants.launchChannelStartY + 30;
-        
-        if (inLaunchChannel) {
-          attempts++;
-          continue;
+
+        if (inLaunchChannel) continue;
+
+        final candidate = Vector2(x, y);
+        if (specialPegs.any((peg) => (candidate - peg.position).length < specialMinSpacing)) continue;
+
+        // A ball must fit past every peg
+        final inTheWay = pegs.where((peg) =>
+            PegPatterns.gapTo(peg, candidate, GameConstants.specialPegRadius) < GameConstants.minPegGap).length;
+        if (inTheWay == 0) {
+          position = candidate;
+        } else if (inTheWay < fewestInTheWay) {
+          fewestInTheWay = inTheWay;
+          crowdedSpot = candidate;
         }
-        
-        // Check spacing with all existing pegs (regular and special)
-        bool hasProperSpacing = true;
-        for (final existingPeg in pegs) {
-          final distance = (Vector2(x, y) - existingPeg.position).length;
-          final requiredSpacing = existingPeg.type == PegType.special ? specialMinSpacing : minSpacing;
-          if (distance < requiredSpacing) {
-            hasProperSpacing = false;
-            break;
-          }
-        }
-        
-        if (hasProperSpacing) {
-          validPosition = true;
-        }
-        attempts++;
       }
-      
-      if (validPosition) {
+
+      if (position == null && crowdedSpot != null) {
+        // A dense field has no free spot. Clear the regular pegs around the
+        // least crowded candidate, so every level keeps its special pegs and its bonus.
+        final spot = crowdedSpot;
+        pegs.removeWhere((peg) => PegPatterns.gapTo(peg, spot, GameConstants.specialPegRadius) < GameConstants.minPegGap);
+        position = spot;
+      }
+
+      if (position != null) {
         final specialPeg = Peg(
-          position: Vector2(x, y),
-          radius: 15.0,
+          position: position,
+          radius: GameConstants.specialPegRadius,
           type: PegType.special,
           isHighlighted: true,
         );
