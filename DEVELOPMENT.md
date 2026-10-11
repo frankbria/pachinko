@@ -94,7 +94,7 @@ git push origin 003-feature-name
 ### Completing a Feature
 
 **Checklist before merging to master**:
-- [ ] All tests passing (`flutter test --exclude-tags golden`)
+- [ ] All tests passing (`flutter test --exclude-tags golden`, and `flutter test --tags golden` on Linux)
 - [ ] Code coverage ≥85% for new code
 - [ ] Code formatted (`dart format`)
 - [ ] Code analyzed (`flutter analyze`)
@@ -106,6 +106,7 @@ git push origin 003-feature-name
 ```bash
 # Final verification
 flutter test --exclude-tags golden
+flutter test --tags golden
 flutter analyze
 dart format --set-exit-if-changed lib/ test/
 
