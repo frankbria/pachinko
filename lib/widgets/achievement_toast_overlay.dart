@@ -6,7 +6,8 @@ import 'achievement_toast.dart';
 ///
 /// Wraps the app to provide achievement toast notifications.
 /// Ensures only one toast is visible at a time by queueing multiple toasts.
-/// Toasts are displayed at the top center of the screen.
+/// Toasts are displayed below the game screen's score header, so the score,
+/// ball count and level stay readable while one is showing.
 class AchievementToastOverlay extends StatefulWidget {
   final Widget child;
 
@@ -26,6 +27,11 @@ class AchievementToastOverlay extends StatefulWidget {
 }
 
 class AchievementToastOverlayState extends State<AchievementToastOverlay> {
+  /// Distance from the top safe area to the toast: the height of the game
+  /// screen's score header. The overlay sits above the Navigator, so the same
+  /// offset applies on every screen.
+  static const double _topOffset = 112;
+
   final List<Achievement> _toastQueue = [];
   Achievement? _currentToast;
 
@@ -62,7 +68,7 @@ class AchievementToastOverlayState extends State<AchievementToastOverlay> {
         widget.child,
         if (_currentToast != null)
           Positioned(
-            top: MediaQuery.of(context).padding.top + 16,
+            top: MediaQuery.of(context).padding.top + _topOffset,
             left: 0,
             right: 0,
             // Transparent Material: above the Navigator there is no Scaffold
