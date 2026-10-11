@@ -515,6 +515,39 @@ void main() {
       expect(gameState.ballsRemaining, equals(20));
     });
 
+    test('given a ball in play, when loadLevel called, then no ball is carried onto the new level', () {
+      /// A ball left in activeBalls would drain through the new level's pegs
+      /// and score there, and it blocks the launcher while it is in play
+      // Given
+      final gameState = GameState();
+      addTearDown(gameState.dispose);
+      gameState.startNewGame();
+      gameState.launchBall(Ball(position: Vector2(200, 300)));
+      expect(gameState.activeBalls, hasLength(1));
+
+      // When
+      gameState.loadLevel(3);
+
+      // Then
+      expect(gameState.activeBalls, isEmpty);
+      expect(gameState.canLaunchBall, isTrue);
+    });
+
+    test('given a ball in play, when nextLevel called, then no ball is carried onto the new level', () {
+      // Given
+      final gameState = GameState();
+      addTearDown(gameState.dispose);
+      gameState.startNewGame();
+      gameState.launchBall(Ball(position: Vector2(200, 300)));
+
+      // When
+      gameState.nextLevel();
+
+      // Then
+      expect(gameState.activeBalls, isEmpty);
+      expect(gameState.canLaunchBall, isTrue);
+    });
+
     test('given GameState, when nextLevel called, then phase set to ready', () {
       /// Validates nextLevel() resets phase to ready for new level
       

@@ -76,6 +76,8 @@ class GameState extends ChangeNotifier {
     _levelStartScore = _score;
     _currentLevelNumber = levelNumber;
     _currentLevel = Level.generate(levelNumber, 400, 600);
+    // A ball still in play belongs to the level being left
+    _activeBalls.clear();
     _phase = GamePhase.ready;
     _specialBonusTriggered = false;
     _bonusBallsToAdd = 0;
@@ -86,7 +88,6 @@ class GameState extends ChangeNotifier {
   void startNewGame({int level = 1}) {
     _score = 0;
     _ballsRemaining = _totalBalls;
-    _activeBalls.clear();
     loadLevel(level);
   }
 

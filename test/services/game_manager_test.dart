@@ -872,6 +872,34 @@ void main() {
       expect(realManager.isRunning, isTrue);
     });
 
+    /// Real objects (no mocks): a level change with a ball still in play
+    /// must not carry that ball onto the new level.
+    for (final change in <String, void Function(GameManager)>{
+      'selectLevel': (manager) => manager.selectLevel(3),
+      'nextLevel': (manager) => manager.nextLevel(),
+    }.entries) {
+      test('Given ball on launch path When ${change.key} called Then the next launch puts exactly one ball in play', () {
+        // Given: a real game with a ball travelling up the channel
+        final realManager = GameManager();
+        addTearDown(realManager.dispose);
+        realManager.startGame();
+        realManager.startLaunchCharging();
+        realManager.updateLaunchPower(50);
+        realManager.launchBall();
+        expect(realManager.gameState.activeBalls, hasLength(1));
+
+        // When
+        change.value(realManager);
+
+        // Then: the old ball is gone and a new launch succeeds
+        expect(realManager.gameState.activeBalls, isEmpty);
+        realManager.startLaunchCharging();
+        realManager.updateLaunchPower(50);
+        realManager.launchBall();
+        expect(realManager.gameState.activeBalls, hasLength(1));
+      });
+    }
+
     test('Given any state When startGame called Then launcher reset', () {
       gameManager.startGame();
       verify(mockBallLauncher.reset()).called(1);
