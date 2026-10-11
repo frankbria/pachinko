@@ -104,12 +104,12 @@ class _HUDItem extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: highlighted
-            ? const Color(0xFFFFD700).withOpacity(0.3) // Gold highlight
+            ? GameConstants.bonusBallColor.withOpacity(0.3)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: highlighted
-              ? const Color(0xFFFFD700)
+              ? GameConstants.bonusBallColor
               : Colors.transparent,
           width: highlighted ? 3 : 0,
         ),
@@ -119,14 +119,14 @@ class _HUDItem extends StatelessWidget {
         children: [
           Icon(
             icon,
-            color: highlighted ? const Color(0xFFFFD700) : color,
+            color: highlighted ? GameConstants.bonusBallColor : color,
             size: highlighted ? 28 : 24,
           ),
           const SizedBox(height: 4),
           Text(
             value,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: highlighted ? const Color(0xFFFFD700) : Colors.white,
+              color: highlighted ? GameConstants.bonusBallColor : Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: highlighted ? 22 : null,
             ),
@@ -134,7 +134,7 @@ class _HUDItem extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: highlighted ? const Color(0xFFFFD700).withOpacity(0.9) : Colors.white70,
+              color: highlighted ? GameConstants.bonusBallColor.withOpacity(0.9) : Colors.white70,
             ),
           ),
         ],
@@ -172,7 +172,7 @@ class _GameControls extends StatelessWidget {
                   icon: const Icon(Icons.pause),
                   style: IconButton.styleFrom(
                     backgroundColor: GameConstants.primaryColor,
-                    foregroundColor: Colors.white,
+                    foregroundColor: GameConstants.onPrimaryColor,
                   ),
                 )
               else if (gameState.phase == GamePhase.ready && gameState.activeBalls.isNotEmpty)
@@ -181,7 +181,7 @@ class _GameControls extends StatelessWidget {
                   icon: const Icon(Icons.play_arrow),
                   style: IconButton.styleFrom(
                     backgroundColor: GameConstants.primaryColor,
-                    foregroundColor: Colors.white,
+                    foregroundColor: GameConstants.onPrimaryColor,
                   ),
                 ),
               
@@ -202,8 +202,8 @@ class _GameControls extends StatelessWidget {
                   icon: const Icon(Icons.skip_next),
                   label: const Text('Next Level'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: GameConstants.secondaryColor,
-                    foregroundColor: Colors.black,
+                    backgroundColor: GameConstants.primaryColor,
+                    foregroundColor: GameConstants.onPrimaryColor,
                   ),
                 ),
             ],

@@ -128,7 +128,7 @@ class GameState extends ChangeNotifier {
             GameConstants.bonusBallSpawnMinX + spawnWidth * i / (count - 1),
             GameConstants.bonusBallSpawnY,
           ),
-          color: const Color(0xFFFFD700), // Gold color for bonus balls
+          color: GameConstants.bonusBallColor,
         );
         _activeBalls.add(bonusBall);
       }

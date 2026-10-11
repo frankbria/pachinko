@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'dart:math' as math;
 import 'package:vector_math/vector_math_64.dart';
+import '../utils/constants.dart';
 
 enum PegType {
   normal,
@@ -41,9 +42,9 @@ class Peg {
   static Color _getDefaultColor(PegType type) {
     switch (type) {
       case PegType.normal:
-        return const Color(0xFF4CAF50); // Green
+        return GameConstants.normalPegColor;
       case PegType.special:
-        return const Color(0xFFFF9800); // Orange
+        return GameConstants.specialPegColor;
       case PegType.bonus:
         return const Color(0xFFE91E63); // Pink
     }

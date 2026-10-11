@@ -42,6 +42,7 @@ lib/
 │   └── pachinko_board.dart     # Custom Canvas game board renderer
 └── utils/
     ├── constants.dart          # Game configuration and styling
+    ├── game_theme.dart         # App theme built from the colour roles
     └── peg_patterns.dart       # ✨ NEW: Organized peg layouts
 ```
 
@@ -78,6 +79,8 @@ lib/
 - **Inverse Scoring**: Edge slots = 2000pts, center = 1000pts, sides = 50-200pts
 - **Power System**: Drag-to-charge launcher with visual power meter
 - **Achievement Toasts**: `AchievementToastOverlay` is installed through `MaterialApp.builder` (above the Navigator) and reached with a `GlobalKey`, so toasts show over every screen; anything else that must appear above every route belongs in that builder, not in `home:`
+- **Colour Roles**: every colour comes from the palette in `GameConstants` (`lib/utils/constants.dart`), and each has one job. Gold is score, prize pegs and bonus balls only. Brass is ordinary pins and never glows, so a glowing peg is always a prize. Slot tiers run cool to hot: slate (50), blue (200), violet (1000), magenta (2000). Cyan is the primary action, and anything drawn on it uses `onPrimaryColor`. New code takes colours from these roles or from `Theme.of(context)`, never from `Colors.*` swatches or new hex literals
+- **Type**: `buildGameTheme()` (`lib/utils/game_theme.dart`) gives display, headline, title and label styles the bundled Oxanium face and leaves body styles on Roboto. Oxanium ships as static regular and bold files in `assets/fonts/` because `FontWeight` does not drive a variable font's weight axis; add another static weight there if one is needed
 - **Game Transitions**: `GameManager.startGame`, `resetGame`, `nextLevel` and `selectLevel` each call `_ballLauncher.reset()` first, because cancelling the loop strands a launcher that is mid-`traveling`; any new method that restarts play or changes level must do the same. `GameState.resetLevel()` and `loadLevel()` call `_clearEffects()`; any new transient visual effect must be cleared there
 
 ## Feature Development Quality Standards

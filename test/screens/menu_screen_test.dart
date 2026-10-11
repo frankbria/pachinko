@@ -96,6 +96,23 @@ void main() {
       expect(find.text(GameStrings.appName), findsOneWidget);
     });
 
+    /// The title must stay on one line inside the screen at phone width,
+    /// however wide the display face is.
+    testWidgets('given a phone-width screen, when rendered, then the title fits on one line within the screen', (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+
+      final title = find.text(GameStrings.appName);
+      final box = tester.getRect(find.ancestor(of: title, matching: find.byType(FittedBox)));
+      expect(box.left, greaterThanOrEqualTo(24.0));
+      expect(box.right, lessThanOrEqualTo(360.0 - 24.0));
+      // Two lines of the 57px display style would be at least 114px tall.
+      expect(tester.getSize(title).height, lessThan(114.0));
+    });
+
     /// GIVEN MenuScreen is rendered
     /// WHEN checking subtitle
     /// THEN subtitle text is displayed
