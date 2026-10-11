@@ -143,8 +143,21 @@ class GameManager extends ChangeNotifier {
 
     _checkGameState();
 
+    // Nothing left for the loop to move: stop until the next launch. The board
+    // animates its own pegs, so it does not need these ticks
+    if (_isIdle) _gameTimer?.cancel();
+
     notifyListeners();
   }
+
+  /// Whether nothing the loop drives is changing: no ball in play or in the
+  /// launch channel, and no score popup, confetti or ball count highlight.
+  bool get _isIdle =>
+      _gameState.activeBalls.isEmpty &&
+      _ballLauncher.phase != LaunchPhase.traveling &&
+      _gameState.floatingTexts.isEmpty &&
+      _gameState.confettiParticles.isEmpty &&
+      !_gameState.ballCountHighlighted;
 
   void _updatePhysics(double deltaTime) {
     final balls = _gameState.activeBalls;
