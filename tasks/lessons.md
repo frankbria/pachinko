@@ -42,4 +42,17 @@ Patterns learned the hard way on this repo. Add an entry after any correction.
 
 ## 2026-10-10 — graphics review (issue #22)
 
+- **Take a mock-up's geometry from the painter, not from a similarly named constant.** The neon parlor mock-up drew the launch channel's inner wall up to `launchChannelEndY` (110). The painter stops that wall at y = 135, and Frank rejected the mock-up because the mouth under the dome looked too narrow for a ball. Read the `draw*` method before drawing anything it draws. (Correction from Frank.)
 - **Take a layout percentage from the pixels, and say what it measures.** Issue #22 first said the board uses about 57% of the screen height. Scanning one column of the screenshot for colour changes gave 68% for the board panel; 57% was the span from the dome to the top of the slots. The pegs span 24%. Name both ends of any measurement in the text.
+
+## 2026-10-10 — PR #34 (issue #25, colour roles and the Oxanium font)
+
+- **`FontWeight` does not drive a variable font's weight axis.** A probe test measured the same text width at w400 and w800 with the variable Oxanium file, and a different one only with `FontVariation('wght', 800)`. Existing code sets weight with `fontWeight:`, so the fix was to ship static instances: `uvx --from fonttools fonttools varLib.instancer <font> wght=700 --update-name-table`, declared with `weight: 700` in `pubspec.yaml`. Check the licence for a reserved font name before renaming or instancing a font.
+- **Do not edit the working tree while a cross-family review is running.** The reviewer gets the diff inline but also reads the files, and it reported fixes made during its run as "stranded uncommitted". Commit first, or hold the edits until it finishes. Run mutation checks in a separate detached worktree (`git worktree add --detach`) for the same reason.
+- **Make a mutation script match exact text and assert it occurs once.** `mutate25.py` in the session notes takes (file, exact text, replacement, test file), restores the file in a `finally`, and reports survivors. Twelve mutations ran unattended with no wrong-line hits.
+- **A wider font moves everything below it.** Under Oxanium the menu title wrapped to two lines and the Play button moved 93 px, so a scripted tap missed and two screenshots came out identical. Compare file sizes or look at the first capture before trusting a scripted sequence.
+- **Wait about 20 seconds after `adb install` before the first screenshot.** Eight seconds caught the splash screen.
+- **`gh` cannot attach an image to a pull request.** Screenshots go on the `pr-assets` branch, which holds no code, and the description links them by raw URL. The branch can be deleted once the pull requests that use it are merged.
+- **Give the exact command with any analyzer count.** The description said "96 issues, down from 98"; the reviewer ran a different invocation and counted 107. The local command is `flutter analyze --no-fatal-infos --no-fatal-warnings lib test`.
+- **Check that an acceptance criterion belongs to the slice before filing it.** Issue #25 first asked for the screens' literal text sizes to move onto the type scale, which is #32's work. It was corrected before implementation started.
+
