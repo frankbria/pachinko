@@ -50,7 +50,8 @@ lib/
 - `export PATH="/home/frankbria/projects/pachinko/tools/flutter/bin:$PATH"` - Set Flutter path
 - `flutter run` - Run the game
 - `flutter build apk` - Build Android APK
-- `flutter test --exclude-tags golden` - Run tests (the CI gate; golden image tests are tagged `golden` and run separately with `flutter test --tags golden`)
+- `flutter test --exclude-tags golden` - Run tests (the main CI gate)
+- `flutter test --tags golden` - Run the golden image tests (also gated in CI). The baselines in `test/widgets/goldens/` were generated on Linux and are only expected to match there. After an intended visual change, regenerate them with `flutter test --tags golden --update-goldens`, look at the images, and commit them
 - `dart run build_runner build --delete-conflicting-outputs` - Regenerate test mocks after changing the public API of a mocked class
 - `flutter analyze` - Check code quality
 - `flutter doctor` - Check Flutter installation
@@ -164,7 +165,7 @@ Before moving to the next feature, ALL changes must be:
 
 Before marking ANY feature as complete, verify:
 
-- [ ] All tests pass (`flutter test --exclude-tags golden`)
+- [ ] All tests pass (`flutter test --exclude-tags golden` and `flutter test --tags golden`)
 - [ ] Code coverage meets 85% minimum threshold
 - [ ] Coverage report reviewed for meaningful test quality
 - [ ] Code formatted and analyzed (`dart format`, `flutter analyze`)

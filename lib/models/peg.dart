@@ -21,6 +21,7 @@ class Peg {
   bool isAnimating = false;
   double pulseProgress = 0.0; // 0.0 to 1.0 for pulse animation
   double shimmerIntensity = 0.0; // 0.0 to 1.0 for special peg shimmer
+  double _shimmerTime = 0.0; // Seconds of shimmer shown so far
   double _hitAnimationTimer = 0.0; // Timer for hit animation (in seconds)
   static const double _hitAnimationDuration = 0.8; // 800ms
 
@@ -79,6 +80,7 @@ class Peg {
     isAnimating = false;
     pulseProgress = 0.0;
     shimmerIntensity = 0.0;
+    _shimmerTime = 0.0;
     _hitAnimationTimer = 0.0;
 
     if (type == PegType.special) {
@@ -106,8 +108,10 @@ class Peg {
 
     // Handle shimmer animation (special pegs)
     if (type == PegType.special && isHighlighted && !hasBeenHit) {
-      // Sine wave shimmer effect
-      shimmerIntensity = 0.3 + 0.3 * math.sin(DateTime.now().millisecondsSinceEpoch / 500.0);
+      // Sine wave shimmer effect, timed by the frames drawn rather than the
+      // wall clock so that a rendered frame can be reproduced
+      _shimmerTime += deltaTime;
+      shimmerIntensity = 0.3 + 0.3 * math.sin(_shimmerTime * 2.0);
     } else {
       shimmerIntensity = 0.0;
     }

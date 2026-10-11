@@ -94,7 +94,7 @@ git push origin 003-feature-name
 ### Completing a Feature
 
 **Checklist before merging to master**:
-- [ ] All tests passing (`flutter test --exclude-tags golden`)
+- [ ] All tests passing (`flutter test --exclude-tags golden`, and `flutter test --tags golden` on Linux)
 - [ ] Code coverage ≥85% for new code
 - [ ] Code formatted (`dart format`)
 - [ ] Code analyzed (`flutter analyze`)
@@ -106,6 +106,7 @@ git push origin 003-feature-name
 ```bash
 # Final verification
 flutter test --exclude-tags golden
+flutter test --tags golden
 flutter analyze
 dart format --set-exit-if-changed lib/ test/
 
@@ -217,7 +218,11 @@ flutter test test/unit/particle_system_test.dart
 # With coverage
 flutter test --coverage --exclude-tags golden
 
-# Update golden files (visual regression)
+# Golden image tests (visual regression); CI runs these too.
+# The baselines were generated on Linux and are only expected to match there.
+flutter test --tags golden
+
+# Update golden files after an intended visual change, then look at the images
 flutter test --tags golden --update-goldens
 
 # Watch mode (rerun on changes)
@@ -289,7 +294,7 @@ lib/
 flutter test --exclude-tags golden --reporter expanded
 
 # Update golden files if visual changes are intentional
-flutter test --update-goldens test/integration/visual_regression_test.dart
+flutter test --tags golden --update-goldens
 ```
 
 **Coverage not meeting 85%**:

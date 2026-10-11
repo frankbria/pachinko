@@ -22,3 +22,4 @@ jobs:
       - run: flutter pub get
       - run: flutter analyze --no-fatal-infos --no-fatal-warnings
       - run: flutter test --exclude-tags golden
+      - run: flutter test --tags golden
