@@ -143,6 +143,15 @@ class MockGameManager extends _i1.Mock implements _i5.GameManager {
       );
 
   @override
+  void stopLoop() => super.noSuchMethod(
+        Invocation.method(
+          #stopLoop,
+          [],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
   void startLaunchCharging() => super.noSuchMethod(
         Invocation.method(
           #startLaunchCharging,
