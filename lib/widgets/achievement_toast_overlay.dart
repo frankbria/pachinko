@@ -6,7 +6,8 @@ import 'achievement_toast.dart';
 ///
 /// Wraps the app to provide achievement toast notifications.
 /// Ensures only one toast is visible at a time by queueing multiple toasts.
-/// Toasts are displayed at the top center of the screen.
+/// Toasts are displayed at the top center of the screen, unless a screen has
+/// anchored them lower with [AchievementToastOverlayState.anchorToasts].
 class AchievementToastOverlay extends StatefulWidget {
   final Widget child;
 
@@ -26,6 +27,38 @@ class AchievementToastOverlay extends StatefulWidget {
 }
 
 class AchievementToastOverlayState extends State<AchievementToastOverlay> {
+  /// Distance from the top safe area to a toast that no screen has anchored.
+  static const double defaultTopOffset = 16;
+
+  // The screen that asked for toasts to start lower, and how far down
+  Object? _anchorOwner;
+  double? _anchoredTopOffset;
+
+  /// Starts toasts [topOffset] below the top safe area, on behalf of [owner].
+  ///
+  /// For a screen whose top edge holds something the player has to keep
+  /// reading: the game screen passes the height of its score header. The
+  /// position holds until the same [owner] calls [releaseToasts].
+  void anchorToasts(Object owner, double topOffset) {
+    if (_anchorOwner == owner && _anchoredTopOffset == topOffset) return;
+    setState(() {
+      _anchorOwner = owner;
+      _anchoredTopOffset = topOffset;
+    });
+  }
+
+  /// Returns toasts to the top of the screen, if [owner] still holds the anchor.
+  ///
+  /// A screen that finishes closing after another one has anchored the
+  /// toasts is ignored, so it does not undo the newer screen's position.
+  void releaseToasts(Object owner) {
+    if (_anchorOwner != owner) return;
+    setState(() {
+      _anchorOwner = null;
+      _anchoredTopOffset = null;
+    });
+  }
+
   final List<Achievement> _toastQueue = [];
   Achievement? _currentToast;
 
@@ -62,7 +95,8 @@ class AchievementToastOverlayState extends State<AchievementToastOverlay> {
         widget.child,
         if (_currentToast != null)
           Positioned(
-            top: MediaQuery.of(context).padding.top + 16,
+            top: MediaQuery.of(context).padding.top +
+                (_anchoredTopOffset ?? defaultTopOffset),
             left: 0,
             right: 0,
             // Transparent Material: above the Navigator there is no Scaffold
