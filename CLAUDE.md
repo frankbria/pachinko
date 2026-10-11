@@ -53,7 +53,7 @@ lib/
 - `flutter test --exclude-tags golden` - Run tests (the main CI gate)
 - `flutter test --tags golden` - Run the golden image tests (also gated in CI). The baselines in `test/widgets/goldens/` were generated on Linux and are only expected to match there. After an intended visual change or a Flutter upgrade, regenerate them with `flutter test --tags golden --update-goldens`, look at the images, and commit them. A golden that draws a prize peg captures its shimmer after however many frames the test pumps, so the picture depends on the frame count
 - `dart run build_runner build --delete-conflicting-outputs` - Regenerate test mocks after changing the public API of a mocked class
-- `flutter analyze` - Check code quality
+- `flutter analyze --no-fatal-infos` - Check code quality (a CI gate: warnings and errors fail it, info-level lints are only reported). `analysis_options.yaml` excludes `tools/**`, so the SDK checkout there is not analyzed
 - `flutter doctor` - Check Flutter installation
 
 ## Current Implementation Status
@@ -168,7 +168,7 @@ Before marking ANY feature as complete, verify:
 - [ ] All tests pass (`flutter test --exclude-tags golden` and `flutter test --tags golden`)
 - [ ] Code coverage meets 85% minimum threshold
 - [ ] Coverage report reviewed for meaningful test quality
-- [ ] Code formatted and analyzed (`dart format`, `flutter analyze`)
+- [ ] Code formatted and analyzed (`dart format`, `flutter analyze --no-fatal-infos`)
 - [ ] All changes committed with conventional commit messages
 - [ ] All commits pushed to remote repository
 - [ ] Implementation documentation updated
