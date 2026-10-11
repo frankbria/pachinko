@@ -117,10 +117,10 @@ class _HighScoresScreenState extends State<HighScoresScreen> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
-              _storageService!.clearData();
+            onPressed: () async {
               Navigator.pop(context);
-              _loadScores(); // Reload (will show empty)
+              await _storageService!.clearData();
+              await _loadScores(); // Reload (will show empty)
             },
             child: const Text('Clear', style: TextStyle(color: Colors.red)),
           ),

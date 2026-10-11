@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
@@ -190,6 +191,39 @@ void main() {
 
       // Then
       verify(mockStorageService.clearData()).called(1);
+    });
+
+    testWidgets('givenConfirmation_whenCleared_thenScoresReloadOnlyAfterClearCompletes',
+        (WidgetTester tester) async {
+      // Given
+      final clearCompleter = Completer<void>();
+      final score = HighScore(level: 1, score: 5000, timestamp: DateTime.now());
+      when(mockStorageService.getHighScores(1)).thenAnswer((_) async => [score]);
+      for (int i = 2; i <= 20; i++) {
+        when(mockStorageService.getHighScores(i)).thenAnswer((_) async => []);
+      }
+      when(mockStorageService.clearData()).thenAnswer((_) => clearCompleter.future);
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.delete));
+      await tester.pumpAndSettle();
+      clearInteractions(mockStorageService);
+
+      // When - confirm, while the clear is still in progress
+      await tester.tap(find.text('Clear'));
+      await tester.pumpAndSettle();
+
+      // Then - nothing reloaded yet
+      verify(mockStorageService.clearData()).called(1);
+      verifyNever(mockStorageService.getHighScores(any));
+
+      // When - the clear finishes
+      clearCompleter.complete();
+      await tester.pumpAndSettle();
+
+      // Then - scores are reloaded
+      verify(mockStorageService.getHighScores(1)).called(1);
     });
   });
 
