@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../services/game_manager.dart';
 import '../models/game_state.dart';
 import '../utils/constants.dart';
+import '../widgets/achievement_toast_overlay.dart';
 import '../widgets/pachinko_board.dart';
 
 class GameScreen extends StatefulWidget {
@@ -14,17 +15,36 @@ class GameScreen extends StatefulWidget {
 
 class _GameScreenState extends State<GameScreen> {
   late final GameManager _gameManager;
+  final GlobalKey _headerKey = GlobalKey();
+  AchievementToastOverlayState? _toasts;
 
   @override
   void initState() {
     super.initState();
     _gameManager = context.read<GameManager>();
+    _toasts = AchievementToastOverlay.of(context);
+    // The header has no size until the first frame has been laid out
+    WidgetsBinding.instance.addPostFrameCallback((_) => _anchorToastsBelowHeader());
+  }
+
+  /// Tells the toast overlay how tall the score header is, so an achievement
+  /// toast starts below it and the score, ball count and level stay readable.
+  void _anchorToastsBelowHeader() {
+    if (!mounted) return;
+    final headerHeight = _headerKey.currentContext?.size?.height;
+    if (headerHeight != null) _toasts?.anchorToasts(this, headerHeight);
   }
 
   @override
   void dispose() {
     // Leaving the screen abandons the game in progress; stop it playing on in the background
     _gameManager.stopLoop();
+    // The overlay is an ancestor, and an ancestor cannot be rebuilt while this
+    // subtree is being torn down, so the release waits for the frame to end
+    final toasts = _toasts;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (toasts != null && toasts.mounted) toasts.releaseToasts(this);
+    });
     super.dispose();
   }
 
@@ -35,8 +55,19 @@ class _GameScreenState extends State<GameScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Game HUD
-            _GameHUD(),
+            // Game HUD. Its height changes with the text scale, and the toast
+            // anchor has to follow it
+            NotificationListener<SizeChangedLayoutNotification>(
+              onNotification: (_) {
+                // Sent during layout, when the overlay cannot be rebuilt yet
+                WidgetsBinding.instance.addPostFrameCallback((_) => _anchorToastsBelowHeader());
+                return true;
+              },
+              child: SizeChangedLayoutNotifier(
+                key: _headerKey,
+                child: _GameHUD(),
+              ),
+            ),
             
             // Game Board
             Expanded(
