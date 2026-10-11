@@ -108,7 +108,7 @@ lib/
   # Coverage of the lines this branch changed, which is what CI gates at 85%
   uvx diff-cover coverage/lcov.info --compare-branch=origin/master --fail-under=85
   ```
-- **CI Gates** (`.github/workflows/ci.yml`, in order): analyzer, generated mocks up to date, tests, coverage of changed lines at least 85% (pull requests only), golden tests. A failed golden step uploads the difference images as the `golden-failures` artifact. The integration tests in `integration_test/` are analyzed but not run: they need a device
+- **CI Gates** (`.github/workflows/ci.yml`, in order): analyzer, generated mocks up to date, tests, coverage of changed lines at least 85% (pull requests only), golden tests. `flutter test --coverage` only records libraries that a test loads, so `test/all_libraries_loaded_test.dart` imports every file under `lib/` and fails when one is missing from its list; add new files there, or an untested file would be skipped by the coverage check instead of failing it. A failed golden step uploads the difference images as the `golden-failures` artifact. The integration tests in `integration_test/` are analyzed but not run: they need a device
 - **Test Quality**: Tests must validate behavior, not just achieve coverage metrics
 - **Test Documentation**: Complex test scenarios must include comments explaining the test strategy
 
