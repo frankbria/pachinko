@@ -344,6 +344,19 @@ void main() {
       // After pop, GameScreen should no longer be in tree
       expect(find.byType(GameScreen), findsNothing);
     });
+
+    testWidgets('given GameScreen shown, when it is removed from the tree, then the game loop is stopped',
+      (WidgetTester tester) async {
+      // Given
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+      await tester.pump();
+
+      // When
+      await tester.pumpWidget(const SizedBox());
+
+      // Then
+      verify(mockGameManager.stopLoop()).called(1);
+    });
   });
 
   group('GameScreen Consumer State Display', () {
