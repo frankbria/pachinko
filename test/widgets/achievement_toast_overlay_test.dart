@@ -318,6 +318,15 @@ void main() {
       expect(find.text('Test Achievement'), findsOneWidget);
       expect(toastOpacity(tester), 1.0);
 
+      // Assert - Toast brings its own Material (no Scaffold above the Navigator)
+      expect(
+        find.ancestor(
+          of: find.byType(AchievementToast),
+          matching: find.byType(Material),
+        ),
+        findsOneWidget,
+      );
+
       // Cleanup - Wait for auto-dismiss
       await tester.pump(const Duration(milliseconds: 3500));
       await tester.pumpAndSettle();
