@@ -70,15 +70,6 @@ void main() {
     when(mockLevel.launchY).thenReturn(GameConstants.launchChannelStartY);
   });
 
-  /// Widget test harness that wraps PachinkoBoard with ChangeNotifierProvider<GameManager>
-  ///
-  /// Provides a Material app context with Provider access for testing PachinkoBoard
-  /// widget interactions. PachinkoBoard uses Consumer<GameManager> to access gameState,
-  /// so the Provider must wrap MaterialApp to ensure all widgets have access.
-  ///
-  /// The [gameManager] parameter allows injection of a mocked GameManager for isolated
-  /// widget testing. PachinkoBoard's Consumer will rebuild when GameManager calls
-  /// notifyListeners().
   /// The painter the board currently draws with.
   CustomPainter boardPainter(WidgetTester tester) => tester
       .widget<CustomPaint>(find.descendant(
@@ -87,6 +78,15 @@ void main() {
       ))
       .painter!;
 
+  /// Widget test harness that wraps PachinkoBoard with ChangeNotifierProvider<GameManager>
+  ///
+  /// Provides a Material app context with Provider access for testing PachinkoBoard
+  /// widget interactions. PachinkoBoard reads the GameManager from the Provider once,
+  /// so the Provider must wrap MaterialApp to ensure all widgets have access.
+  ///
+  /// The [gameManager] parameter allows injection of a mocked GameManager for isolated
+  /// widget testing. The board does not rebuild when GameManager calls
+  /// notifyListeners(); its painter repaints.
   Widget createTestWidget({required GameManager gameManager}) {
     return ChangeNotifierProvider<GameManager>.value(
       value: gameManager,
