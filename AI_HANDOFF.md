@@ -144,7 +144,7 @@ export PATH="/home/frankbria/projects/pachinko/tools/flutter/bin:$PATH"
 flutter run -d linux
 
 # Check for issues
-flutter analyze
+flutter analyze --no-fatal-infos
 
 # Future Android build
 flutter build apk
