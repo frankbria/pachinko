@@ -13,6 +13,7 @@
 // - When: Action performed
 // - Then: Expected outcome
 
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vector_math/vector_math_64.dart';
@@ -667,6 +668,55 @@ void main() {
       expect(peg2.pulseProgress, greaterThan(0.0));
       expect(peg1.isAnimating, isTrue);
       expect(peg2.isAnimating, isTrue);
+    });
+  });
+  group('Special Peg Shimmer Timing -', () {
+    /// The shimmer is driven by the time passed to updateAnimation, not by the
+    /// wall clock, so a rendered frame depends only on how many frames came
+    /// before it. Golden images of a prize peg rely on that.
+    test('given two special pegs advanced by the same time, when a real pause separates them, then their shimmer matches', () async {
+      // Given
+      final first = Peg(position: Vector2(100, 100), type: PegType.special);
+      final second = Peg(position: Vector2(100, 100), type: PegType.special);
+
+      // When: the same 10 frames, 60 ms of wall-clock time apart
+      for (int i = 0; i < 10; i++) {
+        first.updateAnimation(1 / 60);
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+      for (int i = 0; i < 10; i++) {
+        second.updateAnimation(1 / 60);
+      }
+
+      // Then
+      expect(second.shimmerIntensity, first.shimmerIntensity);
+      expect(second.renderColor, first.renderColor);
+    });
+
+    test('given a special peg, when advanced, then the shimmer follows a sine wave over about three seconds', () {
+      // Given
+      final peg = Peg(position: Vector2(100, 100), type: PegType.special);
+
+      // When / Then: 0.3 + 0.3 * sin(2t)
+      peg.updateAnimation(0.25);
+      expect(peg.shimmerIntensity, closeTo(0.3 + 0.3 * math.sin(0.5), 1e-9));
+      peg.updateAnimation(0.5);
+      expect(peg.shimmerIntensity, closeTo(0.3 + 0.3 * math.sin(1.5), 1e-9));
+    });
+
+    test('given a shimmering special peg, when reset, then the shimmer starts again from the beginning', () {
+      // Given
+      final peg = Peg(position: Vector2(100, 100), type: PegType.special);
+      final fresh = Peg(position: Vector2(100, 100), type: PegType.special);
+      peg.updateAnimation(0.7);
+
+      // When
+      peg.reset();
+      peg.updateAnimation(1 / 60);
+      fresh.updateAnimation(1 / 60);
+
+      // Then
+      expect(peg.shimmerIntensity, fresh.shimmerIntensity);
     });
   });
 }
