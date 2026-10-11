@@ -810,6 +810,40 @@ void main() {
       // Then
       verify(mockGameState.updatePhase(GamePhase.gameOver)).called(2);
     });
+
+    // A transition that left the flag set would never record the next game over,
+    // so the level could not end.
+    for (final transition in <String, void Function(GameManager)>{
+      'startGame': (manager) => manager.startGame(),
+      'nextLevel': (manager) => manager.nextLevel(),
+      'selectLevel': (manager) => manager.selectLevel(2),
+    }.entries) {
+      test('Given game over recorded When ${transition.key} then game over again Then result is recorded again', () async {
+        // Given
+        final mockLevel = MockLevel();
+        when(mockLevel.pegs).thenReturn([]);
+        when(mockLevel.slots).thenReturn([]);
+        when(mockLevel.levelNumber).thenReturn(1);
+        when(mockGameState.currentLevel).thenReturn(mockLevel);
+        when(mockGameState.activeBalls).thenReturn([]);
+        when(mockGameState.ballsRemaining).thenReturn(0);
+        when(mockBallLauncher.launch()).thenReturn(Ball(
+          position: Vector2(100, 100),
+          velocity: Vector2(0, 0),
+          radius: 8.0,
+        ));
+        gameManager.launchBall();
+        await Future.delayed(const Duration(milliseconds: 40));
+
+        // When
+        transition.value(gameManager);
+        gameManager.launchBall();
+        await Future.delayed(const Duration(milliseconds: 40));
+
+        // Then
+        verify(mockGameState.updatePhase(GamePhase.gameOver)).called(2);
+      });
+    }
   });
 
   group('Launcher Reset on Game Transitions', () {
