@@ -56,3 +56,11 @@ Patterns learned the hard way on this repo. Add an entry after any correction.
 - **Give the exact command with any analyzer count.** The description said "96 issues, down from 98"; the reviewer ran a different invocation and counted 107. The local command is `flutter analyze --no-fatal-infos --no-fatal-warnings lib test`.
 - **Check that an acceptance criterion belongs to the slice before filing it.** Issue #25 first asked for the screens' literal text sizes to move onto the type scale, which is #32's work. It was corrected before implementation started.
 
+## 2026-10-11 — PR #36 (issue #5, per-level score accounting)
+
+- **A level past the first may not be finishable on a device.** Three attempts at level 2 on the emulator each ended with a ball at rest on a peg (#16). Show what happens at the end of a level with a probe test through the real services instead: `SharedPreferences.setMockInitialValues({})`, a real `StorageService`, `AchievementService.create(prefs)` and a real `GameManager`. Spend each ball with `gameState.launchBall(ball)` then `removeBall(ball)` and wait 40 ms for a loop tick; call `manager.resumeGame()` after `nextLevel()` to restart the loop. Run the same file from the main checkout for the behaviour on `master`.
+- **Do not detect a stopped ball by comparing two screenshots.** Prize pegs shimmer, so the frames always differ. Time how long the Pause button stays on screen; a ball in play for more than 30 seconds has stopped.
+- **Launch power is the length of the drag.** With `adb shell input swipe`, 70 to 120 px is a weak launch and 300 px or more is full power. Different powers reach different pegs, so vary it when one launch keeps ending in the same place.
+- **Borrow a generated mock from another test's mocks file.** `import '../screens/high_scores_screen_test.mocks.dart' show MockStorageService;` gave `game_manager_test.dart` a storage mock without adding the class to its own `@GenerateMocks` list and regenerating.
+- **Update the audit index when an issue closes.** The table in #7 still listed #4 as TODO a day after it merged. Change the row in the same step that files the loose ends.
+- **Label an issue `needs-owner` when it waits on a product decision.** The label did not exist until #37 needed it. Issue discovery skips it and reports the issue as gated.
