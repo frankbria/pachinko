@@ -39,7 +39,8 @@ class _HighScoresScreenState extends State<HighScoresScreen> {
     }
   }
 
-  /// Loads all high scores from all levels (1-20) and sorts them descending.
+  /// Loads the high scores of every level that has any and sorts them
+  /// descending. Levels are not assumed to stop at 20.
   Future<void> _loadScores() async {
     if (_storageService == null) {
       if (mounted) {
@@ -51,7 +52,7 @@ class _HighScoresScreenState extends State<HighScoresScreen> {
     }
 
     List<HighScore> scores = [];
-    for (int level = 1; level <= 20; level++) {
+    for (final level in await _storageService!.levelsWithScores()) {
       final levelScores = await _storageService!.getHighScores(level);
       scores.addAll(levelScores);
     }
