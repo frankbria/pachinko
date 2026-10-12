@@ -5,15 +5,16 @@ A modern graphical Pachinko idle game for Android. Features authentic pachinko m
 
 ## Current Status: a complete game, not yet released
 What a player has today:
-- A full round: launch by power, 20 balls, seven slots, and a summary at the end with Replay and Next Level
+- A full round: launch by power from the channel at the bottom right, 20 balls, seven slots, and a summary at the end with Menu, Replay and Next Level
 - Prize pegs and the bonus they win (5 to 15 extra balls)
 - Levels with no upper limit: three peg layouts in turn, and a colour band every five levels
 - 18 achievements, with a toast over whatever screen is showing
-- High scores (the ten best per level) and one setting, both kept on the device
-- Sound effects, and pause (also when the app is hidden)
+- High scores (the ten best per level) and one setting ("One ball at a time"), both kept on the device
+- Sound effects
+- Pause, which the game also does by itself when the app is hidden
 - Runs on Android, and in a browser for demos
 
-It has not been released from this repository: the version is 1.0.0+1, there is no GitHub release, and a release build needs a signing key that is not in the repository. Work that is planned or under way is in GitHub issues (`gh issue list`), not in this file.
+There is no GitHub release, the version is 1.0.0+1, and a release build needs a signing key that is not in the repository. Work that is planned or under way is in GitHub issues (`gh issue list`), not in this file.
 
 ## Technology Stack
 - **Framework:** Flutter 3.38.1
