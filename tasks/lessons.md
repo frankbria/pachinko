@@ -258,3 +258,9 @@ Patterns learned the hard way on this repo. Add an entry after any correction.
 - **A formula written twice will be changed once.** The bonus size was `5 + level ~/ 2` in the game state, with a literal 5, and again in the round summary, with the constant. The cap went into one function that both call, and a test compares what the summary reports with what the game state drops, so they cannot part again.
 - **Choose a cap by what it leaves alone.** Fifteen is the bonus at level 20, the last level the picker shows, so the levels a player reaches from the menu play exactly as before and only the open-ended ones above them change. The simulation shows it: levels 1 to 20 unchanged, 34 balls a round above level 40 where there were 48.
 - **Run a noisy measurement twice before reading a difference into it.** Two runs of the same code differed by up to three points in the share of rounds with a bonus. The cap's effect is far outside that; a one-point change would not have been.
+
+## 2026-10-12 — the PR for issue #82 (two achievements a round can reach)
+
+- **A stored copy of a definition outlives the definition.** Achievements were saved whole, text included, and loading replaced the definition with the saved object. Lowering a threshold would have left every existing player reading "Score 50,000+" beside a rule of 20,000. Loading now takes only what the player did (progress, the unlock date); the rest comes from the code.
+- **A threshold nobody can reach is found by measuring, not by reading.** 50,000 looked reasonable in the source. The simulation's best of 1,200 rounds was 38,650. The new values are its 90th and 99th percentiles, and the tool now prints the share of rounds that reach each, so the next retune shows at once if they have drifted.
+- **Write the text from the number.** The descriptions are built from the two constants, so the rule and what the player is told cannot part.
