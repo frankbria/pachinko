@@ -42,13 +42,13 @@ The board changes colour every five levels. These are levels 1, 6, 11 and 16:
 
    The two 2,000 slots are against the walls and barely wider than the ball. About one ball in nine lands in one.
 4. **Win the bonus.** Each level has two to four gold prize pegs, with a lamp in the dome for each. Hit them all and the bonus drops extra balls from the top: 5 on level 1, one more for every two levels, 15 at most.
-5. **Finish.** A round is 20 balls. When the last one lands, the summary shows the level's score, how many balls landed in each kind of slot, and whether it is your best for that level. From there: replay, go on to the next level, or return to the menu.
+5. **Finish.** A round starts with 20 balls. When the last one lands, the summary shows the level's score, how many balls landed in each kind of slot, the prize pegs you collected, and whether it is your best for that level. From there: replay, go on to the next level, or return to the menu.
 
 ## What is in the game
 
 - **Levels without end.** Three peg layouts (triangle, random, hexagonal) take turns, and Next Level has no upper limit. The level picker opens any of the first 20 and shows your best score on each.
 - **Four colour bands.** Midnight, Lagoon, Plum and Ember, five levels each, then round again.
-- **18 achievements**, announced by a toast over whatever screen you are on. Some are milestones (First Launch, Marathon Runner), some take a good round (High Roller: 20,000 in one level), and some take luck or aim (Lucky Shot: the first ball of a round in a 2,000 slot. Combo King: every prize peg on a level with one ball).
+- **18 achievements**, announced by a toast over whatever screen you are on. Some are milestones (First Launch, Marathon Runner), some take a good round (High Roller: 20,000 in one level), and some take luck or aim (Lucky Shot: the first ball of a round in a 2,000 slot; Combo King: every prize peg on a level with one ball).
 - **High scores.** The ten best scores for each level are kept on the device.
 - **One ball at a time, or not.** By default the next ball waits for the one in play to land. A setting turns that off, and then you can launch as many as you like. The recording above was made with it off.
 - **Sound** for the launch, the pins, the prize pegs, the slots and the bonus.
@@ -80,7 +80,7 @@ flutter build apk --profile
 flutter build web
 ```
 
-`flutter build apk --release` is signed with `android/key.properties`, which is not in the repository.
+`flutter build apk --release` needs `android/key.properties` for signing, which is not in the repository.
 
 | Platform | Status |
 |----------|--------|
@@ -99,7 +99,7 @@ dart format lib test integration_test tool test_driver
 ```
 
 - **Tests.** More than 750 unit and widget tests and 10 golden image tests run on every pull request. 20 integration tests play the game on an Android emulator: `flutter test integration_test -d emulator-5554 --timeout 120s`.
-- **CI gates**, in order: analyzer, formatting, generated mocks up to date, tests, coverage of at least 85% on the lines a pull request changes, golden tests, and a profile build of the Android app.
+- **CI gates**, in order: analyzer, formatting, generated mocks up to date, tests, coverage of at least 85% on the lines a pull request changes, and golden tests. A second job builds the Android app in profile mode.
 - **Balance.** `flutter test tool/scoring_simulation_test.dart --dart-define=LEVELS=60 --dart-define=ROUNDS=20` plays whole rounds through the real generator, launcher and physics and prints where balls land, how often the bonus triggers and what rounds score. Run it before and after any change to levels, scoring or the bonus.
 - **Workflow.** Work on a branch, use conventional commits (`feat:`, `fix:`, `docs:`), and open a pull request to `master`.
 
