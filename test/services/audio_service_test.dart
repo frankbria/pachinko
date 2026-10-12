@@ -160,6 +160,26 @@ void main() {
         await expectLater(audioService.playLaunch(), completes);
       });
 
+      test('givenPreloadThatFails_whenInitialized_thenTheFailureDoesNotEscape', () async {
+        // Given
+        when(mockPlayers[0].setAsset(any)).thenThrow(StateError('no audio on this platform'));
+
+        // When & Then
+        await expectLater(audioService.initialize(), completes);
+      });
+
+      test('givenPlayersThatCannotBeCreated_whenServiceCreated_thenSoundsAreIgnored', () async {
+        // Given: creating the pool throws. A real player cannot be made to
+        // throw from a unit test (its failure arrives later, on a future), so
+        // an impossible pool size stands in for a platform without audio
+        final withoutPlayers = AudioService(poolSize: -1);
+
+        // When & Then
+        await expectLater(withoutPlayers.initialize(), completes);
+        await expectLater(withoutPlayers.playLaunch(), completes);
+        await expectLater(withoutPlayers.dispose(), completes);
+      });
+
       test('givenPlayerThatFailsToPlay_whenSoundPlayed_thenTheNextSoundStillPlays', () async {
         // Given
         when(mockPlayers[0].play()).thenThrow(StateError('player disposed'));

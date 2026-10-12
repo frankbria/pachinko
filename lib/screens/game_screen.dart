@@ -96,7 +96,7 @@ class _GameScreenState extends State<GameScreen> {
                   color: GameConstants.feltShadeColor,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: GameConstants.primaryColor.withOpacity(0.3),
+                    color: GameConstants.primaryColor.withValues(alpha: 0.3),
                     width: 2,
                   ),
                 ),

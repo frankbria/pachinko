@@ -279,7 +279,7 @@ void main() {
       final originalDate = achievement.unlockedDate;
 
       // Wait a tiny bit to ensure time difference if date changes
-      await Future.delayed(Duration(milliseconds: 1));
+      await Future.delayed(const Duration(milliseconds: 1));
 
       // When
       achievement.unlock();

@@ -24,7 +24,7 @@ void main() {
       // Given
       const level = 1;
       const score = 5000;
-      final key = 'highscores_level_$level';
+      const key = 'highscores_level_$level';
 
       // Mock: No existing scores
       when(mockPrefs.getString(key)).thenReturn(null);
@@ -60,7 +60,7 @@ void main() {
     test('givenMultipleScores_whenSavedSameLevel_thenAllPreserved', () async {
       // Given
       const level = 2;
-      final key = 'highscores_level_$level';
+      const key = 'highscores_level_$level';
 
       // Existing scores
       final existingScores = [
@@ -105,7 +105,7 @@ void main() {
     test('givenStoredScores_whenGetHighScoresCalled_thenReturnsSortedList', () async {
       // Given
       const level = 1;
-      final key = 'highscores_level_$level';
+      const key = 'highscores_level_$level';
       final scores = [
         HighScore(level: level, score: 5000, timestamp: DateTime(2025, 11, 17)),
         HighScore(level: level, score: 7000, timestamp: DateTime(2025, 11, 16)),
@@ -128,7 +128,7 @@ void main() {
     test('givenNoScores_whenGetHighScoresCalled_thenReturnsEmptyList', () async {
       // Given
       const level = 5;
-      final key = 'highscores_level_$level';
+      const key = 'highscores_level_$level';
       when(mockPrefs.getString(key)).thenReturn(null);
 
       // When
@@ -143,7 +143,7 @@ void main() {
     test('givenCorruptedData_whenGetHighScoresCalled_thenReturnsEmptyList', () async {
       // Given
       const level = 1;
-      final key = 'highscores_level_$level';
+      const key = 'highscores_level_$level';
       when(mockPrefs.getString(key)).thenReturn('invalid-json-data');
 
       // When
@@ -219,6 +219,15 @@ void main() {
       verifyNever(mockPrefs.remove('other_app_key'));
     });
 
+    test('givenStorageError_whenClearDataCalled_thenTheFailureDoesNotEscape', () async {
+      // Given
+      when(mockPrefs.getKeys()).thenThrow(Exception('Storage error'));
+
+      // When & Then
+      await expectLater(storageService.clearData(), completes);
+      verifyNever(mockPrefs.remove(any));
+    });
+
     test('givenNoData_whenClearDataCalled_thenNoErrors', () async {
       // Given
       when(mockPrefs.getKeys()).thenReturn(<String>{});
@@ -235,7 +244,7 @@ void main() {
     test('givenMultipleScoresForLevel_whenGetBestScoreCalled_thenReturnsHighest', () async {
       // Given
       const level = 3;
-      final key = 'highscores_level_$level';
+      const key = 'highscores_level_$level';
       final scores = [
         HighScore(level: level, score: 5000, timestamp: DateTime(2025, 11, 17)),
         HighScore(level: level, score: 9000, timestamp: DateTime(2025, 11, 16)), // Highest
@@ -256,7 +265,7 @@ void main() {
     test('givenNoScoresForLevel_whenGetBestScoreCalled_thenReturnsNull', () async {
       // Given
       const level = 10;
-      final key = 'highscores_level_$level';
+      const key = 'highscores_level_$level';
       when(mockPrefs.getString(key)).thenReturn(null);
 
       // When
