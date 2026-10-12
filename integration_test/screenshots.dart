@@ -1,4 +1,5 @@
 import 'dart:ui' as ui;
+import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -45,6 +46,17 @@ void main() {
     (screenshots as List<dynamic>).add(<String, dynamic>{'screenshotName': name, 'bytes': bytes});
   }
 
+  /// Opens the screen behind the menu button [label], captures it as [name]
+  /// and comes back.
+  Future<void> openFromMenu(WidgetTester tester, String label, String name) async {
+    await tester.ensureVisible(find.text(label));
+    await tester.tap(find.text(label));
+    await settle(tester);
+    await capture(tester, name);
+    await tester.pageBack();
+    await settle(tester);
+  }
+
   testWidgets('screenshots of the menu, four levels and one full round', (tester) async {
     app.main();
     await settle(tester);
@@ -56,6 +68,20 @@ void main() {
     await capture(tester, '02-settings');
     await tester.pageBack();
     await settle(tester);
+
+    // The screens around the game, before anything has been played
+    await tester.tap(find.text('Select Level'));
+    await settle(tester);
+    await capture(tester, '03-level-picker-unplayed');
+    await tester.tap(find.text('Cancel'));
+    await settle(tester);
+    await tester.tap(find.text('How to Play'));
+    await settle(tester);
+    await capture(tester, '04-how-to-play');
+    await tester.tap(find.text('Got it!'));
+    await settle(tester);
+    await openFromMenu(tester, 'High Scores', '05-high-scores-empty');
+    await openFromMenu(tester, 'Achievements', '06-achievements-locked');
 
     await tester.tap(find.text(GameStrings.play));
     await settle(tester);
@@ -108,5 +134,15 @@ void main() {
     }
     await settle(tester);
     await capture(tester, 'level-1-round-over');
+
+    // Back on the menu, the same screens with a round behind them
+    await tester.tap(find.byIcon(Icons.arrow_back));
+    await settle(tester);
+    await openFromMenu(tester, 'High Scores', '07-high-scores-filled');
+    await openFromMenu(tester, 'Achievements', '08-achievements-unlocked');
+    await tester.ensureVisible(find.text('Select Level'));
+    await tester.tap(find.text('Select Level'));
+    await settle(tester);
+    await capture(tester, '09-level-picker-played');
   }, timeout: const Timeout(Duration(minutes: 15)));
 }

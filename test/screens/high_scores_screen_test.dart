@@ -142,7 +142,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Then
-      expect(find.text('5'), findsOneWidget); // Level in CircleAvatar
+      expect(find.textContaining('Level 5'), findsOneWidget); // Level, beside the date
       expect(find.text('8500 points'), findsOneWidget); // Score
       expect(find.textContaining('11/17/2025'), findsOneWidget); // Timestamp
     });
