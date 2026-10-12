@@ -92,6 +92,9 @@ void main() {
             !state.specialBonusTriggered) {
           state.triggerSpecialBonus();
           tally.bonusRounds = 1;
+          // The bonus balls have only just dropped: they get the full time
+          // before anything is counted as stuck
+          frames = 0;
         }
         final hitSlots = engine.checkSlotCollisions(balls, level.slots);
         for (final slot in hitSlots) {
