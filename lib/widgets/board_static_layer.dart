@@ -11,10 +11,11 @@ import '../utils/game_theme.dart';
 ///
 /// Every sphere on the board is drawn with this, so they share one light.
 /// The shadow is a gradient and not a blur, so it costs little to rasterize.
-/// A sphere that glows passes [castsShadow] as false: a shadow drawn over its
-/// own glow reads as a dark ring. With [glowColour] the sphere draws its own
-/// soft glow, twice its width, between the shadow and the body, so the two
-/// do not fight.
+/// With [glowColour] the sphere draws a soft glow, twice its width, over its
+/// shadow and under its body: a lit object that still sits on the board, as
+/// the ball does. A sphere that is itself a light, such as a prize peg still
+/// to win, also passes [castsShadow] as false: a shadow showing through its
+/// halo reads as a dark ring.
 ///
 /// The body is two passes, each a two-colour gradient: from the highlight to
 /// [colour], then a shade that darkens towards the far edge. One gradient

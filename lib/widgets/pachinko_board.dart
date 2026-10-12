@@ -297,7 +297,15 @@ class _PachinkoBoardPainter extends CustomPainter {
         paintSphere(canvas, centre, peg.radius, peg.renderColor);
         canvas.drawCircle(centre, peg.radius + 2, ring(1, 0.55));
       } else {
-        paintSphere(canvas, centre, peg.radius, peg.renderColor, glowColour: GameConstants.specialPegColor);
+        // A prize still to win is a light: it has a halo and casts no shadow
+        paintSphere(
+          canvas,
+          centre,
+          peg.radius,
+          peg.renderColor,
+          castsShadow: false,
+          glowColour: GameConstants.specialPegColor,
+        );
         // shimmerIntensity runs from 0.0 to 0.6
         final strength = 0.5 + 0.7 * peg.shimmerIntensity;
         canvas.drawCircle(centre, peg.radius + 3, ring(1.5, strength));

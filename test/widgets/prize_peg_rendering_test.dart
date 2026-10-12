@@ -63,6 +63,17 @@ void main() {
     final rings = drawn.where(isRing).toList();
 
     expect(body, hasLength(2), reason: 'the two gradient passes of a sphere');
+    // A prize still to win is a light. A shadow showing through its halo
+    // would read as a dark ring (the "holes, not prizes" of the review)
+    final canvas = TestRecordingCanvas();
+    painter.paint(canvas, const Size(400, 600));
+    final centre = Offset(prize.position.x, prize.position.y);
+    final shadows = canvas.invocations.map((recorded) => recorded.invocation).where((call) {
+      if (call.memberName != #drawCircle) return false;
+      final at = call.positionalArguments[0] as Offset;
+      return at.dx > centre.dx && at.dy > centre.dy && (at - centre).distance < prize.radius;
+    });
+    expect(shadows, isEmpty, reason: 'no shadow down and to the right of a glowing prize');
     expect(halo, hasLength(1), reason: 'a soft halo wider than the peg');
     expect(drawn.indexOf(halo.single), lessThan(drawn.indexOf(body.first)), reason: 'the halo is behind the peg');
 
@@ -91,6 +102,16 @@ void main() {
     expect(drawn.where((circle) => radiusOf(circle) == prize.radius && !isRing(circle)), hasLength(2));
     expect(drawn.where((circle) => !isRing(circle) && radiusOf(circle) > prize.radius), isEmpty,
         reason: 'no halo and no glow disc');
+    // No longer a light: it sits on the board and casts a shadow like a pin
+    final canvas = TestRecordingCanvas();
+    painter.paint(canvas, const Size(400, 600));
+    final centre = Offset(prize.position.x, prize.position.y);
+    final shadows = canvas.invocations.map((recorded) => recorded.invocation).where((call) {
+      if (call.memberName != #drawCircle) return false;
+      final at = call.positionalArguments[0] as Offset;
+      return at.dx > centre.dx && at.dy > centre.dy && (at - centre).distance < prize.radius;
+    });
+    expect(shadows, hasLength(1));
     expect(rings, hasLength(1));
     expect(paintOf(rings.single).strokeWidth, lessThanOrEqualTo(1.5));
     expect(isGold(paintOf(rings.single)), isTrue);
