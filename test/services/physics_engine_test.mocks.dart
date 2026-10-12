@@ -180,10 +180,25 @@ class MockBall extends _i1.Mock implements _i4.Ball {
       );
 
   @override
+  List<_i2.Vector2> get trail => (super.noSuchMethod(
+        Invocation.getter(#trail),
+        returnValue: <_i2.Vector2>[],
+      ) as List<_i2.Vector2>);
+
+  @override
   bool get isOutOfBounds => (super.noSuchMethod(
         Invocation.getter(#isOutOfBounds),
         returnValue: false,
       ) as bool);
+
+  @override
+  void recordTrail() => super.noSuchMethod(
+        Invocation.method(
+          #recordTrail,
+          [],
+        ),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void update(double? deltaTime) => super.noSuchMethod(
