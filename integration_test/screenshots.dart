@@ -11,7 +11,8 @@ import 'package:pachinko_game/utils/constants.dart';
 import 'helpers.dart';
 
 /// Takes screenshots of the game running on a device, for a pull request that
-/// changes how it looks: the menu, levels 1, 2, 3 and 9, and one full round.
+/// changes how it looks: the menu, levels 1, 2, 3 and 9, and one full round
+/// with the bonus set off half way through.
 ///
 /// This is not one of the integration tests. Its name does not end in
 /// `_test`, so `flutter test integration_test` skips it. Run it with:
@@ -67,8 +68,19 @@ void main() {
       await dragLauncher(tester, 60 + 10.0 * (launched % 5));
       launched++;
       if (launched == 5) {
-        await tester.pump(const Duration(seconds: 3));
+        // Just after the ball leaves the launch channel; a fixed wait can
+        // outlast a fast ball
+        await pumpUntil(tester, () => gameManager.ballLauncher.currentBall == null,
+            what: 'ball $launched to leave the channel');
+        await tester.pump(const Duration(milliseconds: 300));
         await capture(tester, 'level-1-ball-in-play');
+      }
+      if (launched == 10) {
+        // The bonus needs every prize peg hit, which a scripted round cannot
+        // count on, so it is set off directly to show the bonus balls
+        gameManager.gameState.triggerSpecialBonus();
+        await tester.pump(const Duration(milliseconds: 900));
+        await capture(tester, 'level-1-bonus-balls');
       }
       await pumpUntil(tester, () => gameManager.gameState.activeBalls.isEmpty,
           timeout: const Duration(seconds: 60), what: 'ball $launched to land');

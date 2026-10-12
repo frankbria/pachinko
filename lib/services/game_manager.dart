@@ -164,7 +164,12 @@ class GameManager extends ChangeNotifier {
     final level = _gameState.currentLevel;
     
     if (level == null) return;
-    
+
+    // Where each ball is before this step moves it, for the trail behind it
+    for (final ball in balls) {
+      ball.recordTrail();
+    }
+
     // Update ball launcher (for balls traveling on guided path)
     if (_ballLauncher.phase == LaunchPhase.traveling) {
       final ballReleased = _ballLauncher.updateBallPath(deltaTime);

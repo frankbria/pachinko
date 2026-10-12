@@ -9,6 +9,25 @@ class Ball {
   Color color;
   bool isActive;
   bool hasLanded;
+
+  /// How many past positions the trail keeps.
+  static const int maxTrailLength = 8;
+
+  final List<Vector2> _trail = [];
+
+  /// Where the ball has just been, oldest first: at most [maxTrailLength]
+  /// positions. The board draws them fading behind the ball. Empty until the
+  /// ball has moved.
+  List<Vector2> get trail => List.unmodifiable(_trail);
+
+  /// Adds the ball's present position to its [trail]. The game loop calls
+  /// this once per step, before the ball is moved. A ball that has landed or
+  /// left play records nothing.
+  void recordTrail() {
+    if (!isActive || hasLanded) return;
+    _trail.add(position.clone());
+    if (_trail.length > maxTrailLength) _trail.removeAt(0);
+  }
   
   Ball({
     required this.position,
@@ -49,5 +68,6 @@ class Ball {
     acceleration = Vector2.zero();
     isActive = true;
     hasLanded = false;
+    _trail.clear();
   }
 }
