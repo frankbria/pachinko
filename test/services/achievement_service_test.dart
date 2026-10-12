@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
@@ -192,6 +193,22 @@ void main() {
     bool unlocked(AchievementService service, String id) =>
         service.getAllAchievements().firstWhere((a) => a.id == id).isUnlocked;
 
+    test('Combo King and Lucky Shot describe rules the game can meet',
+        () async {
+      // A level has at most four prize pegs and a ball scores 2,000 at most,
+      // so "5 special pegs" and "5,000+ with single ball" could never happen
+      service = await freshService();
+      String description(String id) => service
+          .getAllAchievements()
+          .firstWhere((a) => a.id == id)
+          .description;
+
+      expect(description('combo_king'),
+          'Collect every prize peg on a level with one ball');
+      expect(description('lucky_shot'),
+          'Land the first ball of a round in a 2,000 slot');
+    });
+
     test('the thresholds are 20,000 and 25,000, and each description says so',
         () async {
       service = await freshService();
@@ -291,7 +308,7 @@ void main() {
       expect(unlockedAchievement!.id, equals('point_collector'));
     });
 
-    test('givenSingleBallScore5000_whenTracked_thenLuckyShotUnlocked',
+    test('givenFirstBallInEdgeSlot_whenTracked_thenLuckyShotUnlocked',
         () async {
       // Given
       when(mockPrefs.getStringList('achievements')).thenReturn(null);
@@ -304,7 +321,7 @@ void main() {
       };
 
       // When
-      service.trackSingleBallScore(5000);
+      service.trackFirstBallInEdgeSlot();
 
       // Then
       expect(unlockedAchievement!.id, equals('lucky_shot'));
@@ -351,7 +368,7 @@ void main() {
       expect(unlockedAchievement!.id, equals('bonus_hunter'));
     });
 
-    test('given5SpecialPegsOneBall_whenTracked_thenComboKingUnlocked',
+    test('givenAllPrizePegsWithOneBall_whenTracked_thenComboKingUnlocked',
         () async {
       // Given
       when(mockPrefs.getStringList('achievements')).thenReturn(null);
@@ -364,7 +381,7 @@ void main() {
       };
 
       // When
-      service.trackSpecialPegCombo(5);
+      service.trackAllPrizePegsWithOneBall();
 
       // Then
       expect(unlockedAchievement!.id, equals('combo_king'));
@@ -412,7 +429,7 @@ void main() {
       for (int i = 0; i < 20; i++) {
         service.trackSpecialBonus(); // bonus_hunter (1)
       }
-      service.trackSingleBallScore(5000); // lucky_shot (1)
+      service.trackFirstBallInEdgeSlot(); // lucky_shot (1)
       service.trackAllSpecialPegsHit(); // perfect_shot (1)
       // Total: 10 achievements unlocked
 
@@ -560,5 +577,29 @@ void main() {
       // When & Then - Should not throw
       expect(() => service.trackBallLaunched(), returnsNormally);
     });
+  });
+
+  test('every tracking method of the service is called by the game', () {
+    // An achievement whose tracking method nothing calls cannot be won,
+    // however reasonable its rule reads (#85). Read from the sources: the
+    // service's methods, and every other file under lib/
+    final service = File('lib/services/achievement_service.dart');
+    final methods = RegExp(r'void (track\w+)\(')
+        .allMatches(service.readAsStringSync())
+        .map((match) => match[1]!)
+        .toList();
+    final game = Directory('lib')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where(
+            (file) => file.path.endsWith('.dart') && file.path != service.path)
+        .map((file) => file.readAsStringSync())
+        .join();
+
+    expect(methods, hasLength(greaterThanOrEqualTo(8)));
+    for (final method in methods) {
+      expect(game, contains('.$method('),
+          reason: 'nothing in lib/ calls AchievementService.$method');
+    }
   });
 }

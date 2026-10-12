@@ -148,6 +148,7 @@ class PhysicsEngine {
           _resolvePegCollision(ball, peg);
 
           if (!peg.hasBeenHit) {
+            if (peg.type == PegType.special) ball.prizePegsCollected++;
             peg.onHit();
             hitPegs.add(peg);
             // Play peg hit sound (for all peg types)

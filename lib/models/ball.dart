@@ -10,6 +10,10 @@ class Ball {
   bool isActive;
   bool hasLanded;
 
+  /// The prize pegs this ball was the first to hit. The physics engine
+  /// counts them, since it is what knows which ball hit which peg.
+  int prizePegsCollected = 0;
+
   /// How many past positions the trail keeps.
   static const int maxTrailLength = 8;
 
@@ -68,6 +72,7 @@ class Ball {
     acceleration = Vector2.zero();
     isActive = true;
     hasLanded = false;
+    prizePegsCollected = 0;
     _trail.clear();
   }
 }

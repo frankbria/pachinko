@@ -252,6 +252,7 @@ void main() {
       when(mockPeg.position).thenReturn(Vector2(210, 210));
       when(mockPeg.radius).thenReturn(10.0);
       when(mockPeg.hasBeenHit).thenReturn(false);
+      when(mockPeg.type).thenReturn(PegType.normal);
       when(mockPeg.checkCollision(any, any)).thenReturn(true);
       when(mockPeg.getCollisionNormal(any))
           .thenReturn(Vector2(-1, -1).normalized());
@@ -289,6 +290,34 @@ void main() {
 
       // Then: Peg should not be in hitPegs list
       expect(hitPegs.length, equals(0));
+    });
+
+    /// The engine is the one place that knows which ball hit which peg, so
+    /// it keeps each ball's count of prize pegs collected (Combo King, #85).
+    test(
+        'Given a ball on a prize peg When it collects it Then the ball has one prize peg, and touching it again or a brass pin adds none',
+        () {
+      Ball ballAt(Vector2 position) => Ball(
+          position: position.clone(),
+          velocity: Vector2(0, 50),
+          radius: GameConstants.ballRadius);
+      final prize = Peg(position: Vector2(200, 200), type: PegType.special);
+      final brass = Peg(position: Vector2(300, 200));
+      final ball = ballAt(prize.position);
+      final other = ballAt(prize.position);
+
+      physicsEngine.checkPegCollisions([ball], [prize, brass]);
+      expect(ball.prizePegsCollected, 1);
+
+      // The same peg again, by the same ball and by another: it is collected once
+      ball.position.setFrom(prize.position);
+      physicsEngine.checkPegCollisions([ball, other], [prize, brass]);
+      expect(ball.prizePegsCollected, 1);
+      expect(other.prizePegsCollected, 0);
+
+      ball.position.setFrom(brass.position);
+      physicsEngine.checkPegCollisions([ball], [prize, brass]);
+      expect(ball.prizePegsCollected, 1);
     });
 
     /// Tests that inactive balls do not trigger peg collisions
@@ -335,6 +364,7 @@ void main() {
       when(mockPeg.position).thenReturn(pegPosition);
       when(mockPeg.radius).thenReturn(10.0);
       when(mockPeg.hasBeenHit).thenReturn(false);
+      when(mockPeg.type).thenReturn(PegType.normal);
       when(mockPeg.checkCollision(any, any)).thenReturn(true);
       when(mockPeg.getCollisionNormal(any)).thenReturn(collisionNormal);
 
@@ -364,6 +394,7 @@ void main() {
         when(mockPeg.position).thenReturn(Vector2(210, 200));
         when(mockPeg.radius).thenReturn(10.0);
         when(mockPeg.hasBeenHit).thenReturn(false);
+        when(mockPeg.type).thenReturn(PegType.normal);
         when(mockPeg.checkCollision(any, any)).thenReturn(true);
         when(mockPeg.getCollisionNormal(any)).thenReturn(Vector2(-1, 0));
 
@@ -404,6 +435,7 @@ void main() {
       when(mockPeg.position).thenReturn(pegPosition);
       when(mockPeg.radius).thenReturn(10.0);
       when(mockPeg.hasBeenHit).thenReturn(false);
+      when(mockPeg.type).thenReturn(PegType.normal);
       when(mockPeg.checkCollision(any, any)).thenReturn(true);
       when(mockPeg.getCollisionNormal(any)).thenReturn(collisionNormal);
 
