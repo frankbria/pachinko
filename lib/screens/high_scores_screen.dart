@@ -116,7 +116,7 @@ class _HighScoresScreenState extends State<HighScoresScreen> {
           ),
         ),
         title: Text(
-          '${score.score} points',
+          '${groupedThousands(score.score)} points',
           style: text.titleMedium?.copyWith(color: GameConstants.inkColor, fontWeight: FontWeight.bold),
         ),
         subtitle: Text(

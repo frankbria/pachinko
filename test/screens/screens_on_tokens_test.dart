@@ -137,7 +137,7 @@ void main() {
       await storage.saveHighScore(1, 5000);
       await pump(tester, const SizedBox());
       await pump(tester, const HighScoresScreen());
-      expect(find.text('8500 points'), findsOneWidget);
+      expect(find.text('8,500 points'), findsOneWidget);
       expect(lowContrast(tester), isEmpty);
 
       await tester.tap(find.byIcon(Icons.delete));
@@ -256,7 +256,7 @@ void main() {
       await storage.saveHighScore(1, 5000);
       await pump(tester, const HighScoresScreen());
 
-      final first = find.ancestor(of: find.text('8500 points'), matching: find.byType(ListTile));
+      final first = find.ancestor(of: find.text('8,500 points'), matching: find.byType(ListTile));
       expect(find.descendant(of: first, matching: find.text('1')), findsOneWidget, reason: 'rank');
       expect(find.descendant(of: first, matching: find.textContaining('Level 3')), findsOneWidget);
       final today = DateTime.now();
@@ -264,7 +264,7 @@ void main() {
         find.descendant(of: first, matching: find.textContaining('${today.month}/${today.day}/${today.year}')),
         findsOneWidget,
       );
-      final second = find.ancestor(of: find.text('5000 points'), matching: find.byType(ListTile));
+      final second = find.ancestor(of: find.text('5,000 points'), matching: find.byType(ListTile));
       expect(find.descendant(of: second, matching: find.text('2')), findsOneWidget);
       expect(find.descendant(of: second, matching: find.textContaining('Level 1')), findsOneWidget);
     });
