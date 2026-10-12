@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
@@ -104,16 +105,10 @@ void paintBoardStaticLayer(Canvas canvas, Level level) {
   _paintFelt(canvas, band);
   _paintRail(canvas, band);
   _paintLevelSign(canvas, level.levelNumber, band);
-  // Every glow before any slot, so that no slot is washed by its neighbour's.
-  // Clipped to the board: the edge slots' glows are wider than the space
-  // beside them, and nothing the board draws may cross its sides
-  canvas.save();
-  canvas.clipRect(const Rect.fromLTWH(
-      0, 0, GameConstants.boardWidth, GameConstants.boardHeight));
+  // Every glow before any slot, so that no slot is washed by its neighbour's
   for (final slot in level.slots) {
     _paintLightSpill(canvas, slot.bounds, slot.color);
   }
-  canvas.restore();
   for (final slot in level.slots) {
     _paintSlot(canvas, slot.bounds, slot.color, slot.pointValue);
   }
@@ -252,6 +247,17 @@ void _paintSlot(Canvas canvas, Rect bounds, Color colour, int pointValue) {
       ..color = colour,
   );
 
+  paintSlotValue(canvas, bounds, pointValue, colour, dispose: true);
+}
+
+/// Writes a slot's [pointValue] in the middle of its [bounds]: across, or
+/// sideways (reading upwards) where the slot is narrower than the value is
+/// long, as the two edge slots are.
+///
+/// With [dispose] the text is released once drawn; a caller whose drawing is
+/// read back by a test leaves it.
+void paintSlotValue(Canvas canvas, Rect bounds, int pointValue, Color colour,
+    {bool dispose = false}) {
   final value = TextPainter(
     text: TextSpan(
       text: pointValue.toString(),
@@ -264,9 +270,17 @@ void _paintSlot(Canvas canvas, Rect bounds, Color colour, int pointValue) {
     ),
     textDirection: TextDirection.ltr,
   )..layout();
-  value.paint(
-      canvas, bounds.center - Offset(value.width / 2, value.height / 2));
-  value.dispose();
+  final middle = -Offset(value.width / 2, value.height / 2);
+  if (value.width <= bounds.width) {
+    value.paint(canvas, bounds.center + middle);
+  } else {
+    canvas.save();
+    canvas.translate(bounds.center.dx, bounds.center.dy);
+    canvas.rotate(-math.pi / 2);
+    value.paint(canvas, middle);
+    canvas.restore();
+  }
+  if (dispose) value.dispose();
 }
 
 /// Keeps the picture of a level's static layer, so that it is recorded once

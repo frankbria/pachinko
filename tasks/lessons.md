@@ -294,3 +294,10 @@ Patterns learned the hard way on this repo. Add an entry after any correction.
 - **One flag was doing two jobs.** `hasBeenHit` meant "a prize peg is collected" and also "this pin has had its flash and sound". The second job made every pin fall silent after its first bounce, and on a phone the owner heard it as sound dropping out. The first hit still collects; feedback now answers every hit.
 - **A person playing found in a minute what 750 tests and three reviewers had not.** Nothing was failing: the code did what it said. Whether what it says is right is a question for someone holding the game.
 - **Feedback that repeats needs a pause, measured in time.** A ball lying on a pin touches it on every frame. The pin answers again 0.15 seconds after its last answer, on the clock its flash already runs on; a test lays a ball on a pin for 0.3 seconds and counts two or three sounds, not nineteen.
+
+## 2026-10-12 — the PR for issue #92 (the slot row lies between the walls)
+
+- **A picture that disagrees with the physics is a bug even when the physics is right.** The slots were laid across the whole board and the walls across the playfield, so the right 2,000 slot was drawn 53 wide with a 7 wide way in. Nothing failed; the game scored as designed. The owner, looking at it, said it looked impossible, and was nearly right.
+- **Read where the rule is enforced before describing it.** The issue as first written said balls reach the edge slots by drifting under the foot of a wall. The walls are only drawn that far; in the physics they run to the bottom. The description was corrected before the plan.
+- **Simulate the options, then ask.** Six widths were measured before the owner was asked to choose. One of them, 22, moved the slots into view without moving the odds at all, which made the choice easy and left the achievement thresholds alone.
+- **A fix can delete its neighbour's workaround.** The static layer clipped its drawing to the board because the old edge slots' light spilled past the sides. With the row inside the walls nothing spills, and the clip and the test's allowance for it are gone.

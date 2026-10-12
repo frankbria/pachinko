@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:pachinko_game/models/level.dart';
 import 'package:pachinko_game/services/game_manager.dart';
 import 'package:pachinko_game/utils/constants.dart';
+import 'package:pachinko_game/utils/game_theme.dart';
 import 'package:pachinko_game/widgets/board_effects.dart';
 import 'package:pachinko_game/widgets/board_static_layer.dart';
 import 'package:pachinko_game/widgets/pachinko_board.dart';
@@ -36,10 +38,13 @@ void main() {
       final canvas = TestRecordingCanvas();
       paintBoardStaticLayer(canvas, level3);
 
-      // The slots' values are the other text in the static layer; they are far below
-      final signs = recorded(canvas, #drawParagraph).where((text) =>
-          (text.positionalArguments[1] as Offset).dy <
-          GameConstants.topCurveStartY);
+      // The slots' values are the other text in the static layer. Five are
+      // far below; the two written sideways are drawn after a move to their
+      // slot, at a small negative offset from it
+      final signs = recorded(canvas, #drawParagraph).where((text) {
+        final dy = (text.positionalArguments[1] as Offset).dy;
+        return dy > 0 && dy < GameConstants.topCurveStartY;
+      });
       final sign = signs.single;
       final paragraph = sign.positionalArguments[0] as ui.Paragraph;
       final at = sign.positionalArguments[1] as Offset;
@@ -152,6 +157,72 @@ void main() {
         expect(drawn[spill].positionalArguments[1] as double,
             greaterThan(slot.width / 2));
       }
+    });
+  });
+
+  group('Slot values', () {
+    /// The edge slots are narrower than their value is long (#92), so it is
+    /// written sideways there, turned about the middle of the slot. A
+    /// paragraph does not give back its text; the turn is what is recorded.
+    List<Offset> turnedAbout(TestRecordingCanvas canvas) {
+      final calls = recorded(canvas);
+      return [
+        for (int i = 1; i < calls.length; i++)
+          if (calls[i].memberName == #rotate &&
+              calls[i - 1].memberName == #translate)
+            Offset(calls[i - 1].positionalArguments[0] as double,
+                calls[i - 1].positionalArguments[1] as double)
+      ];
+    }
+
+    test(
+        'given a level, then the values of the two narrow edge slots are written sideways about their middles, and the other five are not',
+        () {
+      final level1 = level(1);
+      final canvas = TestRecordingCanvas();
+
+      paintBoardStaticLayer(canvas, level1);
+
+      expect(turnedAbout(canvas),
+          [level1.slots.first.bounds.center, level1.slots.last.bounds.center]);
+      for (final turn in recorded(canvas, #rotate)) {
+        expect(turn.positionalArguments.single, -pi / 2);
+      }
+    });
+
+    test(
+        'given the two edge slots lit, then their values are written sideways in the light as well',
+        () {
+      final level1 = level(1);
+      for (final slot in level1.slots) {
+        slot.glow = 1.0;
+      }
+      final canvas = TestRecordingCanvas();
+
+      paintSlotLights(canvas, level1.slots);
+
+      expect(turnedAbout(canvas),
+          [level1.slots.first.bounds.center, level1.slots.last.bounds.center]);
+    });
+
+    test(
+        'given a value written sideways, then it is no longer than its slot is tall',
+        () {
+      final edge = level(1).slots.first;
+      final value = TextPainter(
+        text: const TextSpan(
+            text: '2000',
+            style: TextStyle(
+                fontFamily: displayFontFamily,
+                fontSize: 12,
+                fontWeight: FontWeight.bold)),
+        textDirection: TextDirection.ltr,
+      )..layout();
+
+      expect(value.width, greaterThan(edge.bounds.width),
+          reason: 'it would not fit across');
+      expect(value.width, lessThan(edge.bounds.height));
+      expect(value.height, lessThanOrEqualTo(edge.bounds.width));
     });
   });
 
@@ -285,25 +356,16 @@ void main() {
   test(
       'given the static layer of any level, then nothing in it crosses the board\'s edges either',
       () {
-    // The light from the two edge slots is wider than the space beside them
-    // and has to be clipped. Bounds are taken inside whatever clip is in force
+    // Since #92 the slot row lies between the field walls, so nothing has to
+    // be clipped to stay inside: the bounds are checked as they are drawn
     const board = Rect.fromLTWH(
         0, 0, GameConstants.boardWidth, GameConstants.boardHeight);
     for (final number in [1, 2, 3, 9]) {
       final canvas = TestRecordingCanvas();
       paintBoardStaticLayer(canvas, level(number));
 
-      final clips = <Rect?>[null];
-      int clipped = 0;
+      expect(recorded(canvas, #clipRect), isEmpty);
       for (final call in recorded(canvas)) {
-        if (call.memberName == #save) {
-          clips.add(clips.last);
-        } else if (call.memberName == #restore) {
-          clips.removeLast();
-        } else if (call.memberName == #clipRect) {
-          final clip = call.positionalArguments[0] as Rect;
-          clips[clips.length - 1] = clips.last?.intersect(clip) ?? clip;
-        }
         Rect? bounds;
         if (call.memberName == #drawRect) {
           bounds = call.positionalArguments[0] as Rect;
@@ -316,13 +378,6 @@ void main() {
           );
         }
         if (bounds == null) continue;
-        if (clips.last != null) {
-          if (!board.contains(bounds.topLeft) ||
-              !board.contains(bounds.bottomRight)) {
-            clipped++;
-          }
-          bounds = bounds.intersect(clips.last!);
-        }
         expect(bounds.left, greaterThanOrEqualTo(board.left),
             reason: 'level $number: ${call.memberName} at $bounds');
         expect(bounds.right, lessThanOrEqualTo(board.right),
@@ -330,8 +385,6 @@ void main() {
         expect(bounds.bottom, lessThanOrEqualTo(board.bottom),
             reason: 'level $number: ${call.memberName} at $bounds');
       }
-      expect(clipped, greaterThan(0),
-          reason: 'the edge slots\' glows are the case in point');
     }
   });
 

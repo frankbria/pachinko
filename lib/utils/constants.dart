@@ -62,6 +62,13 @@ class GameConstants {
   // Field boundary constants (playfield area where balls interact with pegs/slots)
   // Left boundary slightly inside the board to align near leftmost slot
   static const double fieldLeftBoundaryX = 25.0;
+
+  /// How wide each of the two edge (2,000) slots is. The row of slots lies
+  /// between the field walls; the edge slots are just wider than the ball,
+  /// so that they stay the hardest to hit and are drawn exactly as they can
+  /// be reached. Set from the scoring simulation by the owner (#92): at 22
+  /// about one ball in nine lands in a 2,000 slot
+  static const double edgeSlotWidth = 22.0;
   // Right boundary at left edge of launch channel (blocks entry from playfield)
   static const double fieldRightBoundaryX = launchChannelStartX; // 360.0
 

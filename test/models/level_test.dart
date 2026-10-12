@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pachinko_game/models/level.dart';
 import 'package:pachinko_game/models/peg.dart';
@@ -641,18 +642,67 @@ void main() {
       }
     });
 
+    /// The row lies between the field walls (#92). It used to span the whole
+    /// board, which put most of each edge slot behind a wall: the right one
+    /// had an opening 7 wide for a ball 16 across.
     test(
-        'given generated level, when slots created, then evenly distributed across width',
+        'given generated level, when slots created, then the row runs from wall to wall: two narrow edge slots and five equal ones between',
         () {
-      // Given / When
       final level = Level.generate(22, 400.0, 600.0);
-      final slotWidth = level.boardWidth / 7;
+      const edge = GameConstants.edgeSlotWidth;
+      const inner = (GameConstants.fieldRightBoundaryX -
+              GameConstants.fieldLeftBoundaryX -
+              2 * edge) /
+          5;
 
-      // Then - slots should be evenly spaced
+      double left = GameConstants.fieldLeftBoundaryX;
       for (int i = 0; i < level.slots.length; i++) {
-        final expectedX = slotWidth * i + slotWidth / 2;
-        expect(level.slots[i].position.x, closeTo(expectedX, 0.1));
+        final width = i == 0 || i == 6 ? edge : inner;
+        expect(level.slots[i].position.x, closeTo(left + width / 2, 0.01),
+            reason: 'slot $i');
+        expect(level.slots[i].width, closeTo(width - 4, 0.01),
+            reason: 'slot $i');
+        left += width;
       }
+      expect(left, closeTo(GameConstants.fieldRightBoundaryX, 0.01));
+    });
+
+    test(
+        'given levels 1 to 100, then no slot passes a field wall and a ball fits into every one',
+        () {
+      for (int number = 1; number <= 100; number++) {
+        final level = Level.generate(number, 400.0, 600.0);
+        for (final slot in level.slots) {
+          final reason = 'level $number, slot ${slot.pointValue}';
+          expect(slot.bounds.left,
+              greaterThanOrEqualTo(GameConstants.fieldLeftBoundaryX),
+              reason: reason);
+          expect(slot.bounds.right,
+              lessThanOrEqualTo(GameConstants.fieldRightBoundaryX),
+              reason: reason);
+          // Where a ball's centre can be inside the slot: the walls keep it a
+          // radius away from themselves
+          final reachLeft = max(slot.bounds.left,
+              GameConstants.fieldLeftBoundaryX + GameConstants.ballRadius);
+          final reachRight = min(slot.bounds.right,
+              GameConstants.fieldRightBoundaryX - GameConstants.ballRadius);
+          expect(reachRight - reachLeft, greaterThanOrEqualTo(10),
+              reason: reason);
+        }
+      }
+    });
+
+    test('given the row, then the two edge slots are reached equally', () {
+      final slots = Level.generate(1, 400.0, 600.0).slots;
+      double reach(Slot slot) =>
+          min(slot.bounds.right,
+              GameConstants.fieldRightBoundaryX - GameConstants.ballRadius) -
+          max(slot.bounds.left,
+              GameConstants.fieldLeftBoundaryX + GameConstants.ballRadius);
+
+      expect(reach(slots.first), closeTo(reach(slots.last), 0.01));
+      expect(slots.first.pointValue, 2000);
+      expect(slots.last.pointValue, 2000);
     });
   });
 
