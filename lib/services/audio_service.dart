@@ -229,9 +229,16 @@ class AudioService {
   /// shutdown or when disposing Provider.
   ///
   /// After calling dispose(), do not use any playback methods.
+  ///
+  /// Never throws, for the same reason as [_playSound]: the app does not
+  /// await it. A player that fails to dispose does not keep the others alive.
   Future<void> dispose() async {
     for (final player in _audioPlayers) {
-      await player.dispose();
+      try {
+        await player.dispose();
+      } catch (e) {
+        debugPrint('AudioService: could not dispose a player: $e');
+      }
     }
   }
 }

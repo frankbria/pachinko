@@ -15,7 +15,9 @@ Future<void> settle(WidgetTester tester) async {
 }
 
 /// Launches a ball the way a player does: a drag upward from the launcher,
-/// [distance] board pixels long (the length sets the power).
+/// [distance] board pixels long. The board works out the power from the
+/// drag's length on screen, so the same [distance] launches harder on a
+/// larger board; any drag longer than the touch slop launches a ball.
 ///
 /// The launch point is a board coordinate. On a device the board is scaled
 /// and sits somewhere inside the screen, so the point is converted through

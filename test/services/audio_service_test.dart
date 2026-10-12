@@ -170,6 +170,15 @@ void main() {
         // Then: the second sound went to the next player in the pool
         verify(mockPlayers[1].play()).called(1);
       });
+
+      test('givenPlayerThatFailsToDispose_whenDisposed_thenTheOthersAreStillDisposed', () async {
+        // Given
+        when(mockPlayers[0].dispose()).thenThrow(StateError('already disposed'));
+
+        // When / Then: dispose is not awaited by the app either
+        await expectLater(audioService.dispose(), completes);
+        verify(mockPlayers[4].dispose()).called(1);
+      });
     });
 
     group('Volume Control', () {

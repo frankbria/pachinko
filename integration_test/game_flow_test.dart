@@ -226,7 +226,8 @@ void main() {
             what: 'ball ${ballsLaunched + 1} to land');
       }
 
-      // Three balls were spent and the score has accumulated
+      // Three balls were spent and the score has accumulated. Bonus balls from
+      // a prize peg go into play and are not added to the count, so it is exact
       expect(gameManager.gameState.ballsRemaining, equals(17));
       expect(gameManager.gameState.score, greaterThan(0));
     });
