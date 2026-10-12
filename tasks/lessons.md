@@ -183,3 +183,11 @@ Patterns learned the hard way on this repo. Add an entry after any correction.
 - **Draw a scrim under what should stay bright.** The bonus announcement was the last thing painted, so its wash sat over the confetti and the bonus balls and turned blue confetti green. It is drawn after the pegs and before the balls.
 - **Put the drawing you must police in its own file.** "Only role colours" cannot be tested on one method of a large painter. `board_static_layer.dart` and `board_effects.dart` are small enough that a test can read the source and reject `Colors.` and `Color(`.
 - **Slicing a file by `index()` of a short string finds substrings.** `s.index("  });")` matched inside `"    });"` and left a stray brace in a test file. Anchor on a whole line, with its newline.
+
+## 2026-10-11 — the PR for issue #29 (composition)
+
+- **Measure before promising space.** The issue said the height saved in the header would go to the board. On a phone the board is as wide as the screen, so the width sets its size: the header went from 120 to 59 logical pixels on a Pixel 7 and the playfield did not grow at all. The panel grew, and the gain became an empty strip. Write the numbers into the plan before the design, not after.
+- **Record the "before" figure while the old code is still in the worktree.** The layout test was written and run against the old header first; its output gave the 120 and 694.3 that the test now compares against.
+- **A disposed `TextPainter` takes its `Paragraph` with it.** A test that reads `paragraph.longestLine` from a recorded `drawParagraph` fails with "native peer has been collected" if the code disposed the painter after painting. Either the test does not measure the text, or that painter is left to the garbage collector.
+- **A mock with no default answers breaks on every new getter the code reads.** Reading `level.levelNumber` in the static layer failed 41 mocked board tests with `MissingStubError`. Stub it in `setUp`, and prefer what is already stubbed (`level.pegs`) when it carries the same information.
+- **Do not push a branch that is stacked on an unmerged one.** After the base is squash-merged the stacked branch must be rebased, and a pushed branch would then need a force push. Keep it local until the base lands.

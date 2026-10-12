@@ -202,8 +202,17 @@ class _PachinkoBoardPainter extends CustomPainter {
     // Felt, rail, pins and slots: recorded once per level and replayed
     canvas.drawPicture(staticLayer.pictureFor(level));
 
-    _drawSlotCounts(canvas, level);
+    // A phone's screen is taller than the board; the counts go in the strip below it
+    final roomBelow = size.height / scale - GameConstants.boardHeight;
+    paintSlotCounts(canvas, level.slots, inTray: roomBelow >= slotTrayHeight + 8);
+
     _drawAnimatedPegs(canvas, level);
+    final prizes = level.pegs.where((peg) => peg.type == PegType.special);
+    paintPrizeLamps(
+      canvas,
+      total: prizes.length,
+      collected: prizes.where((peg) => peg.isCollected).length,
+    );
 
     // The bonus announcement dims the board. It goes under the balls, the
     // confetti and the score popups, which would be muddied beneath it
@@ -236,34 +245,6 @@ class _PachinkoBoardPainter extends CustomPainter {
     }
 
     canvas.restore();
-  }
-
-  /// How many balls each slot has caught. The slots themselves are in the
-  /// static layer; the count changes during a level.
-  void _drawSlotCounts(Canvas canvas, Level level) {
-    for (final slot in level.slots) {
-      if (slot.ballCount == 0) continue;
-
-      final ballCountPainter = TextPainter(
-        text: TextSpan(
-          text: '×${slot.ballCount}',
-          style: const TextStyle(
-            color: GameConstants.inkColor,
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      );
-      ballCountPainter.layout();
-      ballCountPainter.paint(
-        canvas,
-        Offset(
-          slot.position.x - ballCountPainter.width / 2,
-          slot.position.y + 15,
-        ),
-      );
-    }
   }
 
   /// Prize pegs, and any pin in the middle of its hit pulse. A pin at rest is
@@ -341,53 +322,48 @@ class _PachinkoBoardPainter extends CustomPainter {
     }
   }
 
-  void _drawLaunchArea(Canvas canvas, level) {
-    // Draw launch area background
-    final paint = Paint()
-      ..color = GameConstants.primaryColor.withOpacity(0.2)
-      ..style = PaintingStyle.fill;
-    
-    canvas.drawRect(
-      Rect.fromLTWH(
-        GameConstants.launchChannelStartX - 20,
-        GameConstants.launchChannelStartY - 20,
-        GameConstants.launchChannelWidth + 40,
-        40,
+  /// The launch area's box, the resting marker and the hint. All of it stays
+  /// inside the board: the box used to overhang the right edge and was cut
+  /// off by the screen.
+  void _drawLaunchArea(Canvas canvas, Level level) {
+    const right = GameConstants.boardWidth - 4;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        const Rect.fromLTRB(
+          GameConstants.launchChannelStartX - 16,
+          GameConstants.launchChannelStartY - 20,
+          right,
+          GameConstants.launchChannelStartY + 20,
+        ),
+        const Radius.circular(8),
       ),
-      paint,
+      Paint()..color = GameConstants.primaryColor.withValues(alpha: 0.2),
     );
-    
+
     // Draw launch point
-    final launchPaint = Paint()
-      ..color = GameConstants.ballColor
-      ..style = PaintingStyle.fill;
-    
     canvas.drawCircle(
       Offset(level.launchX, level.launchY),
       GameConstants.ballRadius,
-      launchPaint,
+      Paint()..color = GameConstants.ballColor,
     );
-    
-    // Draw launch instructions
+
+    // The hint, right-aligned to the box so that it cannot run off the board
     final textPainter = TextPainter(
       text: const TextSpan(
         text: 'DRAG TO\nLAUNCH',
         style: TextStyle(
-          color: Colors.white,
-          fontSize: 10,
+          color: GameConstants.inkColor,
+          fontSize: 12,
           fontWeight: FontWeight.bold,
         ),
       ),
       textDirection: TextDirection.ltr,
-      textAlign: TextAlign.center,
+      textAlign: TextAlign.right,
     );
     textPainter.layout();
     textPainter.paint(
       canvas,
-      Offset(
-        GameConstants.launchChannelStartX - 15,
-        GameConstants.launchChannelStartY + 25,
-      ),
+      Offset(right - textPainter.width, GameConstants.launchChannelStartY + 25),
     );
   }
 
@@ -438,7 +414,7 @@ class _PachinkoBoardPainter extends CustomPainter {
         text: 'POWER\n${(powerRatio * 100).toInt()}%',
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 8,
+          fontSize: 12,
           fontWeight: FontWeight.bold,
         ),
       ),
