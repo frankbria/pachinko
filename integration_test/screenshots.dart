@@ -68,7 +68,11 @@ void main() {
       await dragLauncher(tester, 60 + 10.0 * (launched % 5));
       launched++;
       if (launched == 5) {
-        await tester.pump(const Duration(seconds: 3));
+        // Just after the ball leaves the launch channel; a fixed wait can
+        // outlast a fast ball
+        await pumpUntil(tester, () => gameManager.ballLauncher.currentBall == null,
+            what: 'ball $launched to leave the channel');
+        await tester.pump(const Duration(milliseconds: 300));
         await capture(tester, 'level-1-ball-in-play');
       }
       if (launched == 10) {
