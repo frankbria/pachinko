@@ -24,6 +24,10 @@ jobs:
       - run: flutter pub get
       # No flags: info-level lints fail the job too. The count is zero and stays zero
       - run: flutter analyze
+      # The generated mocks are in these directories too. The generator writes
+      # them in this style, so this step and the next one agree
+      - name: Code is formatted
+        run: dart format --output=none --set-exit-if-changed lib test integration_test tool test_driver
       - name: Generated mocks are up to date
         run: |
           dart run build_runner build --delete-conflicting-outputs

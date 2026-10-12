@@ -318,7 +318,9 @@ void main() {
         if (bounds == null) continue;
         if (clips.last != null) {
           if (!board.contains(bounds.topLeft) ||
-              !board.contains(bounds.bottomRight)) clipped++;
+              !board.contains(bounds.bottomRight)) {
+            clipped++;
+          }
           bounds = bounds.intersect(clips.last!);
         }
         expect(bounds.left, greaterThanOrEqualTo(board.left),

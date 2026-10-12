@@ -58,10 +58,13 @@ class Level {
         // Field walls only, which also keeps it out of the launch channel beyond
         // the right wall; the pegs in the way are counted below
         if (!PegPatterns.leavesRoomForBall(
-            const [], candidate, GameConstants.specialPegRadius)) continue;
-        if (specialPegs.any(
-            (peg) => (candidate - peg.position).length < specialMinSpacing))
+            const [], candidate, GameConstants.specialPegRadius)) {
           continue;
+        }
+        if (specialPegs.any(
+            (peg) => (candidate - peg.position).length < specialMinSpacing)) {
+          continue;
+        }
 
         // A ball must fit past every peg
         final inTheWay = pegs

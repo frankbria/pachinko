@@ -80,8 +80,9 @@ class GameState extends ChangeNotifier {
   /// The one gate for launching a ball.
   bool get canLaunchBall {
     if (_paused || launcherBusy || _ballsRemaining <= 0) return false;
-    if (singleBallLaunch)
+    if (singleBallLaunch) {
       return _phase == GamePhase.ready && _activeBalls.isEmpty;
+    }
     return _phase == GamePhase.ready || _phase == GamePhase.playing;
   }
 

@@ -74,8 +74,9 @@ class GameManager extends ChangeNotifier {
       {StorageService? storageService,
       AchievementService? achievementService}) {
     if (achievementService != null) _achievementService = achievementService;
-    if (storageService == null || identical(storageService, _storageService))
+    if (storageService == null || identical(storageService, _storageService)) {
       return;
+    }
     _storageService = storageService;
 
     final unsaved = _unsavedSingleBallLaunch;

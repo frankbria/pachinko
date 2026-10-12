@@ -13,10 +13,12 @@ class PegPatterns {
   static bool leavesRoomForBall(
       Iterable<Peg> pegs, Vector2 position, double radius) {
     const gap = GameConstants.minPegGap;
-    if (position.x - radius - GameConstants.fieldLeftBoundaryX < gap)
+    if (position.x - radius - GameConstants.fieldLeftBoundaryX < gap) {
       return false;
-    if (GameConstants.fieldRightBoundaryX - position.x - radius < gap)
+    }
+    if (GameConstants.fieldRightBoundaryX - position.x - radius < gap) {
       return false;
+    }
     if (_distanceToTopCurve(position) - radius < gap) return false;
     return pegs.every((peg) => gapTo(peg, position, radius) >= gap);
   }

@@ -306,8 +306,9 @@ void main() {
       // Launch all 20 balls
       for (int i = 0; i < 20; i++) {
         gameState.launchBall(Ball(position: Vector2(200.0 + i, 300)));
-        if (i < 19)
+        if (i < 19) {
           gameState.updatePhase(GamePhase.ready); // Reset phase for next launch
+        }
       }
       expect(gameState.ballsRemaining, equals(0));
       expect(gameState.activeBalls.length, equals(20));
