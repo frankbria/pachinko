@@ -164,7 +164,7 @@ flutter build linux --release
 1. **Launch a Ball**: Drag from the bottom-right corner to build launch power
    - **Power Meter**: Green (low) → Yellow (medium) → Red (high)
    - **Visual Feedback**: Launch path shows curve into peg field
-2. **Watch Physics**: Ball travels up channel, curves into peg field, bounces through pegs
+2. **Watch Physics**: Ball travels up the channel, meets the dome and follows it for as far as its power carries it, then bounces through the pegs
 3. **Score Points**: Ball lands in slots at bottom for points
 4. **Special Bonus**: Hit ALL highlighted orange pegs to spawn bonus balls
 5. **Level Up**: Complete rounds to progress to new peg patterns
