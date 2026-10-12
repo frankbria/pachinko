@@ -93,9 +93,13 @@ class Achievement {
   /// stored number is not a compile-time constant, and a profile or release
   /// build fails on one. Throws if the entry's values are of the wrong type.
   void restoreFrom(Map<String, dynamic> json) {
-    progress = json['progress'] as int? ?? 0;
+    // Both are read before either is set, so that an entry that is half
+    // unreadable changes nothing
+    final storedProgress = json['progress'] as int? ?? 0;
     final unlocked = json['unlockedDate'] as String?;
-    unlockedDate = unlocked == null ? null : DateTime.parse(unlocked);
+    final storedDate = unlocked == null ? null : DateTime.parse(unlocked);
+    progress = storedProgress;
+    unlockedDate = storedDate;
   }
 
   /// Checks equality based on id, progress, and unlocked date.

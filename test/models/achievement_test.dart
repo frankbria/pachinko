@@ -127,6 +127,21 @@ void main() {
           throwsA(isA<TypeError>()));
     });
 
+    test(
+        'givenStoredEntryWithGoodProgressAndAnUnreadableDate_whenRestored_thenItThrowsAndNothingIsTaken',
+        () {
+      // Half an entry must not be applied: the service skips what throws,
+      // and would be left with progress that nothing else agrees with
+      final achievement = defined();
+
+      expect(
+          () => achievement
+              .restoreFrom({'progress': 75, 'unlockedDate': 'not a date'}),
+          throwsFormatException);
+      expect(achievement.progress, 0);
+      expect(achievement.unlockedDate, isNull);
+    });
+
     test('givenWhatToJsonWrote_whenRestored_thenTheStateComesBack', () {
       final saved = defined()..unlock();
       final loaded = defined()..restoreFrom(saved.toJson());
