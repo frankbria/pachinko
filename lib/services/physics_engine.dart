@@ -147,11 +147,15 @@ class PhysicsEngine {
         if (peg.checkCollision(ball.position, ball.radius)) {
           _resolvePegCollision(ball, peg);
 
-          if (!peg.hasBeenHit) {
-            if (peg.type == PegType.special) ball.prizePegsCollected++;
+          // Every bounce flashes and sounds. Only a peg's first hit is
+          // reported: that is what collects a prize peg
+          final firstHit = !peg.hasBeenHit;
+          if (firstHit || peg.canFireAgain) {
+            if (firstHit) {
+              if (peg.type == PegType.special) ball.prizePegsCollected++;
+              hitPegs.add(peg);
+            }
             peg.onHit();
-            hitPegs.add(peg);
-            // Play peg hit sound (for all peg types)
             _audioService?.playPegHit();
           }
         }

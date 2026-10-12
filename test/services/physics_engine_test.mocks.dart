@@ -393,6 +393,12 @@ class MockPeg extends _i1.Mock implements _i5.Peg {
       );
 
   @override
+  bool get canFireAgain => (super.noSuchMethod(
+        Invocation.getter(#canFireAgain),
+        returnValue: false,
+      ) as bool);
+
+  @override
   bool get isCollected => (super.noSuchMethod(
         Invocation.getter(#isCollected),
         returnValue: false,
