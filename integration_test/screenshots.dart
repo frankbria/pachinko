@@ -62,7 +62,8 @@ void main() {
     final gameManager =
         Provider.of<GameManager>(tester.element(find.byType(GameScreen)), listen: false);
 
-    for (final level in [9, 3, 2, 1]) {
+    // Levels 1, 6, 11 and 16 are the first of each band of colours
+    for (final level in [16, 11, 9, 6, 3, 2, 1]) {
       gameManager.startGame(level: level);
       await settle(tester);
       await capture(tester, 'level-$level-ready');

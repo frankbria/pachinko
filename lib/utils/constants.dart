@@ -1,5 +1,21 @@
 import 'dart:ui';
 
+/// The look of a band of levels: its felt, lit and in shade, and the colour
+/// its rail glows in and its level sign is written in.
+class LevelBand {
+  final String name;
+  final Color felt;
+  final Color feltShade;
+  final Color rim;
+
+  const LevelBand({
+    required this.name,
+    required this.felt,
+    required this.feltShade,
+    required this.rim,
+  });
+}
+
 class GameConstants {
   // Physics constants
   static const double gravity = 980.0; // pixels/second^2
@@ -95,6 +111,41 @@ class GameConstants {
   static const Color slot1000Color = violetColor;
   static const Color slot200Color = blueColor;
   static const Color slot50Color = slateColor;
+
+  /// How many levels share a look before it changes.
+  static const int levelsPerBand = 5;
+
+  /// The bands of levels, in order. Each felt is dark enough for every role
+  /// colour to stand out on it, and no rim is gold or brass: gold is score
+  /// and prizes, brass is pins. A test checks both.
+  static const List<LevelBand> levelBands = [
+    LevelBand(name: 'Midnight', felt: feltColor, feltShade: feltShadeColor, rim: primaryColor),
+    LevelBand(
+      name: 'Lagoon',
+      felt: Color(0xFF0E3B3F),
+      feltShade: Color(0xFF061A1D),
+      rim: Color(0xFF6BF2B5),
+    ),
+    LevelBand(
+      name: 'Plum',
+      felt: Color(0xFF36194F),
+      feltShade: Color(0xFF160A22),
+      rim: Color(0xFFD7DCFF),
+    ),
+    LevelBand(
+      name: 'Ember',
+      felt: Color(0xFF4A1626),
+      feltShade: Color(0xFF1F090F),
+      rim: Color(0xFFFF7A66),
+    ),
+  ];
+
+  /// The band [levelNumber] belongs to. Beyond the last band they come round
+  /// again, so the look keeps changing however far the player goes.
+  static LevelBand bandForLevel(int levelNumber) {
+    final index = levelNumber < 1 ? 0 : (levelNumber - 1) ~/ levelsPerBand;
+    return levelBands[index % levelBands.length];
+  }
 
   // UI Colors
   static const Color primaryColor = cyanColor;

@@ -88,20 +88,26 @@ class _GameScreenState extends State<GameScreen> {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  Container(
-                margin: const EdgeInsets.all(8.0),
-                decoration: BoxDecoration(
-                  // The felt darkens to this at the board's foot, so the
-                  // strip under the board continues it
-                  color: GameConstants.feltShadeColor,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: GameConstants.primaryColor.withOpacity(0.3),
-                    width: 2,
+                  // Rebuilt only when the level changes: the panel's colour is
+                  // the level's band
+                  Selector<GameManager, int>(
+                    selector: (context, gameManager) => gameManager.gameState.currentLevelNumber,
+                    builder: (context, levelNumber, child) => Container(
+                      margin: const EdgeInsets.all(8.0),
+                      decoration: BoxDecoration(
+                        // The felt darkens to this at the board's foot, so the
+                        // strip under the board continues it
+                        color: GameConstants.bandForLevel(levelNumber).feltShade,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: GameConstants.bandForLevel(levelNumber).rim.withValues(alpha: 0.3),
+                          width: 2,
+                        ),
+                      ),
+                      child: child,
+                    ),
+                    child: const PachinkoBoard(),
                   ),
-                ),
-                child: const PachinkoBoard(),
-              ),
                   const _RoundSummaryOverlay(),
                 ],
               ),

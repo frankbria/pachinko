@@ -223,3 +223,9 @@ Patterns learned the hard way on this repo. Add an entry after any correction.
 - **Measure the empty space before choosing where a label goes.** "Beside the channel, clear of the pegs" had no obvious place: the channel is 10 pixels from the board's edge. Generating 300 levels gave the peg field's real extent (no peg edge below y = 412 or right of x = 342), and the label went left of the launch box, below that line. The test then checks every power against every level's pegs.
 - **A ramp through three colours is two gradients stacked.** The channel's light is cyan to violet in its lower half and violet to magenta in its upper half, each a two-colour gradient, which also keeps to the rule the CI emulator imposes.
 - **A held drag is how to screenshot a state that only exists mid-gesture.** `tester.startGesture`, `moveTo`, capture, then `up()`; the power meter is only drawn while the board thinks a drag is in progress.
+
+## 2026-10-11 — the PR for issue #33 (level bands)
+
+- **Put the constraint on a palette in a test before choosing the colours.** Every role colour has to keep a 3 to 1 contrast on every band's felt, lit and shaded. The slate of the 50 slot is the weakest, which caps a felt's luminance at about 0.05; the four felts were chosen under that line and the test passed first time.
+- **To test a gradient's colours, rasterize and read a pixel.** A recorded `Paint` shows that a shader is set and nothing about its colours. `Picture.toImage` inside `tester.runAsync`, then `toByteData`, gives the felt's real colour at a point with nothing else on it.
+- **A slice that needs the owner's approval of its content is opened, not merged.** The bands and their colours are a proposal; the pull request says so and waits.

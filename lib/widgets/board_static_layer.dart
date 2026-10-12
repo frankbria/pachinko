@@ -97,9 +97,10 @@ void paintSphere(
 /// Prize pegs, ball counts and everything that moves are drawn by the board's
 /// painter on top of this.
 void paintBoardStaticLayer(Canvas canvas, Level level) {
-  _paintFelt(canvas);
-  _paintRail(canvas);
-  _paintLevelSign(canvas, level.levelNumber);
+  final band = GameConstants.bandForLevel(level.levelNumber);
+  _paintFelt(canvas, band);
+  _paintRail(canvas, band);
+  _paintLevelSign(canvas, level.levelNumber, band);
   // Every glow before any slot, so that no slot is washed by its neighbour's.
   // Clipped to the board: the edge slots' glows are wider than the space
   // beside them, and nothing the board draws may cross its sides
@@ -119,7 +120,7 @@ void paintBoardStaticLayer(Canvas canvas, Level level) {
 }
 
 /// Felt lit from the dome: brightest under it, falling off to the corners.
-void _paintFelt(Canvas canvas) {
+void _paintFelt(Canvas canvas, LevelBand band) {
   const domeCentre = Offset(
     (GameConstants.topCurveStartX + GameConstants.topCurveEndX) / 2,
     GameConstants.topCurveStartY,
@@ -130,13 +131,13 @@ void _paintFelt(Canvas canvas) {
       ..shader = ui.Gradient.radial(
         domeCentre,
         GameConstants.boardHeight * 0.9,
-        [GameConstants.feltColor, GameConstants.feltShadeColor],
+        [band.felt, band.feltShade],
       ),
   );
 }
 
 /// The walls and the dome as one chrome rail over a soft glow.
-void _paintRail(Canvas canvas) {
+void _paintRail(Canvas canvas, LevelBand band) {
   const channelRight = GameConstants.launchChannelStartX + GameConstants.launchChannelWidth;
   final outline = Path()
     ..moveTo(GameConstants.topCurveStartX, GameConstants.launchChannelStartY)
@@ -161,8 +162,8 @@ void _paintRail(Canvas canvas) {
 
   // The glow is two wide, faint strokes, not a blur
   final passes = [
-    stroke(12)..color = GameConstants.primaryColor.withValues(alpha: 0.08),
-    stroke(7)..color = GameConstants.primaryColor.withValues(alpha: 0.14),
+    stroke(12)..color = band.rim.withValues(alpha: 0.08),
+    stroke(7)..color = band.rim.withValues(alpha: 0.14),
     stroke(4)
       ..shader = ui.Gradient.linear(
         const Offset(GameConstants.topCurveStartX, 0),
@@ -177,12 +178,12 @@ void _paintRail(Canvas canvas) {
 }
 
 /// The level's sign, under the top of the dome. Balls pass over it.
-void _paintLevelSign(Canvas canvas, int levelNumber) {
+void _paintLevelSign(Canvas canvas, int levelNumber, LevelBand band) {
   final sign = TextPainter(
     text: TextSpan(
       text: 'LEVEL $levelNumber',
       style: TextStyle(
-        color: GameConstants.inkColor.withValues(alpha: 0.9),
+        color: band.rim,
         fontFamily: displayFontFamily,
         fontSize: 16,
         fontWeight: FontWeight.bold,
