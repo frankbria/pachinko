@@ -76,7 +76,7 @@ As documented in [CODE_REVIEW.md](./CODE_REVIEW.md), the following must be compl
   - **Random**: Chaotic distribution (50 placement attempts per peg)
 - **Special Peg Bonuses**: 2-4 highlighted pegs per level (50px spacing) trigger multi-ball bonuses (5 + level/2 balls)
 - **Strategic Scoring**: Inverse probability distribution rewards skilled play
-  - Edge slots: 2000 points (hardest to reach)
+  - Edge slots: 2000 points (hardest to reach: narrow slots against the walls)
   - Center slot: 1000 points (medium difficulty)
   - Side slots: 50-200 points (easiest to reach)
 - **Infinite Levels**: Pattern cycling with increasing difficulty

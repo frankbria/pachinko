@@ -104,11 +104,19 @@ class Level {
     }
 
     // Generate slots with inverse probability distribution
+    // The row lies between the field walls, so that every slot is inside
+    // the playfield and what is drawn is what a ball can reach
     const slotCount = 7;
-    final slotWidth = boardWidth / slotCount;
+    const rowLeft = GameConstants.fieldLeftBoundaryX;
+    const rowRight = GameConstants.fieldRightBoundaryX;
+    const edgeWidth = GameConstants.edgeSlotWidth;
+    const innerWidth = (rowRight - rowLeft - 2 * edgeWidth) / (slotCount - 2);
+    double slotLeft = rowLeft;
 
     for (int i = 0; i < slotCount; i++) {
-      final x = slotWidth * i + slotWidth / 2;
+      final slotWidth = i == 0 || i == slotCount - 1 ? edgeWidth : innerWidth;
+      final x = slotLeft + slotWidth / 2;
+      slotLeft += slotWidth;
       final y = boardHeight - 40;
 
       // Inverse probability distribution for scoring

@@ -42,6 +42,9 @@ class Tally {
   /// Every round's score, for the percentiles.
   final scores = <int>[];
   final slots = <int, int>{50: 0, 200: 0, 1000: 0, 2000: 0};
+
+  /// Balls landed in each slot, counted from the left of the row.
+  final byPosition = List<int>.filled(7, 0);
   void add(Tally o) {
     rounds += o.rounds;
     bonusRounds += o.bonusRounds;
@@ -57,6 +60,9 @@ class Tally {
     luckyRounds += o.luckyRounds;
     best = max(best, o.best);
     o.slots.forEach((k, v) => slots[k] = slots[k]! + v);
+    for (int i = 0; i < byPosition.length; i++) {
+      byPosition[i] += o.byPosition[i];
+    }
   }
 
   String share(int n) => '${(100 * n / rounds).toStringAsFixed(1)}%';
@@ -153,6 +159,7 @@ void main() {
           }
           state.addScore(slot.pointValue);
           tally.slots[slot.pointValue] = tally.slots[slot.pointValue]! + 1;
+          tally.byPosition[level.slots.indexOf(slot)]++;
         }
         for (final ball in balls) {
           if (!ball.isActive) {
@@ -215,5 +222,7 @@ void main() {
     });
     // ignore: avoid_print
     print('BAND ${all.band('all')}');
+    // ignore: avoid_print
+    print('ROW left to right | ${all.byPosition.map(all.pct).join(' | ')}');
   }, timeout: const Timeout(Duration(minutes: 20)));
 }

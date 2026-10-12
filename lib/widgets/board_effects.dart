@@ -208,20 +208,8 @@ void paintSlotLights(Canvas canvas, List<Slot> slots) {
       RRect.fromRectAndRadius(slot.bounds, const Radius.circular(4)),
       Paint()..color = slot.color.withValues(alpha: 0.75 * slot.glow),
     );
-    final value = TextPainter(
-      text: TextSpan(
-        text: slot.pointValue.toString(),
-        style: TextStyle(
-          color: GameConstants.inkColor.withValues(alpha: slot.glow),
-          fontFamily: displayFontFamily,
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    value.paint(
-        canvas, slot.bounds.center - Offset(value.width / 2, value.height / 2));
+    paintSlotValue(canvas, slot.bounds, slot.pointValue,
+        GameConstants.inkColor.withValues(alpha: slot.glow));
   }
 }
 
