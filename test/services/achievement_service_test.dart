@@ -181,40 +181,74 @@ void main() {
   });
 
   group('AchievementService Event Tracking - Scoring', () {
-    test('givenLevelScore50000_whenTracked_thenHighRollerUnlocked', () async {
-      // Given
+    /// The two thresholds come from the scoring simulation (#82): about one
+    /// round in ten reaches the first and about one in a hundred the second.
+    Future<AchievementService> freshService() async {
       when(mockPrefs.getStringList('achievements')).thenReturn(null);
       when(mockPrefs.setStringList(any, any)).thenAnswer((_) async => true);
-      service = await AchievementService.create(mockPrefs);
+      return AchievementService.create(mockPrefs);
+    }
 
-      Achievement? unlockedAchievement;
-      service.onAchievementUnlocked = (achievement) {
-        unlockedAchievement = achievement;
-      };
+    bool unlocked(AchievementService service, String id) =>
+        service.getAllAchievements().firstWhere((a) => a.id == id).isUnlocked;
 
-      // When
-      service.trackLevelScore(1, 50000);
+    test('the thresholds are 20,000 and 25,000, and each description says so',
+        () async {
+      service = await freshService();
+      String description(String id) => service
+          .getAllAchievements()
+          .firstWhere((a) => a.id == id)
+          .description;
 
-      // Then
-      expect(unlockedAchievement!.id, equals('high_roller'));
+      expect(AchievementService.highRollerScore, 20000);
+      expect(AchievementService.scoreMasterScore, 25000);
+      expect(description('high_roller'), 'Score 20,000+ in single level');
+      expect(description('score_master'), 'Score 25,000+ in single level');
     });
 
-    test('givenLevelScore100000_whenTracked_thenScoreMasterUnlocked', () async {
-      // Given
-      when(mockPrefs.getStringList('achievements')).thenReturn(null);
+    test(
+        'givenLevelScoreOneBelowHighRoller_whenTracked_thenNothingUnlocks_andAtTheThresholdItDoes',
+        () async {
+      service = await freshService();
+
+      service.trackLevelScore(1, AchievementService.highRollerScore - 1);
+      expect(unlocked(service, 'high_roller'), isFalse);
+
+      service.trackLevelScore(1, AchievementService.highRollerScore);
+      expect(unlocked(service, 'high_roller'), isTrue);
+      expect(unlocked(service, 'score_master'), isFalse);
+    });
+
+    test(
+        'givenLevelScoreOneBelowScoreMaster_whenTracked_thenOnlyHighRollerUnlocks_andAtTheThresholdBothDo',
+        () async {
+      service = await freshService();
+
+      service.trackLevelScore(1, AchievementService.scoreMasterScore - 1);
+      expect(unlocked(service, 'high_roller'), isTrue);
+      expect(unlocked(service, 'score_master'), isFalse);
+
+      service.trackLevelScore(2, AchievementService.scoreMasterScore);
+      expect(unlocked(service, 'score_master'), isTrue);
+    });
+
+    test(
+        'givenAchievementUnlockedUnderTheOldRule_whenLoaded_thenItStaysUnlockedAndReadsAsItIsNow',
+        () async {
+      // Stored by an earlier version: unlocked, with the description of the time
+      final stored = [
+        '{"id":"high_roller","name":"High Roller","description":"Score 50,000+ in single level","iconCodePoint":${Icons.trending_up.codePoint},"pointValue":250,"progress":100,"unlockedDate":"2025-11-17T10:00:00.000"}',
+      ];
+      when(mockPrefs.getStringList('achievements')).thenReturn(stored);
       when(mockPrefs.setStringList(any, any)).thenAnswer((_) async => true);
+
       service = await AchievementService.create(mockPrefs);
+      final highRoller =
+          service.getAllAchievements().firstWhere((a) => a.id == 'high_roller');
 
-      Achievement? unlockedAchievement;
-      service.onAchievementUnlocked = (achievement) {
-        unlockedAchievement = achievement;
-      };
-
-      // When
-      service.trackLevelScore(1, 100000);
-
-      // Then
-      expect(unlockedAchievement!.id, equals('score_master'));
+      expect(highRoller.isUnlocked, isTrue);
+      expect(highRoller.unlockedDate, DateTime(2025, 11, 17, 10));
+      expect(highRoller.description, 'Score 20,000+ in single level');
     });
 
     test('givenTotalScore1Million_whenTracked_thenMillionaireUnlocked',
@@ -373,7 +407,8 @@ void main() {
       for (int i = 1; i <= 20; i++) {
         service.trackLevelComplete(i); // novice, advanced, expert, master (4)
       }
-      service.trackLevelScore(1, 100000); // high_roller, score_master (2)
+      service.trackLevelScore(1,
+          AchievementService.scoreMasterScore); // high_roller, score_master (2)
       for (int i = 0; i < 20; i++) {
         service.trackSpecialBonus(); // bonus_hunter (1)
       }

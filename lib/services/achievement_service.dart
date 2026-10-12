@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pachinko_game/models/achievement.dart';
+import 'package:pachinko_game/widgets/game_card.dart' show groupedThousands;
 
 /// Service for tracking and managing game achievements.
 ///
@@ -22,6 +23,14 @@ class AchievementService extends ChangeNotifier {
   int _specialBonusCount = 0;
   int _edgeSlotCount = 0;
   final Map<int, int> _levelScores = {}; // Track scores per level
+
+  /// A level score that unlocks High Roller. About one round in ten reaches
+  /// it in the scoring simulation (`tool/scoring_simulation_test.dart`);
+  /// the first value, 50,000, was beyond any round (#72, #82)
+  static const int highRollerScore = 20000;
+
+  /// A level score that unlocks Score Master: about one round in a hundred.
+  static const int scoreMasterScore = 25000;
 
   /// Private constructor for dependency injection pattern
   AchievementService._(this._prefs);
@@ -93,14 +102,16 @@ class AchievementService extends ChangeNotifier {
       Achievement(
         id: 'high_roller',
         name: 'High Roller',
-        description: 'Score 50,000+ in single level',
+        description:
+            'Score ${groupedThousands(highRollerScore)}+ in single level',
         icon: Icons.trending_up,
         pointValue: 250,
       ),
       Achievement(
         id: 'score_master',
         name: 'Score Master',
-        description: 'Score 100,000+ in single level',
+        description:
+            'Score ${groupedThousands(scoreMasterScore)}+ in single level',
         icon: Icons.emoji_events,
         pointValue: 500,
       ),
@@ -216,7 +227,12 @@ class AchievementService extends ChangeNotifier {
       for (int i = 0; i < _achievements.length; i++) {
         final saved = savedAchievements[_achievements[i].id];
         if (saved != null) {
-          _achievements[i] = saved;
+          // What the player has done is the store's; the name, the
+          // description and the reward are the code's, so a rule that
+          // changes is read as it is now
+          _achievements[i]
+            ..progress = saved.progress
+            ..unlockedDate = saved.unlockedDate;
         }
       }
     } catch (e) {
@@ -316,7 +332,7 @@ class AchievementService extends ChangeNotifier {
     _levelScores[level] = score;
 
     // Check single-level score achievements (check higher threshold first for proper callback order)
-    if (score >= 50000) {
+    if (score >= highRollerScore) {
       final achievement =
           _achievements.firstWhere((a) => a.id == 'high_roller');
       if (!achievement.isUnlocked) {
@@ -324,7 +340,7 @@ class AchievementService extends ChangeNotifier {
         _checkUnlock(achievement);
       }
     }
-    if (score >= 100000) {
+    if (score >= scoreMasterScore) {
       final achievement =
           _achievements.firstWhere((a) => a.id == 'score_master');
       if (!achievement.isUnlocked) {

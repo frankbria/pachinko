@@ -21,6 +21,7 @@ import 'package:pachinko_game/models/ball.dart';
 import 'package:pachinko_game/models/ball_launcher.dart';
 import 'package:pachinko_game/models/game_state.dart';
 import 'package:pachinko_game/models/peg.dart';
+import 'package:pachinko_game/services/achievement_service.dart';
 import 'package:pachinko_game/services/physics_engine.dart';
 
 class Tally {
@@ -32,7 +33,10 @@ class Tally {
       score = 0,
       prizePegs = 0,
       pegs = 0;
-  int over10k = 0, over50k = 0, over100k = 0, best = 0;
+  int over10k = 0, best = 0;
+
+  /// Every round's score, for the percentiles.
+  final scores = <int>[];
   final slots = <int, int>{50: 0, 200: 0, 1000: 0, 2000: 0};
   void add(Tally o) {
     rounds += o.rounds;
@@ -44,8 +48,7 @@ class Tally {
     prizePegs += o.prizePegs;
     pegs += o.pegs;
     over10k += o.over10k;
-    over50k += o.over50k;
-    over100k += o.over100k;
+    scores.addAll(o.scores);
     best = max(best, o.best);
     o.slots.forEach((k, v) => slots[k] = slots[k]! + v);
   }
@@ -53,7 +56,20 @@ class Tally {
   String share(int n) => '${(100 * n / rounds).toStringAsFixed(1)}%';
   String band(String name) =>
       '$name | ${share(bonusRounds)} | ${(balls / rounds).toStringAsFixed(1)} | ${(score / rounds).round()} | '
-      '${share(over10k)} | ${share(over50k)} | ${share(over100k)} | $best';
+      '${share(over10k)} | ${percentile(50)} | ${percentile(90)} | ${percentile(99)} | '
+      '${share(reaching(AchievementService.highRollerScore))} | '
+      '${share(reaching(AchievementService.scoreMasterScore))} | $best';
+
+  /// How many rounds scored at least [threshold].
+  int reaching(int threshold) =>
+      scores.where((score) => score >= threshold).length;
+
+  /// The score that [p] percent of rounds did not beat.
+  int percentile(int p) {
+    final sorted = [...scores]..sort();
+    return sorted[((sorted.length - 1) * p / 100).round()];
+  }
+
   String pct(int n) => '${(100 * n / balls).toStringAsFixed(1)}%';
   String row(String name) =>
       '$name | ${(pegs / rounds).toStringAsFixed(1)} | ${(prizePegs / rounds).toStringAsFixed(2)} | '
@@ -131,8 +147,7 @@ void main() {
     tally.score = state.score;
     tally.best = state.score;
     if (state.score >= 10000) tally.over10k = 1;
-    if (state.score >= 50000) tally.over50k = 1;
-    if (state.score >= 100000) tally.over100k = 1;
+    tally.scores.add(state.score);
     state.dispose();
     return tally;
   }
@@ -174,7 +189,7 @@ void main() {
     print('SIM ${all.row('all')}');
     // ignore: avoid_print
     print(
-        'BAND levels | bonus rounds | balls/round | score/round | rounds over 10k | over 50k | over 100k | best round');
+        'BAND levels | bonus rounds | balls/round | score/round | rounds over 10k | p50 | p90 | p99 | High Roller | Score Master | best round');
     bands.forEach((name, tally) {
       // ignore: avoid_print
       if (tally.rounds > 0) print('BAND ${tally.band(name)}');
