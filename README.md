@@ -17,7 +17,7 @@ Core gameplay is complete and functional:
 - ✅ **Authentic Ball Launching** - Bottom-right launch channel with drag-to-charge power meter
 - ✅ **Advanced Physics Engine** - 60 FPS realistic ball physics with gravity and collisions
 - ✅ **Level System** - 3 distinct peg patterns (hexagonal, triangle, random) with infinite progression
-- ✅ **Special Pegs & Bonuses** - Hit all special pegs to trigger 5+ bonus balls
+- ✅ **Special Pegs & Bonuses** - Hit all special pegs to trigger 5 to 15 bonus balls
 - ✅ **Strategic Scoring** - Inverse probability distribution (edge slots = 2000pts, center = 1000pts)
 - ✅ **Cross-Platform Ready** - Runs on Linux desktop, configured for Android deployment
 
@@ -187,7 +187,7 @@ The scoring system rewards skilled shots to hard-to-reach slots:
 
 - **Orange Pegs**: 2-4 appear randomly per level
 - **Bonus Trigger**: Hit ALL special pegs with any balls in the round
-- **Reward**: 5 bonus balls at level 1, scaling up (+0.5 per level)
+- **Reward**: 5 bonus balls at level 1, one more for every two levels, and 15 at most (from level 20)
 - **Reset**: Special pegs reset each level
 
 ## 🏗️ Project Structure

@@ -415,6 +415,19 @@ void main() {
     });
 
     test(
+        'given levels 20, 21 and 60, when the bonus triggers, then it drops 15 balls: the bonus stops growing at level 20',
+        () {
+      for (final level in [20, 21, 60]) {
+        final gameState = GameState()..startNewGame(level: level);
+        addTearDown(gameState.dispose);
+
+        gameState.triggerSpecialBonus();
+
+        expect(gameState.activeBalls.length, 15, reason: 'level $level');
+      }
+    });
+
+    test(
         'given GameState, when triggerSpecialBonus called, then specialBonusTriggered becomes true',
         () {
       /// Validates bonus trigger flag prevents multiple bonus activations

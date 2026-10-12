@@ -83,6 +83,18 @@ void main() {
   });
 
   test(
+      'given every prize peg collected on level 60, then the summary reports the balls the game dropped',
+      () {
+    final state = roundWith({50: 1}, levelNumber: 60);
+    final before = state.activeBalls.length;
+    state.triggerSpecialBonus();
+    final dropped = state.activeBalls.length - before;
+
+    expect(dropped, 15);
+    expect(RoundSummary.of(state).bonusBalls, dropped);
+  });
+
+  test(
       'given one prize peg collected and the rest not, then no bonus balls are reported',
       () {
     // Every level has at least two prize pegs, so one collected is not all of them

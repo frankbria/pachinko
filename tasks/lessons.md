@@ -251,3 +251,9 @@ Patterns learned the hard way on this repo. Add an entry after any correction.
 - **Which formatter style you get depends on the package's language version.** The issue feared the tall style of Dart 3.7 and later. `pubspec.yaml` says `sdk: ^3.5.4`, so the formatter used the classic style. Check before estimating the diff: raising the SDK constraint later will reformat everything again.
 - **A formatting commit must keep its hash to be ignorable.** `.git-blame-ignore-revs` names a commit. A squash merge gives the work a new hash, so this pull request was merged with a merge commit, the one time that is the right choice here.
 - **Check whether generated files already agree with a gate before excluding them.** The plan was to keep the mocks out of the format check. The generator already writes them in the formatter's style, so they are inside it, and the mock freshness step and the format step cannot disagree.
+
+## 2026-10-12 — the PR for issue #81 (the bonus is capped)
+
+- **A formula written twice will be changed once.** The bonus size was `5 + level ~/ 2` in the game state, with a literal 5, and again in the round summary, with the constant. The cap went into one function that both call, and a test compares what the summary reports with what the game state drops, so they cannot part again.
+- **Choose a cap by what it leaves alone.** Fifteen is the bonus at level 20, the last level the picker shows, so the levels a player reaches from the menu play exactly as before and only the open-ended ones above them change. The simulation shows it: levels 1 to 20 unchanged, 34 balls a round above level 40 where there were 48.
+- **Run a noisy measurement twice before reading a difference into it.** Two runs of the same code differed by up to three points in the share of rounds with a bonus. The cap's effect is far outside that; a one-point change would not have been.
