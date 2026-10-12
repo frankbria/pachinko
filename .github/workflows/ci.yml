@@ -52,3 +52,20 @@ jobs:
           name: golden-failures
           path: test/**/failures/
           if-no-files-found: ignore
+
+  build:
+    # Profile mode compiles ahead of time and drops unused icons from the
+    # font, as a release does; debug builds and tests do neither, so only a
+    # build like this one finds what breaks them (#89). Profile, not release:
+    # a release needs the signing key, which is not in the repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: 3.38.1
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter build apk --profile

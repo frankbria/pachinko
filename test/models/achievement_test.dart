@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pachinko_game/models/achievement.dart';
@@ -75,54 +76,94 @@ void main() {
       expect(json['unlockedDate'], equals(timestamp.toIso8601String()));
     });
 
-    test('givenValidJson_whenFromJsonCalled_thenAchievementCreated', () {
-      // Given
+    /// Only what the player has done is read back from storage. The name,
+    /// description, icon and reward are the code's: an icon built from a
+    /// stored number cannot be a compile-time constant, and Flutter refuses
+    /// to build a release with one (#89).
+    Achievement defined() => Achievement(
+          id: 'test_id',
+          name: 'Name in the code',
+          description: 'Description in the code',
+          icon: Icons.star,
+          pointValue: 500,
+        );
+
+    test(
+        'givenStoredEntry_whenRestored_thenProgressAndUnlockDateAreTaken_andTheDefinitionIsKept',
+        () {
       final timestamp = DateTime(2025, 11, 17, 15, 30);
-      final json = {
-        'id': 'test_id',
-        'name': 'Test Name',
-        'description': 'Test Description',
-        'iconCodePoint': Icons.star.codePoint,
-        'pointValue': 500,
-        'progress': 75,
-        'unlockedDate': timestamp.toIso8601String(),
-      };
+      final achievement = defined()
+        ..restoreFrom({
+          'id': 'test_id',
+          'name': 'An older name',
+          'description': 'An older description',
+          'iconCodePoint': Icons.lock.codePoint,
+          'pointValue': 100,
+          'progress': 75,
+          'unlockedDate': timestamp.toIso8601String(),
+        });
 
-      // When
-      final achievement = Achievement.fromJson(json);
+      expect(achievement.progress, 75);
+      expect(achievement.unlockedDate, timestamp);
+      expect(achievement.name, 'Name in the code');
+      expect(achievement.description, 'Description in the code');
+      expect(identical(achievement.icon, Icons.star), isTrue);
+      expect(achievement.pointValue, 500);
+    });
 
-      // Then
-      expect(achievement.id, equals('test_id'));
-      expect(achievement.name, equals('Test Name'));
-      expect(achievement.description, equals('Test Description'));
-      expect(achievement.icon.codePoint, equals(Icons.star.codePoint));
-      expect(achievement.pointValue, equals(500));
-      expect(achievement.progress, equals(75));
-      expect(achievement.unlockedDate, equals(timestamp));
+    test('givenStoredEntryWithoutUnlockedDate_whenRestored_thenNotUnlocked',
+        () {
+      final achievement = defined()
+        ..restoreFrom({'id': 'test_id', 'progress': 25, 'unlockedDate': null});
+
+      expect(achievement.unlockedDate, isNull);
+      expect(achievement.isUnlocked, isFalse);
+      expect(achievement.progress, 25);
+    });
+
+    test('givenStoredEntryWithNothingUsable_whenRestored_thenItThrows', () {
+      // The service skips an entry that cannot be read and keeps the default
+      expect(() => defined().restoreFrom({'progress': 'seventy'}),
+          throwsA(isA<TypeError>()));
     });
 
     test(
-        'givenJsonWithoutUnlockedDate_whenFromJsonCalled_thenAchievementNotUnlocked',
+        'givenStoredEntryWithGoodProgressAndAnUnreadableDate_whenRestored_thenItThrowsAndNothingIsTaken',
         () {
-      // Given
-      final json = {
-        'id': 'test_id',
-        'name': 'Test Name',
-        'description': 'Test Description',
-        'iconCodePoint': Icons.star.codePoint,
-        'pointValue': 100,
-        'progress': 25,
-        'unlockedDate': null,
-      };
+      // Half an entry must not be applied: the service skips what throws,
+      // and would be left with progress that nothing else agrees with
+      final achievement = defined();
 
-      // When
-      final achievement = Achievement.fromJson(json);
-
-      // Then
+      expect(
+          () => achievement
+              .restoreFrom({'progress': 75, 'unlockedDate': 'not a date'}),
+          throwsFormatException);
+      expect(achievement.progress, 0);
       expect(achievement.unlockedDate, isNull);
-      expect(achievement.isUnlocked, isFalse);
-      expect(achievement.progress, equals(25));
     });
+
+    test('givenWhatToJsonWrote_whenRestored_thenTheStateComesBack', () {
+      final saved = defined()..unlock();
+      final loaded = defined()..restoreFrom(saved.toJson());
+
+      expect(loaded.progress, saved.progress);
+      expect(loaded.unlockedDate, saved.unlockedDate);
+    });
+  });
+
+  test('no icon is built at run time anywhere under lib/', () {
+    // Flutter drops unused icons from the font in profile and release
+    // builds, and fails the build if an IconData is constructed from a value
+    // it cannot see when compiling. Icons.* constants are fine (#89)
+    final offenders = Directory('lib')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((file) => file.path.endsWith('.dart'))
+        .where((file) => file.readAsStringSync().contains('IconData('))
+        .map((file) => file.path)
+        .toList();
+
+    expect(offenders, isEmpty);
   });
 
   group('Achievement Progress Tracking', () {

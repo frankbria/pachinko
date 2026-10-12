@@ -85,25 +85,21 @@ class Achievement {
     };
   }
 
-  /// Creates an Achievement from JSON data.
+  /// Takes what the player has done from a stored entry: the progress and
+  /// the unlock date. The rest of the entry is ignored, so the name, the
+  /// description, the icon and the reward stay as the code defines them.
   ///
-  /// [json] must contain all required fields. Missing fields will throw.
-  /// Icon is reconstructed from codePoint with MaterialIcons font.
-  factory Achievement.fromJson(Map<String, dynamic> json) {
-    return Achievement(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      description: json['description'] as String,
-      icon: IconData(
-        json['iconCodePoint'] as int,
-        fontFamily: 'MaterialIcons',
-      ),
-      pointValue: json['pointValue'] as int,
-      progress: json['progress'] as int? ?? 0,
-      unlockedDate: json['unlockedDate'] != null
-          ? DateTime.parse(json['unlockedDate'] as String)
-          : null,
-    );
+  /// The icon in particular cannot be read back: an `IconData` built from a
+  /// stored number is not a compile-time constant, and a profile or release
+  /// build fails on one. Throws if the entry's values are of the wrong type.
+  void restoreFrom(Map<String, dynamic> json) {
+    // Both are read before either is set, so that an entry that is half
+    // unreadable changes nothing
+    final storedProgress = json['progress'] as int? ?? 0;
+    final unlocked = json['unlockedDate'] as String?;
+    final storedDate = unlocked == null ? null : DateTime.parse(unlocked);
+    progress = storedProgress;
+    unlockedDate = storedDate;
   }
 
   /// Checks equality based on id, progress, and unlocked date.

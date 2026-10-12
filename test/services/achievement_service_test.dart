@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -57,6 +58,44 @@ void main() {
           .firstWhere((a) => a.id == 'novice_player');
       expect(novice.progress, equals(50));
       expect(novice.isUnlocked, isFalse);
+    });
+
+    test(
+        'givenStoredProgressOnTheFourCountedAchievements_whenPlayContinues_thenEachCarriesOnFromWhereItWas',
+        () async {
+      // Four achievements count something over many rounds. The count is not
+      // stored; it is worked back from the stored percentage, so that one
+      // more event after a restart finishes what 19 of 20 had started
+      String entry(String id, int progress) =>
+          jsonEncode({'id': id, 'progress': progress, 'unlockedDate': null});
+      when(mockPrefs.getStringList('achievements')).thenReturn([
+        entry('marathon_runner', 98), // 49 of 50 levels
+        entry('millionaire', 90), // 900,000 of 1,000,000
+        entry('bonus_hunter', 95), // 19 of 20 bonuses
+        entry('edge_master', 95), // 19 of 20 edge slots
+      ]);
+      when(mockPrefs.setStringList(any, any)).thenAnswer((_) async => true);
+      service = await AchievementService.create(mockPrefs);
+      bool unlocked(String id) =>
+          service.getAllAchievements().firstWhere((a) => a.id == id).isUnlocked;
+      for (final id in [
+        'marathon_runner',
+        'millionaire',
+        'bonus_hunter',
+        'edge_master'
+      ]) {
+        expect(unlocked(id), isFalse, reason: id);
+      }
+
+      service.trackLevelComplete(1);
+      service.trackLevelScore(1, 100000);
+      service.trackSpecialBonus();
+      service.trackEdgeSlot();
+
+      expect(unlocked('marathon_runner'), isTrue);
+      expect(unlocked('millionaire'), isTrue);
+      expect(unlocked('bonus_hunter'), isTrue);
+      expect(unlocked('edge_master'), isTrue);
     });
 
     test('givenCorruptedData_whenInitialized_thenResetToDefaults', () async {
