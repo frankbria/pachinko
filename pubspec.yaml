@@ -74,6 +74,9 @@ dev_dependencies:
   mockito: ^5.4.4
   build_runner: ^2.4.13
 
+  # Imported by test/app_startup_test.dart for a store that answers late
+  shared_preferences_platform_interface: ^2.4.1
+
   # Icon generation
   flutter_launcher_icons: ^0.14.1
 
