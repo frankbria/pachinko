@@ -86,7 +86,9 @@ class _GameScreenState extends State<GameScreen> {
               child: Container(
                 margin: const EdgeInsets.all(8.0),
                 decoration: BoxDecoration(
-                  color: GameConstants.boardColor,
+                  // The felt darkens to this at the board's foot, so the
+                  // strip under the board continues it
+                  color: GameConstants.feltShadeColor,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: GameConstants.primaryColor.withOpacity(0.3),
@@ -106,36 +108,46 @@ class _GameScreenState extends State<GameScreen> {
   }
 }
 
+/// The score, the balls left and the level: three matching tiles in one row.
 class _GameHUD extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Consumer<GameManager>(
       builder: (context, gameManager, child) {
         final gameState = gameManager.gameState;
-        
-        return Container(
-          padding: const EdgeInsets.all(16.0),
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _HUDItem(
-                icon: Icons.star,
-                label: GameStrings.score,
-                value: gameState.score.toString(),
-                color: GameConstants.secondaryColor,
+              Expanded(
+                child: _HUDItem(
+                  icon: Icons.star,
+                  label: GameStrings.score,
+                  value: gameState.score.toString(),
+                  // Gold is the score's colour and nothing else's in the header
+                  color: GameConstants.secondaryColor,
+                  valueColor: GameConstants.secondaryColor,
+                ),
               ),
-              _HUDItem(
-                icon: Icons.sports_golf,
-                label: GameStrings.ballsRemaining,
-                value: gameState.ballsRemaining.toString(),
-                color: GameConstants.ballColor,
-                highlighted: gameState.ballCountHighlighted,
+              const SizedBox(width: 8),
+              Expanded(
+                child: _HUDItem(
+                  icon: Icons.sports_golf,
+                  label: GameStrings.ballsRemaining,
+                  value: gameState.ballsRemaining.toString(),
+                  color: GameConstants.ballColor,
+                  highlighted: gameState.ballCountHighlighted,
+                ),
               ),
-              _HUDItem(
-                icon: Icons.layers,
-                label: GameStrings.level,
-                value: gameState.currentLevelNumber.toString(),
-                color: GameConstants.primaryColor,
+              const SizedBox(width: 8),
+              Expanded(
+                child: _HUDItem(
+                  icon: Icons.layers,
+                  label: GameStrings.level,
+                  value: gameState.currentLevelNumber.toString(),
+                  color: GameConstants.primaryColor,
+                ),
               ),
             ],
           ),
@@ -145,11 +157,13 @@ class _GameHUD extends StatelessWidget {
   }
 }
 
+/// One stat tile: icon, label and value on a single line.
 class _HUDItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
   final Color color;
+  final Color valueColor;
   final bool highlighted;
 
   const _HUDItem({
@@ -157,6 +171,7 @@ class _HUDItem extends StatelessWidget {
     required this.label,
     required this.value,
     required this.color,
+    this.valueColor = GameConstants.inkColor,
     this.highlighted = false,
   });
 
@@ -164,40 +179,51 @@ class _HUDItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: highlighted
-            ? GameConstants.bonusBallColor.withOpacity(0.3)
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
+            ? GameConstants.bonusBallColor.withValues(alpha: 0.25)
+            : GameConstants.surfaceColor,
+        borderRadius: BorderRadius.circular(10),
+        // The same width in both states: a change would resize the header
         border: Border.all(
           color: highlighted
               ? GameConstants.bonusBallColor
-              : Colors.transparent,
-          width: highlighted ? 3 : 0,
+              : GameConstants.mutedColor.withValues(alpha: 0.25),
+          width: 1.5,
         ),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      child: Row(
         children: [
           Icon(
             icon,
             color: highlighted ? GameConstants.bonusBallColor : color,
-            size: highlighted ? 28 : 24,
+            size: 16,
           ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: highlighted ? GameConstants.bonusBallColor : GameConstants.inkColor,
-              fontWeight: FontWeight.bold,
-              fontSize: highlighted ? 22 : null,
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: highlighted ? GameConstants.bonusBallColor : GameConstants.mutedColor,
+              ),
             ),
           ),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: highlighted ? GameConstants.bonusBallColor.withOpacity(0.9) : GameConstants.mutedColor,
+          // A long score shrinks to fit its half of the tile
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Text(
+                value,
+                maxLines: 1,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: highlighted ? GameConstants.bonusBallColor : valueColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
         ],

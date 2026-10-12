@@ -210,6 +210,7 @@ lib/
 │   └── menu_screen.dart        # Menu with level selection
 ├── widgets/                     # Custom rendering (477 LOC)
 │   ├── pachinko_board.dart     # Canvas-based game board
+│   ├── board_effects.dart      # Bonus announcement and confetti
 │   └── board_static_layer.dart # Felt, rail, pins and slots, drawn once per level
 └── utils/                       # Configuration (272 LOC)
     ├── constants.dart          # Game parameters and styling

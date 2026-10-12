@@ -223,13 +223,13 @@ class GameState extends ChangeNotifier {
   }
 
   Color _randomConfettiColor(math.Random random) {
-    final colors = [
-      const Color(0xFFFFD700), // Gold
-      const Color(0xFFFF6B6B), // Red
-      const Color(0xFF4ECDC4), // Cyan
-      const Color(0xFFFFA500), // Orange
-      const Color(0xFF95E1D3), // Mint
-      const Color(0xFFF38181), // Pink
+    // The palette's bright colours; gold leads because the bonus is gold
+    const colors = [
+      GameConstants.goldColor,
+      GameConstants.magentaColor,
+      GameConstants.violetColor,
+      GameConstants.blueColor,
+      GameConstants.cyanColor,
     ];
     return colors[random.nextInt(colors.length)];
   }

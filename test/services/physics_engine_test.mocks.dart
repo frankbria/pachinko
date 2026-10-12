@@ -378,6 +378,12 @@ class MockPeg extends _i1.Mock implements _i5.Peg {
       );
 
   @override
+  bool get isCollected => (super.noSuchMethod(
+        Invocation.getter(#isCollected),
+        returnValue: false,
+      ) as bool);
+
+  @override
   _i3.Color get renderColor => (super.noSuchMethod(
         Invocation.getter(#renderColor),
         returnValue: _FakeColor_1(

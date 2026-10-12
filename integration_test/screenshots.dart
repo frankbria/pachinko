@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:provider/provider.dart';
+import 'package:vector_math/vector_math_64.dart' show Vector2;
 import 'package:pachinko_game/main.dart' as app;
 import 'package:pachinko_game/screens/game_screen.dart';
 import 'package:pachinko_game/services/game_manager.dart';
@@ -67,7 +68,13 @@ void main() {
       await capture(tester, 'level-$level-ready');
     }
 
-    // One full round on level 1, which the loop above left loaded
+    // One full round on level 1, which the loop above left loaded. First one
+    // prize peg is marked as hit, to show a collected prize beside two that
+    // are still to win
+    gameManager.gameState.currentLevel!.specialPegs.first.onHit();
+    await tester.pump(const Duration(milliseconds: 1200));
+    await capture(tester, 'level-1-prize-collected');
+
     int launched = 0;
     while (gameManager.gameState.ballsRemaining > 0) {
       await pumpUntil(tester, () => gameManager.gameState.canLaunchBall,
@@ -84,9 +91,16 @@ void main() {
       }
       if (launched == 10) {
         // The bonus needs every prize peg hit, which a scripted round cannot
-        // count on, so it is set off directly to show the bonus balls
+        // count on, so it is set off directly, with the confetti the game
+        // throws when it is earned
         gameManager.gameState.triggerSpecialBonus();
-        await tester.pump(const Duration(milliseconds: 900));
+        gameManager.gameState.spawnConfetti(
+          Vector2(GameConstants.boardWidth / 2, GameConstants.boardHeight / 2),
+          50,
+        );
+        await tester.pump(const Duration(milliseconds: 350));
+        await capture(tester, 'level-1-bonus-overlay');
+        await tester.pump(const Duration(milliseconds: 550));
         await capture(tester, 'level-1-bonus-balls');
       }
       await pumpUntil(tester, () => gameManager.gameState.activeBalls.isEmpty,
