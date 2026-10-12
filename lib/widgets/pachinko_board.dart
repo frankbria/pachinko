@@ -347,6 +347,8 @@ class _PachinkoBoardPainter extends CustomPainter {
       Paint()..color = GameConstants.primaryColor.withValues(alpha: 0.2),
     );
 
+    paintPlunger(canvas);
+
     // Draw launch point
     canvas.drawCircle(
       Offset(level.launchX, level.launchY),
@@ -356,9 +358,9 @@ class _PachinkoBoardPainter extends CustomPainter {
 
     // The hint, right-aligned to the box so that it cannot run off the board
     final textPainter = TextPainter(
-      text: const TextSpan(
-        text: 'DRAG TO\nLAUNCH',
-        style: TextStyle(
+      text: TextSpan(
+        text: launchHintFor(gameManager.ballLauncher.phase),
+        style: const TextStyle(
           color: GameConstants.inkColor,
           fontSize: 12,
           fontWeight: FontWeight.bold,
@@ -367,75 +369,18 @@ class _PachinkoBoardPainter extends CustomPainter {
       textDirection: TextDirection.ltr,
       textAlign: TextAlign.right,
     );
-    textPainter.layout();
+    // Two short lines under the launch box, clear of the slots below
+    textPainter.layout(maxWidth: 120);
     textPainter.paint(
       canvas,
       Offset(right - textPainter.width, GameConstants.launchChannelStartY + 25),
     );
   }
 
+  /// The launch channel as the power meter, while the player drags.
   void _drawLaunchPowerIndicator(Canvas canvas, double scale) {
-    // Draw power meter
-    final power = gameManager.ballLauncher.launchPower;
-    final maxPower = gameManager.ballLauncher.maxPower;
-    final powerRatio = power / maxPower;
-    
-    // Power meter background
-    final bgPaint = Paint()
-      ..color = Colors.black.withOpacity(0.3)
-      ..style = PaintingStyle.fill;
-    
-    final meterRect = Rect.fromLTWH(
-      GameConstants.launchChannelStartX - 60,
-      GameConstants.launchChannelStartY - 100,
-      20,
-      100,
-    );
-    
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(meterRect, const Radius.circular(10)),
-      bgPaint,
-    );
-    
-    // Power meter fill
-    final powerPaint = Paint()
-      ..color = Color.lerp(Colors.green, Colors.red, powerRatio)!
-      ..style = PaintingStyle.fill;
-    
-    final powerHeight = meterRect.height * powerRatio;
-    final powerRect = Rect.fromLTWH(
-      meterRect.left,
-      meterRect.bottom - powerHeight,
-      meterRect.width,
-      powerHeight,
-    );
-    
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(powerRect, const Radius.circular(10)),
-      powerPaint,
-    );
-    
-    // Power meter label
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: 'POWER\n${(powerRatio * 100).toInt()}%',
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-      textAlign: TextAlign.center,
-    );
-    textPainter.layout();
-    textPainter.paint(
-      canvas,
-      Offset(
-        meterRect.left - 10,
-        meterRect.top - 30,
-      ),
-    );
+    final launcher = gameManager.ballLauncher;
+    paintLaunchPower(canvas, launcher.launchPower / launcher.maxPower);
   }
 
   void _drawFloatingText(Canvas canvas, FloatingText floatingText) {

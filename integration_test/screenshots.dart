@@ -75,6 +75,19 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1200));
     await capture(tester, 'level-1-prize-collected');
 
+    // The launcher at three powers: a drag held and then released. The board
+    // takes power as half the drag's length in screen pixels
+    final down = launcherOnScreen(tester);
+    final drag = await tester.startGesture(down);
+    for (final percent in [25, 50, 100]) {
+      await drag.moveTo(down - Offset(0, 2.0 * percent));
+      await tester.pump(const Duration(milliseconds: 100));
+      await capture(tester, 'launcher-$percent');
+    }
+    await drag.up();
+    await pumpUntil(tester, () => gameManager.gameState.activeBalls.isEmpty,
+        timeout: const Duration(seconds: 60), what: 'the full-power ball to land');
+
     int launched = 0;
     while (gameManager.gameState.ballsRemaining > 0) {
       await pumpUntil(tester, () => gameManager.gameState.canLaunchBall,
