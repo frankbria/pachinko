@@ -2,8 +2,10 @@ name: Integration tests
 
 # The tests in integration_test/ need a device, so they run on an Android
 # emulator. That takes several times as long as the CI job, so this is not a
-# check on every pull request: it runs when the tests or this file change,
-# once a week, and on demand.
+# check on every pull request: it runs when the tests, the drawing code or
+# this file change, once a week, and on demand. The drawing code is there
+# because a gradient the emulator's software renderer cannot take makes the
+# emulator abort (PR #65), and nothing else in CI would notice.
 on:
   workflow_dispatch:
   schedule:
@@ -11,6 +13,7 @@ on:
   pull_request:
     paths:
       - 'integration_test/**'
+      - 'lib/widgets/**'
       - '.github/workflows/integration.yml'
 
 permissions:
