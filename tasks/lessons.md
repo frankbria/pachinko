@@ -301,3 +301,8 @@ Patterns learned the hard way on this repo. Add an entry after any correction.
 - **Read where the rule is enforced before describing it.** The issue as first written said balls reach the edge slots by drifting under the foot of a wall. The walls are only drawn that far; in the physics they run to the bottom. The description was corrected before the plan.
 - **Simulate the options, then ask.** Six widths were measured before the owner was asked to choose. One of them, 22, moved the slots into view without moving the odds at all, which made the choice easy and left the achievement thresholds alone.
 - **A fix can delete its neighbour's workaround.** The static layer clipped its drawing to the board because the old edge slots' light spilled past the sides. With the row inside the walls nothing spills, and the clip and the test's allowance for it are gone.
+
+## 2026-10-12 — the PR for issue #95 (a score popup is not drawn over the launcher's hint)
+
+- **Two things drawn in one place need to know about each other.** The hint and the popups were each placed sensibly and landed on the same spot. The popup's bounds are now a function its drawing uses too, so the hint can ask where a popup is instead of guessing.
+- **Look at the corners of a screenshot, not only at what the change was about.** The overlap was on the pictures for the slot row, beside the slots that were being checked. It had been there since the hint was written; nobody had been looking at that corner with a ball just landed.

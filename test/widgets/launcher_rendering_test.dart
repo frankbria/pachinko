@@ -6,6 +6,8 @@ import 'package:pachinko_game/models/ball_launcher.dart';
 import 'package:pachinko_game/models/level.dart';
 import 'package:pachinko_game/services/game_manager.dart';
 import 'package:pachinko_game/utils/constants.dart';
+import 'package:pachinko_game/models/slot.dart';
+import 'package:pachinko_game/widgets/floating_text.dart';
 import 'package:pachinko_game/widgets/board_effects.dart';
 import 'package:pachinko_game/widgets/pachinko_board.dart';
 
@@ -208,5 +210,113 @@ void main() {
     // The release launches a ball; stop the loop it started before the test ends
     manager.stopLoop();
     await tester.pump(const Duration(milliseconds: 100));
+  });
+
+  group('The hint and score popups', () {
+    /// The hint is written under the launch box, above the right-hand slots,
+    /// which is where a popup rises when a ball lands in one of them. Two
+    /// texts were drawn on top of each other (#95). The hint now steps aside
+    /// for as long as a popup is over it.
+    const hintTop = GameConstants.launchChannelStartY + 25;
+
+    Future<(GameManager, CustomPainter)> board(WidgetTester tester) async {
+      final manager = GameManager();
+      addTearDown(manager.dispose);
+      manager.startGame();
+      await tester.pumpWidget(ChangeNotifierProvider<GameManager>.value(
+        value: manager,
+        child: const MaterialApp(home: Scaffold(body: PachinkoBoard())),
+      ));
+      await tester.pump(const Duration(milliseconds: 50));
+      final painter = tester
+          .widget<CustomPaint>(find.descendant(
+              of: find.byType(PachinkoBoard),
+              matching: find.byType(CustomPaint)))
+          .painter!;
+      return (manager, painter);
+    }
+
+    /// Whether the board, painted now, writes the hint.
+    bool hintDrawn(CustomPainter painter) {
+      final canvas = TestRecordingCanvas();
+      painter.paint(canvas, const Size(400, 600));
+      return recorded(canvas, #drawParagraph)
+          .any((call) => (call.positionalArguments[1] as Offset).dy == hintTop);
+    }
+
+    /// Raises the popup the game raises for a ball landed in [slot].
+    void popupAbove(GameManager manager, Slot slot) {
+      final size = FloatingText.sizeFor(slot.pointValue);
+      manager.gameState.addFloatingText('+${slot.pointValue}',
+          Offset(slot.position.x, slot.top - size * 1.4), slot.color,
+          fontSize: size);
+    }
+
+    testWidgets('given nothing in play, then the hint is written',
+        (tester) async {
+      final (_, painter) = await board(tester);
+
+      expect(hintDrawn(painter), isTrue);
+    });
+
+    testWidgets(
+        'given a popup above each slot in turn, then the hint is never drawn under one, and is drawn beside the others',
+        (tester) async {
+      final (manager, painter) = await board(tester);
+      final hint = TextPainter(
+        text: TextSpan(
+            text: launchHintFor(LaunchPhase.ready),
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+        textDirection: TextDirection.ltr,
+        textAlign: TextAlign.right,
+      )..layout(maxWidth: 120);
+      final hintBounds = Rect.fromLTWH(
+          GameConstants.boardWidth - 4 - hint.width,
+          hintTop,
+          hint.width,
+          hint.height);
+      int hidden = 0;
+
+      for (final slot in manager.gameState.currentLevel!.slots) {
+        manager.gameState.resetLevel();
+        popupAbove(manager, slot);
+        final popup = scorePopupBounds(
+            text: '+${slot.pointValue}',
+            centreTop: manager.gameState.floatingTexts.single.currentPosition,
+            fontSize: FloatingText.sizeFor(slot.pointValue));
+
+        expect(hintDrawn(painter), !popup.overlaps(hintBounds),
+            reason: 'a popup above the ${slot.pointValue} slot at '
+                '${slot.position.x.round()}');
+        if (popup.overlaps(hintBounds)) hidden++;
+      }
+
+      expect(hidden, greaterThan(0),
+          reason: 'the right-hand slots are under the hint');
+      expect(hidden, lessThan(7), reason: 'the left-hand slots are not');
+      manager.gameState.resetLevel();
+    });
+
+    test('given a popup, then its bounds are where it is drawn', () {
+      for (final x in [10.0, 200.0, 395.0]) {
+        final canvas = TestRecordingCanvas();
+        paintScorePopup(canvas,
+            text: '+2000',
+            centreTop: Offset(x, 400),
+            colour: GameConstants.magentaColor,
+            fontSize: 28,
+            opacity: 1);
+        final drawnAt = recorded(canvas, #drawParagraph)
+            .single
+            .positionalArguments[1] as Offset;
+
+        final bounds = scorePopupBounds(
+            text: '+2000', centreTop: Offset(x, 400), fontSize: 28);
+
+        expect(bounds.topLeft, drawnAt, reason: 'x = $x');
+        expect(bounds.left, greaterThanOrEqualTo(0));
+        expect(bounds.right, lessThanOrEqualTo(GameConstants.boardWidth));
+      }
+    });
   });
 }

@@ -213,8 +213,49 @@ void paintSlotLights(Canvas canvas, List<Slot> slots) {
   }
 }
 
-/// Draws a score popup at [centreTop], in its own colour and size, kept
-/// inside the board's width however near the edge its slot is.
+/// A score popup's text, laid out.
+TextPainter _scorePopup(
+        String text, Color colour, double fontSize, double opacity) =>
+    TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          color: colour.withValues(alpha: opacity),
+          fontFamily: displayFontFamily,
+          fontSize: fontSize,
+          fontWeight: FontWeight.bold,
+          shadows: [
+            Shadow(
+              color:
+                  GameConstants.cabinetColor.withValues(alpha: opacity * 0.6),
+              blurRadius: 4,
+              offset: const Offset(1, 1),
+            ),
+          ],
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+/// Where a score popup at [centreTop] is drawn: kept inside the board's
+/// width however near the edge its slot is. Anything that must not be
+/// written under a popup compares its own bounds with this.
+Rect scorePopupBounds({
+  required String text,
+  required Offset centreTop,
+  required double fontSize,
+}) {
+  final popup = _scorePopup(text, GameConstants.inkColor, fontSize, 1);
+  const margin = 2.0;
+  final left = (centreTop.dx - popup.width / 2)
+      .clamp(margin, GameConstants.boardWidth - margin - popup.width);
+  final bounds = Rect.fromLTWH(left, centreTop.dy, popup.width, popup.height);
+  popup.dispose();
+  return bounds;
+}
+
+/// Draws a score popup at [centreTop], in its own colour and size, inside
+/// [scorePopupBounds].
 void paintScorePopup(
   Canvas canvas, {
   required String text,
@@ -223,29 +264,9 @@ void paintScorePopup(
   required double fontSize,
   required double opacity,
 }) {
-  final popup = TextPainter(
-    text: TextSpan(
-      text: text,
-      style: TextStyle(
-        color: colour.withValues(alpha: opacity),
-        fontFamily: displayFontFamily,
-        fontSize: fontSize,
-        fontWeight: FontWeight.bold,
-        shadows: [
-          Shadow(
-            color: GameConstants.cabinetColor.withValues(alpha: opacity * 0.6),
-            blurRadius: 4,
-            offset: const Offset(1, 1),
-          ),
-        ],
-      ),
-    ),
-    textDirection: TextDirection.ltr,
-  )..layout();
-  const margin = 2.0;
-  final left = (centreTop.dx - popup.width / 2)
-      .clamp(margin, GameConstants.boardWidth - margin - popup.width);
-  popup.paint(canvas, Offset(left, centreTop.dy));
+  final bounds =
+      scorePopupBounds(text: text, centreTop: centreTop, fontSize: fontSize);
+  _scorePopup(text, colour, fontSize, opacity).paint(canvas, bounds.topLeft);
 }
 
 /// The colour of launch power at [ratio] (0.0 to 1.0): cyan, rising through
