@@ -5,6 +5,7 @@ import '../utils/constants.dart';
 import 'game_screen.dart';
 import 'high_scores_screen.dart';
 import 'settings_screen.dart';
+import '../widgets/game_card.dart';
 import 'achievements_screen.dart';
 
 class MenuScreen extends StatelessWidget {
@@ -13,18 +14,7 @@ class MenuScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: GameConstants.backgroundColor,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              GameConstants.backgroundColor,
-              GameConstants.boardColor,
-            ],
-          ),
-        ),
+      body: SizedBox.expand(
         child: SafeArea(
           child: Center(
             // Six buttons are taller than a small phone held sideways
@@ -32,35 +22,36 @@ class MenuScreen extends StatelessWidget {
               child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Game Title, scaled down to stay on one line with its glow
+                // The title as a magenta neon sign. The padding is wider than
+                // the glow, so the sign and its glow both fit any screen
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 28.0),
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
                       GameStrings.appName,
                       style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                        color: Colors.white,
+                        color: Color.lerp(GameConstants.magentaColor, GameConstants.inkColor, 0.75),
                         fontWeight: FontWeight.bold,
                         shadows: [
-                          const Shadow(
-                            blurRadius: 10.0,
-                            color: GameConstants.primaryColor,
-                            offset: Offset(2.0, 2.0),
+                          const Shadow(blurRadius: 8.0, color: GameConstants.magentaColor),
+                          Shadow(
+                            blurRadius: 24.0,
+                            color: GameConstants.magentaColor.withValues(alpha: 0.8),
                           ),
                         ],
                       ),
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 20),
                 
                 // Subtitle
                 Text(
                   'Physics-based Pachinko Game',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Colors.white70,
+                    color: GameConstants.mutedColor,
                   ),
                 ),
                 
@@ -125,7 +116,7 @@ class MenuScreen extends StatelessWidget {
                 Text(
                   'Launch balls, hit pegs, score points!',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white60,
+                    color: GameConstants.mutedColor,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -149,57 +140,92 @@ class MenuScreen extends StatelessWidget {
     );
   }
 
+  /// The level picker: twenty tiles in rows of five. A level that has been
+  /// played is rimmed in gold and shows its best score.
   void _showLevelSelect(BuildContext context) {
+    final bestScores = context.read<GameManager>().bestScoresByLevel();
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: GameConstants.surfaceColor,
-        title: const Text('Select Level', style: TextStyle(color: Colors.white)),
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Select Level'),
+        // A fixed box: a dialog asks its content for its natural size, which
+        // a grid cannot give. Four rows of five fit it at a phone's width
         content: SizedBox(
           width: double.maxFinite,
           height: 300,
-          child: GridView.builder(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 4,
-              childAspectRatio: 1,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-            ),
-            itemCount: 20, // Show first 20 levels
-            itemBuilder: (context, index) {
-              final levelNumber = index + 1;
-              return GestureDetector(
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _startGameFromLevel(context, levelNumber);
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: GameConstants.primaryColor,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: GameConstants.secondaryColor),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '$levelNumber',
-                      style: const TextStyle(
-                        color: GameConstants.onPrimaryColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                  ),
+          child: FutureBuilder<Map<int, int>>(
+            future: bestScores,
+            builder: (_, snapshot) {
+              final best = snapshot.data ?? const <int, int>{};
+              return GridView.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 5,
+                  childAspectRatio: 0.8,
+                  crossAxisSpacing: 6,
+                  mainAxisSpacing: 6,
                 ),
+                itemCount: 20,
+                itemBuilder: (_, index) {
+                  final levelNumber = index + 1;
+                  return _levelTile(context, dialogContext, levelNumber, best[levelNumber]);
+                },
               );
             },
           ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Cancel'),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _levelTile(BuildContext context, BuildContext dialogContext, int levelNumber, int? best) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(dialogContext).pop();
+        _startGameFromLevel(context, levelNumber);
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: GameConstants.cabinetColor,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: best != null
+                ? GameConstants.secondaryColor.withValues(alpha: 0.8)
+                : GameConstants.mutedColor.withValues(alpha: 0.35),
+            width: 1.5,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              '$levelNumber',
+              style: const TextStyle(
+                color: GameConstants.inkColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+            if (best != null)
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  groupedThousands(best),
+                  style: const TextStyle(
+                    color: GameConstants.secondaryColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -219,51 +245,26 @@ class MenuScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: GameConstants.surfaceColor,
-        title: const Text('How to Play', style: TextStyle(color: Colors.white)),
-        content: const SingleChildScrollView(
+        title: const Text('How to Play'),
+        content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                '🎯 Objective:',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-              Text(
-                'Score as many points as possible with 20 balls!\n',
-                style: TextStyle(color: Colors.white70),
-              ),
-              Text(
-                '🎮 Controls:',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-              Text(
-                '• Tap and drag to aim your ball\n'
-                '• Release to launch\n'
-                '• Hit pegs to change ball direction\n',
-                style: TextStyle(color: Colors.white70),
-              ),
-              Text(
-                '⭐ Special Features:',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-              Text(
-                '• Gold pegs are special - hit all special pegs to get bonus balls!\n'
-                '• Edge slots give highest points but are hardest to reach\n'
-                '• Center slot gives good points with medium difficulty\n',
-                style: TextStyle(color: Colors.white70),
-              ),
-              Text(
-                '🏆 Scoring:',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-              Text(
-                '• Edge slots: 2000 points\n'
-                '• Center slot: 1000 points\n'
-                '• Other slots: 50-200 points\n',
-                style: TextStyle(color: Colors.white70),
-              ),
+              _heading(Icons.flag, 'Objective'),
+              _body('Score as many points as possible with 20 balls.'),
+              _heading(Icons.touch_app, 'Controls'),
+              _body('• Drag from the launcher: the longer the drag, the more power\n'
+                  '• Release to launch\n'
+                  '• Pegs change the ball\'s direction'),
+              _heading(Icons.auto_awesome, 'Special Features'),
+              _body('• Gold pegs are prizes: hit them all for bonus balls\n'
+                  '• Edge slots give the most points and are the hardest to reach\n'
+                  '• The centre slot gives good points'),
+              _heading(Icons.emoji_events, 'Scoring'),
+              _body('• Edge slots: 2000 points\n'
+                  '• Centre slot: 1000 points\n'
+                  '• Other slots: 50 to 200 points'),
             ],
           ),
         ),
@@ -276,6 +277,24 @@ class MenuScreen extends StatelessWidget {
       ),
     );
   }
+
+  /// A section heading in How to Play: an icon from the icon font, not an
+  /// emoji, and its title.
+  Widget _heading(IconData icon, String title) => Padding(
+        padding: const EdgeInsets.only(top: 12, bottom: 4),
+        child: Row(
+          children: [
+            Icon(icon, size: 18, color: GameConstants.primaryColor),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: const TextStyle(color: GameConstants.inkColor, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      );
+
+  Widget _body(String text) => Text(text, style: const TextStyle(color: GameConstants.mutedColor));
 
   void _showHighScores(BuildContext context) {
     Navigator.of(context).push(
@@ -325,18 +344,16 @@ class _MenuButton extends StatelessWidget {
         icon: Icon(icon),
         label: Text(title),
         style: ElevatedButton.styleFrom(
-          backgroundColor: isPrimary 
-              ? GameConstants.primaryColor 
-              : GameConstants.surfaceColor,
-          foregroundColor: isPrimary
-              ? GameConstants.onPrimaryColor
-              : GameConstants.inkColor,
-          elevation: isPrimary ? 8 : 4,
-          shadowColor: isPrimary 
-              ? GameConstants.primaryColor.withOpacity(0.5) 
-              : Colors.black.withOpacity(0.3),
+          backgroundColor: isPrimary ? GameConstants.primaryColor : GameConstants.surfaceColor,
+          foregroundColor: isPrimary ? GameConstants.onPrimaryColor : GameConstants.inkColor,
+          elevation: isPrimary ? 8 : 0,
+          shadowColor: GameConstants.primaryColor.withValues(alpha: 0.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(25),
+            // Dark glass: a hairline rim in place of a shadow
+            side: isPrimary
+                ? BorderSide.none
+                : BorderSide(color: GameConstants.mutedColor.withValues(alpha: 0.35), width: 1.5),
           ),
         ),
       ),

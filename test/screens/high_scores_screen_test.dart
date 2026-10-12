@@ -64,8 +64,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Then
-      expect(find.text('5000 points'), findsOneWidget);
-      expect(find.text('7000 points'), findsOneWidget);
+      expect(find.text('5,000 points'), findsOneWidget);
+      expect(find.text('7,000 points'), findsOneWidget);
       expect(find.byType(ListTile), findsNWidgets(2));
     });
 
@@ -113,15 +113,15 @@ void main() {
 
       // First item should be 9000 points
       final firstTitle = (listTiles[0].title as Text).data;
-      expect(firstTitle, contains('9000'));
+      expect(firstTitle, contains('9,000'));
 
       // Second item should be 5000 points
       final secondTitle = (listTiles[1].title as Text).data;
-      expect(secondTitle, contains('5000'));
+      expect(secondTitle, contains('5,000'));
 
       // Third item should be 3000 points
       final thirdTitle = (listTiles[2].title as Text).data;
-      expect(thirdTitle, contains('3000'));
+      expect(thirdTitle, contains('3,000'));
     });
 
     testWidgets('givenScoreEntry_whenRendered_thenShowsLevelScoreTimestamp',
@@ -142,8 +142,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Then
-      expect(find.text('5'), findsOneWidget); // Level in CircleAvatar
-      expect(find.text('8500 points'), findsOneWidget); // Score
+      expect(find.textContaining('Level 5'), findsOneWidget); // Level, beside the date
+      expect(find.text('8,500 points'), findsOneWidget); // Score
       expect(find.textContaining('11/17/2025'), findsOneWidget); // Timestamp
     });
   });

@@ -11,6 +11,7 @@ import 'package:pachinko_game/screens/game_screen.dart';
 import 'package:pachinko_game/services/game_manager.dart';
 import 'package:pachinko_game/services/storage_service.dart';
 import 'package:pachinko_game/utils/game_theme.dart';
+import 'package:pachinko_game/widgets/game_card.dart';
 import 'package:pachinko_game/widgets/round_summary_panel.dart';
 
 /// The round summary: what the panel shows for a given round, and that the
@@ -99,10 +100,10 @@ void main() {
   });
 
   test('numbers are grouped in thousands', () {
-    expect(RoundSummaryPanel.grouped(0), '0');
-    expect(RoundSummaryPanel.grouped(550), '550');
-    expect(RoundSummaryPanel.grouped(8550), '8,550');
-    expect(RoundSummaryPanel.grouped(1234567), '1,234,567');
+    expect(groupedThousands(0), '0');
+    expect(groupedThousands(550), '550');
+    expect(groupedThousands(8550), '8,550');
+    expect(groupedThousands(1234567), '1,234,567');
   });
 
   group('On the game screen', () {

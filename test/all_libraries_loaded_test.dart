@@ -39,6 +39,7 @@ import 'package:pachinko_game/widgets/achievement_toast_overlay.dart';
 import 'package:pachinko_game/widgets/board_effects.dart';
 import 'package:pachinko_game/widgets/board_static_layer.dart';
 import 'package:pachinko_game/widgets/floating_text.dart';
+import 'package:pachinko_game/widgets/game_card.dart';
 import 'package:pachinko_game/widgets/pachinko_board.dart';
 import 'package:pachinko_game/widgets/round_summary_panel.dart';
 

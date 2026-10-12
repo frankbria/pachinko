@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/round_summary.dart';
 import '../models/slot.dart';
 import '../utils/constants.dart';
+import 'game_card.dart';
 
 /// The panel shown over the board when the last ball lands: what the round
 /// scored and how, and where to go next.
@@ -18,11 +19,6 @@ class RoundSummaryPanel extends StatelessWidget {
     required this.onReplay,
     required this.onNextLevel,
   });
-
-  /// 8550 as "8,550".
-  static String grouped(int number) => number
-      .toString()
-      .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (match) => '${match[1]},');
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +44,7 @@ class RoundSummaryPanel extends StatelessWidget {
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
-              grouped(summary.score),
+              groupedThousands(summary.score),
               style: text.displaySmall?.copyWith(
                 color: GameConstants.secondaryColor,
                 fontWeight: FontWeight.bold,
@@ -98,7 +94,7 @@ class RoundSummaryPanel extends StatelessWidget {
           ),
           Text('× ${tier.balls}', style: text.bodyMedium?.copyWith(color: GameConstants.inkColor)),
           const Spacer(),
-          Text(grouped(tier.points), style: text.bodyMedium?.copyWith(color: GameConstants.inkColor)),
+          Text(groupedThousands(tier.points), style: text.bodyMedium?.copyWith(color: GameConstants.inkColor)),
         ],
       ),
     );

@@ -127,6 +127,17 @@ class MockGameManager extends _i1.Mock implements _i5.GameManager {
       );
 
   @override
+  _i8.Future<Map<int, int>> bestScoresByLevel({int? levels = 20}) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #bestScoresByLevel,
+          [],
+          {#levels: levels},
+        ),
+        returnValue: _i8.Future<Map<int, int>>.value(<int, int>{}),
+      ) as _i8.Future<Map<int, int>>);
+
+  @override
   _i8.Future<void> setSingleBallLaunch(bool? value) => (super.noSuchMethod(
         Invocation.method(
           #setSingleBallLaunch,

@@ -25,6 +25,8 @@ void main() {
 
     // Stub GameManager properties needed by GameScreen
     when(mockGameManager.gameState).thenReturn(mockGameState);
+    // Read by the level picker for the best score on each level
+    when(mockGameManager.bestScoresByLevel()).thenAnswer((_) async => const <int, int>{});
     when(mockGameManager.ballLauncher).thenReturn(mockBallLauncher);
 
     // Stub GameState properties
@@ -211,7 +213,7 @@ void main() {
       // Verify dialog appears with instructions
       expect(find.byType(AlertDialog), findsOneWidget);
       expect(find.text('How to Play'), findsNWidgets(2)); // Title + button text
-      expect(find.text('🎯 Objective:'), findsOneWidget);
+      expect(find.text('Objective'), findsOneWidget);
     });
 
     testWidgets('givenInstructionsDialog_whenRead_thenPrizePegsAreCalledGold',
@@ -315,10 +317,10 @@ void main() {
       await tester.pumpAndSettle();
       
       // Verify all major sections are present
-      expect(find.text('🎯 Objective:'), findsOneWidget);
-      expect(find.text('🎮 Controls:'), findsOneWidget);
-      expect(find.text('⭐ Special Features:'), findsOneWidget);
-      expect(find.text('🏆 Scoring:'), findsOneWidget);
+      expect(find.text('Objective'), findsOneWidget);
+      expect(find.text('Controls'), findsOneWidget);
+      expect(find.text('Special Features'), findsOneWidget);
+      expect(find.text('Scoring'), findsOneWidget);
     });
 
     /// GIVEN instructions dialog is open

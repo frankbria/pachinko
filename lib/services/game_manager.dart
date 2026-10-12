@@ -87,6 +87,19 @@ class GameManager extends ChangeNotifier {
     }
   }
 
+  /// The best score stored for each level that has been played, for the
+  /// level picker. Empty when there is no storage.
+  Future<Map<int, int>> bestScoresByLevel({int levels = 20}) async {
+    final storage = _storageService;
+    if (storage == null) return const {};
+    final best = <int, int>{};
+    for (int level = 1; level <= levels; level++) {
+      final score = await storage.getBestScore(level);
+      if (score != null) best[level] = score.score;
+    }
+    return best;
+  }
+
   /// Sets whether a ball may only be launched once no ball is in play,
   /// applies it to the game at once and saves it for the next start.
   Future<void> setSingleBallLaunch(bool value) async {
