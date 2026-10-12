@@ -213,6 +213,18 @@ void main() {
       expect(find.text('How to Play'), findsNWidgets(2)); // Title + button text
       expect(find.text('🎯 Objective:'), findsOneWidget);
     });
+
+    testWidgets('givenInstructionsDialog_whenRead_thenPrizePegsAreCalledGold',
+      (WidgetTester tester) async {
+      // Prize pegs are gold on the board; the text once called them orange
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+
+      await tester.tap(find.text('How to Play'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Gold pegs'), findsOneWidget);
+      expect(find.textContaining(RegExp('orange', caseSensitive: false)), findsNothing);
+    });
   });
 
   group('MenuScreen Level Select Dialog', () {

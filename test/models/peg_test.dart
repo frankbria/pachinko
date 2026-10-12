@@ -454,27 +454,17 @@ void main() {
       expect(renderColor.opacity, equals(1.0)); // Full opacity
     });
 
-    /// Validates special peg visual glow effect
-    ///
-    /// Highlighted special pegs should have a yellow tint (Color.lerp with yellow)
-    /// to draw player attention and indicate bonus potential.
-    test('given highlighted special peg, when renderColor accessed, then returns yellow-tinted color', () {
+    /// A prize peg is gold and nothing else is. Its shimmer shows in the halo
+    /// the board draws around it, not in the colour of the peg itself.
+    test('given an unhit prize peg mid-shimmer, when renderColor accessed, then it is the prize gold', () {
       // Given
-      final peg = Peg(
-        position: Vector2(100, 100),
-        type: PegType.special,
-        isHighlighted: true,
-        hasBeenHit: false,
-      );
-
-      // When
-      final renderColor = peg.renderColor;
+      final peg = Peg(position: Vector2(100, 100), type: PegType.special);
+      peg.updateAnimation(0.5);
+      expect(peg.shimmerIntensity, greaterThan(0.0));
 
       // Then
-      // Color.lerp between the prize gold and yellow (0xFFFFFF00) at 0.5
-      // Should produce a yellow-tinted gold
-      expect(renderColor, isNot(equals(GameConstants.specialPegColor)));
-      expect(renderColor.opacity, equals(1.0)); // Full opacity
+      expect(peg.renderColor, equals(GameConstants.specialPegColor));
+      expect(peg.isCollected, isFalse);
     });
 
     test('given unhighlighted special peg, when renderColor accessed, then returns normal special color', () {
@@ -497,30 +487,51 @@ void main() {
       expect(renderColor.opacity, equals(1.0));
     });
 
-    test('given hit special peg with completed animation, when renderColor accessed, then returns normal special color', () {
-      // Given
-      final peg = Peg(
-        position: Vector2(100, 100),
-        type: PegType.special,
-      );
+    test('given a prize peg that has been hit, when its flash has finished, then it is dimmed to dark gold', () {
+      // A collected peg has to look different from one that is still to win
+      final peg = Peg(position: Vector2(100, 100), type: PegType.special);
 
-      // Hit the peg (this will unhighlight it)
       peg.onHit();
-
-      // Simulate animation completion (1 second = 60 frames at 60 FPS)
       for (int i = 0; i < 60; i++) {
-        peg.updateAnimation(1/60);
+        peg.updateAnimation(1 / 60);
       }
 
-      // When
-      final renderColor = peg.renderColor;
+      expect(peg.isCollected, isTrue);
+      expect(peg.renderColor, equals(Peg.collectedPrizeColor));
+      expect(
+        peg.renderColor.computeLuminance(),
+        lessThan(GameConstants.specialPegColor.computeLuminance() * 0.5),
+      );
+    });
 
-      // Then
-      // After animation completes, returns to the normal prize color (not dimmed)
-      expect(renderColor, equals(GameConstants.specialPegColor));
-      expect(renderColor.opacity, equals(1.0)); // Full opacity
-      expect(peg.isHighlighted, isFalse); // No longer highlighted
-      expect(peg.hasBeenHit, isTrue); // Marked as hit
+    test('given a prize peg at the moment it is hit, when renderColor accessed, then it flashes towards the ink colour', () {
+      final peg = Peg(position: Vector2(100, 100), type: PegType.special);
+
+      peg.onHit();
+
+      expect(
+        peg.renderColor,
+        equals(Color.lerp(Peg.collectedPrizeColor, GameConstants.inkColor, 0.7)),
+      );
+    });
+
+    test('given a collected prize peg, when reset, then it is gold and uncollected again', () {
+      final peg = Peg(position: Vector2(100, 100), type: PegType.special)..onHit();
+
+      peg.reset();
+
+      expect(peg.isCollected, isFalse);
+      expect(peg.renderColor, equals(GameConstants.specialPegColor));
+    });
+
+    test('given a brass pin that has been hit, then it is never collected and returns to brass', () {
+      final peg = Peg(position: Vector2(100, 100))..onHit();
+      for (int i = 0; i < 60; i++) {
+        peg.updateAnimation(1 / 60);
+      }
+
+      expect(peg.isCollected, isFalse);
+      expect(peg.renderColor, equals(GameConstants.normalPegColor));
     });
   });
 
@@ -598,7 +609,7 @@ void main() {
       expect(renderColorStart.g, greaterThan(GameConstants.normalPegColor.g));
     });
 
-    test('given special peg hit, when animation completes, then returns to normal color not special', () {
+    test('given special peg hit, when animation completes, then it stays dimmed as a collected prize', () {
       // Given
       final peg = Peg(
         position: Vector2(100, 100),
@@ -616,7 +627,7 @@ void main() {
 
       // Then
       expect(peg.isHighlighted, isFalse); // No longer highlighted
-      expect(peg.renderColor, equals(GameConstants.specialPegColor));
+      expect(peg.renderColor, equals(Peg.collectedPrizeColor));
       expect(peg.hasBeenHit, isTrue);
     });
 
