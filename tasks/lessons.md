@@ -225,3 +225,9 @@ Patterns learned the hard way on this repo. Add an entry after any correction.
 - **A flag that an animation clears is not a record of what happened.** The summary read `specialBonusTriggered` for its bonus line. That flag belongs to the announcement and clears after 2.5 seconds, so any round that went on longer reported no bonus. The pegs keep the fact (every prize peg collected); the summary reads them.
 - **State that lives on an object is cleared by that object's reset.** `Slot.glow` was put out by a loop in `GameState`, and `Slot.reset()` left it lit. The slot clears it now, as a peg clears its own hit state, and the loop is gone: one place, not two.
 - **A long mutation run checks that every mutation applies before it starts.** After the review fixes one entry's text no longer matched, and the script stopped ten minutes in. It now asserts all of them up front and can start from a given entry.
+
+## 2026-10-11 — the PR for issue #31 (the launcher)
+
+- **Measure the empty space before choosing where a label goes.** "Beside the channel, clear of the pegs" had no obvious place: the channel is 10 pixels from the board's edge. Generating 300 levels gave the peg field's real extent (no peg edge below y = 412 or right of x = 342), and the label went left of the launch box, below that line. The test then checks every power against every level's pegs.
+- **A ramp through three colours is two gradients stacked.** The channel's light is cyan to violet in its lower half and violet to magenta in its upper half, each a two-colour gradient, which also keeps to the rule the CI emulator imposes.
+- **A held drag is how to screenshot a state that only exists mid-gesture.** `tester.startGesture`, `moveTo`, capture, then `up()`; the power meter is only drawn while the board thinks a drag is in progress.
