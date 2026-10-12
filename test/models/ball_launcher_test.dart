@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pachinko_game/models/ball.dart';
 import 'package:pachinko_game/models/ball_launcher.dart';
 import 'package:pachinko_game/utils/constants.dart';
 import 'dart:math' as math;
@@ -45,281 +46,23 @@ void main() {
   });
 
   group('Launch Path Generation -', () {
-    /// Tests launch path structure and segment count.
-    ///
-    /// Path consists of 3 sections:
-    /// - Straight path up channel: 21 points (pathSegments=20, i from 0 to 20)
-    /// - Quarter-circle curve: 15 points (curveSegments=15, i from 1 to 15)
-    /// - Entry point to peg field: 1 point
-    /// Total: 37 points (21 + 15 + 1)
-    test('given launcher, when path generated, then contains exactly 37 points',
-        () {
-      // Given
-      final launcher = BallLauncher();
-
-      // When
-      final path = launcher.getLaunchPath();
-
-      // Then
-      expect(path.length, equals(37)); // 21 straight + 15 curve + 1 entry
-    });
-
+    /// The launcher carries the ball up the channel and nowhere else. It used
+    /// to carry it on round a quarter circle that was not the dome, which
+    /// took the ball outside the boundary (#96). From the top of the channel
+    /// the physics has the ball.
     test(
-        'given launcher, when path generated, then starts at bottom-right launch position',
+        'given launcher, when path generated, then it runs straight up the channel from the launch position to the channel top',
         () {
-      // Given
-      final launcher = BallLauncher();
+      final path = BallLauncher().getLaunchPath();
 
-      // When
-      final path = launcher.getLaunchPath();
-      final startPoint = path.first;
-
-      // Then
-      expect(startPoint.x, equals(GameConstants.ballLaunchX));
-      expect(startPoint.y, equals(GameConstants.ballLaunchY));
-    });
-
-    /// Tests path end point calculation.
-    ///
-    /// Final point is entry to peg field after quarter-circle curve.
-    /// Position: (curveStartX - curveRadius, curveEndY - curveRadius)
-    /// With curveRadius = 40px
-    test(
-        'given launcher, when path generated, then ends at peg field entry point',
-        () {
-      // Given
-      final launcher = BallLauncher();
-      const curveRadius = 40.0;
-
-      // When
-      final path = launcher.getLaunchPath();
-      final endPoint = path.last;
-
-      // Then
-      const expectedX = GameConstants.ballLaunchX - curveRadius;
-      const expectedY = GameConstants.launchChannelEndY - curveRadius;
-      expect(endPoint.x, closeTo(expectedX, 0.01));
-      expect(endPoint.y, closeTo(expectedY, 0.01));
-    });
-
-    test(
-        'given launcher, when getLaunchPath called, then returns immutable copy',
-        () {
-      // Given
-      final launcher = BallLauncher();
-
-      // When
-      final path1 = launcher.getLaunchPath();
-      final path2 = launcher.getLaunchPath();
-
-      // Then
-      expect(path1, isNot(same(path2))); // Different list instances
-      expect(path1.length, equals(path2.length)); // Same content
-    });
-
-    /// Tests vertical progression of straight path section.
-    ///
-    /// First 21 points should form straight vertical line from bottom to top.
-    /// All x-coordinates should equal ballLaunchX (constant).
-    /// Y-coordinates should decrease monotonically (moving upward).
-    test(
-        'given launcher, when path generated, then first 21 points form straight vertical path',
-        () {
-      // Given
-      final launcher = BallLauncher();
-
-      // When
-      final path = launcher.getLaunchPath();
-      final straightPathPoints = path.sublist(0, 21);
-
-      // Then - all x coordinates should be constant
-      for (final point in straightPathPoints) {
-        expect(point.x, equals(GameConstants.ballLaunchX));
+      expect(path.first.x, GameConstants.ballLaunchX);
+      expect(path.first.y, GameConstants.ballLaunchY);
+      expect(path.last.x, GameConstants.ballLaunchX);
+      expect(path.last.y, GameConstants.launchChannelEndY);
+      for (int i = 1; i < path.length; i++) {
+        expect(path[i].x, GameConstants.ballLaunchX, reason: 'point $i');
+        expect(path[i].y, lessThan(path[i - 1].y), reason: 'point $i');
       }
-
-      // Then - y coordinates should decrease monotonically (moving up)
-      for (int i = 0; i < straightPathPoints.length - 1; i++) {
-        expect(
-            straightPathPoints[i].y, greaterThan(straightPathPoints[i + 1].y));
-      }
-    });
-  });
-
-  group('Curve Mathematics Validation -', () {
-    /// Tests quarter-circle curve geometry validation.
-    ///
-    /// Curve section (points 21-35, indices 21-35 inclusive, 15 points) forms quarter-circle:
-    /// - Radius: 40px
-    /// - Center: (ballLaunchX - 40, launchChannelEndY)
-    /// - Angle range: 0 to π/2 radians (90 degrees)
-    /// - Direction: right to left (x decreases), top to bottom (y decreases)
-    ///
-    /// Parametric formula:
-    /// x = curveStartX - curveRadius * (1 - cos(angle))
-    /// y = curveEndY - curveRadius * sin(angle)
-    ///
-    /// All curve points must satisfy circle equation:
-    /// (x - cx)² + (y - cy)² = r²
-    /// Tolerance: ±1.0px for floating-point precision
-    test(
-        'given launcher, when path generated, then curve points satisfy circle equation',
-        () {
-      // Given
-      final launcher = BallLauncher();
-      const curveRadius = 40.0;
-      const curveStartX = GameConstants.ballLaunchX;
-      const curveEndY = GameConstants.launchChannelEndY;
-      const centerX = curveStartX - curveRadius;
-      const centerY = curveEndY;
-
-      // When
-      final path = launcher.getLaunchPath();
-      final curvePoints = path.sublist(21, 36); // Points 21-35 (15 points)
-
-      // Then - all curve points should satisfy circle equation: (x-cx)² + (y-cy)² = r²
-      for (final point in curvePoints) {
-        final dx = point.x - centerX;
-        final dy = point.y - centerY;
-        final distanceSquared = dx * dx + dy * dy;
-        const radiusSquared = curveRadius * curveRadius;
-
-        expect(
-            distanceSquared, closeTo(radiusSquared, 1.0)); // ±1.0px tolerance
-      }
-    });
-
-    /// Tests curve radius consistency.
-    ///
-    /// All curve points should be exactly 40px from curve center.
-    /// This validates the parametric circle formula implementation.
-    test(
-        'given launcher, when path generated, then all curve points are 40px from curve center',
-        () {
-      // Given
-      final launcher = BallLauncher();
-      const curveRadius = 40.0;
-      const curveStartX = GameConstants.ballLaunchX;
-      const curveEndY = GameConstants.launchChannelEndY;
-      const centerX = curveStartX - curveRadius;
-      const centerY = curveEndY;
-
-      // When
-      final path = launcher.getLaunchPath();
-      final curvePoints = path.sublist(21, 36);
-
-      // Then
-      for (final point in curvePoints) {
-        final distance = math.sqrt(
-            math.pow(point.x - centerX, 2) + math.pow(point.y - centerY, 2));
-        expect(distance, closeTo(curveRadius, 0.5)); // ±0.5px tolerance
-      }
-    });
-
-    /// Tests curve angle progression.
-    ///
-    /// Curve should progress through quarter-circle (π/2 radians = 90°).
-    /// First curve point should start at small angle, last near 90° (pointing down).
-    test(
-        'given launcher, when path generated, then curve spans quarter-circle angle',
-        () {
-      // Given
-      final launcher = BallLauncher();
-      const curveRadius = 40.0;
-      const curveStartX = GameConstants.ballLaunchX;
-      const curveEndY = GameConstants.launchChannelEndY;
-      const centerX = curveStartX - curveRadius;
-      const centerY = curveEndY;
-
-      // When
-      final path = launcher.getLaunchPath();
-      final firstCurvePoint = path[21]; // First curve point
-      final lastCurvePoint = path[35]; // Last curve point
-
-      // Then - first point should be near 0° (small negative angle in screen coords)
-      final firstAngle = math
-          .atan2(firstCurvePoint.y - centerY, firstCurvePoint.x - centerX)
-          .abs();
-      expect(firstAngle, lessThan(0.3)); // Near 0 radians (small angle)
-
-      // Then - last point should be near 90° (angle ≈ -π/2 due to screen coords)
-      final lastAngle = math
-          .atan2(lastCurvePoint.y - centerY, lastCurvePoint.x - centerX)
-          .abs();
-      expect(
-          lastAngle, closeTo(math.pi / 2, 0.2)); // Near π/2 radians magnitude
-    });
-
-    /// Tests curve direction (right to left, top to bottom).
-    ///
-    /// X-coordinates should decrease (moving left).
-    /// Y-coordinates should decrease (moving down, as y-axis increases downward).
-    test(
-        'given launcher, when path generated, then curve moves right-to-left and top-to-bottom',
-        () {
-      // Given
-      final launcher = BallLauncher();
-
-      // When
-      final path = launcher.getLaunchPath();
-      final curvePoints = path.sublist(21, 36);
-
-      // Then - x should decrease (moving left)
-      final firstX = curvePoints.first.x;
-      final lastX = curvePoints.last.x;
-      expect(lastX, lessThan(firstX));
-
-      // Then - y should decrease (moving down/toward more negative)
-      final firstY = curvePoints.first.y;
-      final lastY = curvePoints.last.y;
-      expect(lastY, lessThan(firstY));
-    });
-
-    /// Tests curve smoothness by checking segment spacing.
-    ///
-    /// Consecutive curve points should be roughly equidistant.
-    /// This validates uniform angle distribution across curve.
-    test(
-        'given launcher, when path generated, then curve segments have roughly uniform spacing',
-        () {
-      // Given
-      final launcher = BallLauncher();
-
-      // When
-      final path = launcher.getLaunchPath();
-      final curvePoints = path.sublist(21, 36);
-
-      // Calculate distances between consecutive curve points
-      final distances = <double>[];
-      for (int i = 0; i < curvePoints.length - 1; i++) {
-        final distance = (curvePoints[i] - curvePoints[i + 1]).length;
-        distances.add(distance);
-      }
-
-      // Then - calculate mean and check all distances are within 50% of mean
-      final meanDistance = distances.reduce((a, b) => a + b) / distances.length;
-      for (final distance in distances) {
-        expect(distance, closeTo(meanDistance, meanDistance * 0.5));
-      }
-    });
-
-    /// Tests curve connection to straight path.
-    ///
-    /// Point at index 20 (last straight path point) should be near point at index 21 (first curve point).
-    /// This validates smooth transition from straight path to curve.
-    test(
-        'given launcher, when path generated, then straight path connects smoothly to curve',
-        () {
-      // Given
-      final launcher = BallLauncher();
-
-      // When
-      final path = launcher.getLaunchPath();
-      final lastStraightPoint = path[20];
-      final firstCurvePoint = path[21];
-
-      // Then - points should be close (smooth transition)
-      final distance = (lastStraightPoint - firstCurvePoint).length;
-      expect(distance, lessThan(20.0)); // Should be reasonable segment length
     });
   });
 
@@ -488,174 +231,83 @@ void main() {
     });
   });
 
-  group('Release Velocity Calculation -', () {
-    /// Tests release velocity calculation based on path direction.
-    ///
-    /// NEW FORMULA (direction-based):
-    /// direction = (last - secondToLast).normalized()  // Direction from final path segment
-    /// powerMultiplier = 0.5 + (power / maxPower) * 1.0  // Range: 0.5 to 1.5
-    /// baseSpeed = 200.0 * powerMultiplier  // Range: 100 to 300 pixels/second
-    /// finalVelocity = direction * baseSpeed
-    ///
-    /// Expected behavior:
-    /// - Ball should have leftward (negative X) velocity from curve direction
-    /// - Ball should have downward (positive Y) velocity from curve direction
-    /// - Velocity magnitude should scale with launch power
+  group('Release -', () {
+    /// At the top of the channel the ball is let go moving straight up, at a
+    /// speed set by the launch power. Where it comes down is then a matter of
+    /// how far that speed carries it along the dome.
+    Ball released(double power, {double step = 1 / 60}) {
+      final launcher = BallLauncher()
+        ..startCharging()
+        ..updateCharging(power);
+      final ball = launcher.launch()!;
+      for (int i = 0; i < 10000 && !launcher.updateBallPath(step); i++) {}
+      expect(launcher.phase, LaunchPhase.released);
+      return ball;
+    }
+
     test(
-        'given zero power launch, when ball released, then uses minimum velocity multiplier 0.5',
+        'given any power, when the ball is released, then it is at the top of the channel moving straight up',
         () {
-      // Given
-      final launcher = BallLauncher();
-      launcher.startCharging();
-      launcher.updateCharging(0.0);
-      launcher.launch();
+      for (final power in [0.0, 37.0, 100.0]) {
+        final ball = released(power);
 
-      // When - complete path to trigger release
-      bool isReleased = false;
-      for (int i = 0; i < 100; i++) {
-        isReleased = launcher.updateBallPath(0.1);
-        if (isReleased) break;
+        expect(ball.position.x, GameConstants.ballLaunchX,
+            reason: 'power $power');
+        expect(ball.position.y, GameConstants.launchChannelEndY,
+            reason: 'power $power');
+        expect(ball.velocity.x, 0.0, reason: 'power $power');
+        expect(ball.velocity.y, lessThan(0), reason: 'power $power');
       }
-
-      // Then
-      expect(isReleased, isTrue);
-      final ball = launcher.currentBall;
-      expect(ball, isNotNull);
-
-      // Velocity should follow path curve direction (leftward + downward)
-      // New formula: baseSpeed = 180 + (0 * 100) = 180
-      // With easing: finalSpeed = 180 * 0.85 = 153 px/s
-      expect(ball!.velocity.length, closeTo(153.0, 10.0));
-      expect(ball.velocity.x, lessThan(0)); // Leftward
-      expect(ball.velocity.y,
-          lessThan(0)); // Downward (negative Y in screen coords means down)
     });
 
     test(
-        'given full power launch, when ball released, then uses maximum velocity multiplier 1.5',
+        'given no power, half power and full power, when released, then the speed runs from the least to the most in proportion',
         () {
-      // Given
-      final launcher = BallLauncher();
-      launcher.startCharging();
-      launcher.updateCharging(100.0);
-      launcher.launch();
-
-      // When
-      bool isReleased = false;
-      for (int i = 0; i < 100; i++) {
-        isReleased = launcher.updateBallPath(0.1);
-        if (isReleased) break;
-      }
-
-      // Then
-      expect(isReleased, isTrue);
-      final ball = launcher.currentBall;
-      expect(ball, isNotNull);
-
-      // New formula: baseSpeed = 180 + (1.0 * 100) = 280
-      // With easing: finalSpeed = 280 * 1.0 = 280 px/s
-      expect(ball!.velocity.length, closeTo(280.0, 10.0));
-      expect(ball.velocity.x, lessThan(0)); // Leftward
-      expect(ball.velocity.y, lessThan(0)); // Downward
+      expect(released(0).velocity.length, GameConstants.launchSpeedMin);
+      expect(released(100).velocity.length, GameConstants.launchSpeedMax);
+      expect(
+          released(50).velocity.length,
+          closeTo(
+              (GameConstants.launchSpeedMin + GameConstants.launchSpeedMax) / 2,
+              0.001));
     });
 
     test(
-        'given mid power launch, when ball released, then uses mid-range velocity',
+        'given a ball in the channel, when it travels, then it moves at the speed it will be released with',
         () {
-      // Given
-      final launcher = BallLauncher();
-      launcher.startCharging();
-      launcher.updateCharging(50.0);
-      launcher.launch();
+      final launcher = BallLauncher()
+        ..startCharging()
+        ..updateCharging(100);
+      final ball = launcher.launch()!;
+      launcher.updateBallPath(1 / 60);
+      final before = ball.position.clone();
 
-      // When
-      bool isReleased = false;
-      for (int i = 0; i < 100; i++) {
-        isReleased = launcher.updateBallPath(0.1);
-        if (isReleased) break;
-      }
+      launcher.updateBallPath(1 / 60);
 
-      // Then
-      final ball = launcher.currentBall;
-      expect(ball, isNotNull);
-
-      // New formula: baseSpeed = 180 + (0.5 * 100) = 230
-      // With easing (powerRatio 0.5): easedPower ≈ 0.5, finalSpeed ≈ 212.75 px/s
-      expect(ball!.velocity.length, closeTo(212.75, 10.0));
-      expect(ball.velocity.x, lessThan(0)); // Leftward
-      expect(ball.velocity.y, lessThan(0)); // Downward
+      expect((ball.position - before).length * 60,
+          closeTo(GameConstants.launchSpeedMax, 0.01));
     });
 
     test(
-        'given different power levels, when ball released, then velocity magnitude increases with power',
+        'given the least launch speed, then it is enough to leave the channel, and the most is enough to ride the dome over its top',
         () {
-      // Given - launch with low power
-      final launcher1 = BallLauncher();
-      launcher1.startCharging();
-      launcher1.updateCharging(25.0);
-      launcher1.launch();
-      for (int i = 0; i < 100; i++) {
-        if (launcher1.updateBallPath(0.1)) break;
-      }
-      final lowPowerVelocity = launcher1.currentBall!.velocity.length;
+      // The dome is close to a parabola 105 high over a half-width of 180. A
+      // ball rides it while its sideways speed exceeds that of a projectile
+      // following the same curve; it loses a little under a third of its
+      // speed turning onto the dome, and height takes more on the way up
+      const sag = GameConstants.topCurveStartY -
+          (GameConstants.topCurveStartY + GameConstants.topCurveControlY) / 2;
+      const halfWidth =
+          (GameConstants.topCurveEndX - GameConstants.topCurveStartX) / 2;
+      final rideSpeed =
+          math.sqrt(GameConstants.gravity * halfWidth * halfWidth / (2 * sag));
 
-      // Given - launch with high power
-      final launcher2 = BallLauncher();
-      launcher2.startCharging();
-      launcher2.updateCharging(75.0);
-      launcher2.launch();
-      for (int i = 0; i < 100; i++) {
-        if (launcher2.updateBallPath(0.1)) break;
-      }
-      final highPowerVelocity = launcher2.currentBall!.velocity.length;
-
-      // Then - higher power should result in higher velocity magnitude
-      expect(highPowerVelocity, greaterThan(lowPowerVelocity));
-    });
-
-    test(
-        'given any power launch, when ball released, then velocity has both X and Y components',
-        () {
-      // Given
-      final launcher = BallLauncher();
-      launcher.startCharging();
-      launcher.updateCharging(50.0);
-      launcher.launch();
-
-      // When
-      for (int i = 0; i < 100; i++) {
-        if (launcher.updateBallPath(0.1)) break;
-      }
-
-      // Then - verify velocity is not purely vertical (both components non-zero)
-      final ball = launcher.currentBall;
-      expect(ball, isNotNull);
-      expect(ball!.velocity.x.abs(),
-          greaterThan(0.1)); // Significant horizontal component
-      expect(ball.velocity.y.abs(),
-          greaterThan(0.1)); // Significant vertical component
-    });
-
-    test(
-        'given ball released, when velocity calculated, then follows curve direction leftward and downward',
-        () {
-      // Given
-      final launcher = BallLauncher();
-      launcher.startCharging();
-      launcher.updateCharging(50.0);
-      launcher.launch();
-
-      // When
-      for (int i = 0; i < 100; i++) {
-        if (launcher.updateBallPath(0.1)) break;
-      }
-
-      // Then
-      final ball = launcher.currentBall;
-      expect(ball, isNotNull);
-      // Curve goes from right to left (negative X) and top to bottom (negative Y in screen coords)
-      expect(ball!.velocity.x, lessThan(0)); // Leftward trajectory
-      expect(ball.velocity.y, lessThan(0)); // Downward trajectory
+      expect(
+          GameConstants.launchSpeedMax * 0.72,
+          greaterThan(math
+              .sqrt(rideSpeed * rideSpeed + 2 * GameConstants.gravity * sag)));
+      expect(GameConstants.launchSpeedMin, greaterThan(300));
+      expect(GameConstants.launchSpeedMin, lessThan(rideSpeed));
     });
   });
 

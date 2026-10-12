@@ -54,6 +54,8 @@ void main() {
     await tester.ensureVisible(find.text(label));
     await tester.tap(find.text(label));
     await settle(tester);
+    // For the picture: a toast would lie over what the screen shows
+    await toastsGone(tester);
     await capture(tester, name);
     await tester.pageBack();
     await settle(tester);

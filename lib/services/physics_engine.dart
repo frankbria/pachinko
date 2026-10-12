@@ -66,67 +66,46 @@ class PhysicsEngine {
       ball.velocity.x = -ball.velocity.x * _damping;
     }
 
-    // Top curved boundary collision - quadratic bezier curve
-    // Starts at x=30 to match visual rendering
-    const topBoundaryStartX = GameConstants.topCurveStartX;
-    const topBoundaryStartY =
-        GameConstants.topCurveStartY; // Matches left field barrier top
-    const topBoundaryControlX = GameConstants.topCurveControlX;
-    const topBoundaryControlY = GameConstants.topCurveControlY;
-    const topBoundaryEndX = GameConstants.topCurveEndX;
-    const topBoundaryEndY = GameConstants.topCurveEndY;
+    // The dome: a quadratic bezier over the top of the field. A ball that
+    // reaches it is guided along its underside, not thrown back: the dome
+    // takes away the part of the ball's velocity that points into it and
+    // leaves the rest, so a fast ball rides the curve and a slow one drops
+    // away where gravity outweighs its speed
+    const startX = GameConstants.topCurveStartX;
+    const startY = GameConstants.topCurveStartY;
+    const controlX = GameConstants.topCurveControlX;
+    const controlY = GameConstants.topCurveControlY;
+    const endX = GameConstants.topCurveEndX;
+    const endY = GameConstants.topCurveEndY;
 
-    // Check if ball is in the region of the curved boundary
-    if (ball.position.x >= topBoundaryStartX &&
-        ball.position.x <= topBoundaryEndX) {
-      // Calculate t parameter for the bezier curve based on x position
-      final t = (ball.position.x - topBoundaryStartX) /
-          (topBoundaryEndX - topBoundaryStartX);
+    if (ball.position.x >= startX && ball.position.x <= endX) {
+      final t = (ball.position.x - startX) / (endX - startX);
+      // B(t) = (1-t)²P₀ + 2(1-t)tP₁ + t²P₂, and its derivative
+      final curveY = (1 - t) * (1 - t) * startY +
+          2 * (1 - t) * t * controlY +
+          t * t * endY;
+      final tangentX =
+          2 * (1 - t) * (controlX - startX) + 2 * t * (endX - controlX);
+      final tangentY =
+          2 * (1 - t) * (controlY - startY) + 2 * t * (endY - controlY);
+      final tangentLength =
+          math.sqrt(tangentX * tangentX + tangentY * tangentY);
+      // The normal that points down into the field
+      final normalX = -tangentY / tangentLength;
+      final normalY = tangentX / tangentLength;
 
-      // Quadratic bezier formula: B(t) = (1-t)²P₀ + 2(1-t)tP₁ + t²P₂
-      final curveY = (1 - t) * (1 - t) * topBoundaryStartY +
-          2 * (1 - t) * t * topBoundaryControlY +
-          t * t * topBoundaryEndY;
+      // How far the ball's centre is below the curve, measured across it
+      // and not straight down: at the dome's steep ends the two differ
+      final clearance = (ball.position.y - curveY) * normalY;
+      final overlap = ball.radius - clearance;
+      if (overlap > 0) {
+        ball.position.x += normalX * overlap;
+        ball.position.y += normalY * overlap;
 
-      // Distance from BOTTOM of ball to the curve (not center)
-      final distanceToCurve = (ball.position.y - ball.radius) - curveY;
-
-      // Only apply collision if ball has penetrated the curve
-      if (distanceToCurve < 0) {
-        // Calculate the derivative for the normal vector
-        // Derivative: B'(t) = 2(1-t)(P₁-P₀) + 2t(P₂-P₁)
-        final derivativeX =
-            2 * (1 - t) * (topBoundaryControlX - topBoundaryStartX) +
-                2 * t * (topBoundaryEndX - topBoundaryControlX);
-        final derivativeY =
-            2 * (1 - t) * (topBoundaryControlY - topBoundaryStartY) +
-                2 * t * (topBoundaryEndY - topBoundaryControlY);
-
-        // Calculate the normal (perpendicular to derivative, pointing down)
-        final normalLength =
-            math.sqrt(derivativeX * derivativeX + derivativeY * derivativeY);
-        final normalX = derivativeY / normalLength; // Perpendicular
-        final normalY = -derivativeX / normalLength;
-
-        // Ensure normal points downward (away from curve)
-        final normalYFinal = normalY > 0 ? normalY : -normalY;
-        final normalXFinal = normalY > 0 ? normalX : -normalX;
-
-        // Push ball below the curve
-        final overlap =
-            -distanceToCurve; // distanceToCurve is negative, so overlap is positive
-        ball.position.x += normalXFinal * overlap;
-        ball.position.y += normalYFinal * overlap;
-
-        // Reflect velocity along the normal
-        final dotProduct =
-            ball.velocity.x * normalXFinal + ball.velocity.y * normalYFinal;
-        if (dotProduct < 0) {
-          // Only bounce if moving toward the curve
-          ball.velocity.x =
-              (ball.velocity.x - 2 * dotProduct * normalXFinal) * _damping;
-          ball.velocity.y =
-              (ball.velocity.y - 2 * dotProduct * normalYFinal) * _damping;
+        final into = ball.velocity.x * normalX + ball.velocity.y * normalY;
+        if (into < 0) {
+          ball.velocity.x -= into * normalX;
+          ball.velocity.y -= into * normalY;
         }
       }
     }

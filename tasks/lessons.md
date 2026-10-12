@@ -302,6 +302,15 @@ Patterns learned the hard way on this repo. Add an entry after any correction.
 - **Simulate the options, then ask.** Six widths were measured before the owner was asked to choose. One of them, 22, moved the slots into view without moving the odds at all, which made the choice easy and left the achievement thresholds alone.
 - **A fix can delete its neighbour's workaround.** The static layer clipped its drawing to the board because the old edge slots' light spilled past the sides. With the row inside the walls nothing spills, and the clip and the test's allowance for it are gone.
 
+## 2026-10-12 — the PR for issue #96 (a launched ball rides the dome)
+
+- **A scripted path next to a physics engine is two sets of rules.** The launcher carried the ball round a quarter circle that was not the dome, so for a few frames the ball was drawn outside the boundary the physics enforces everywhere else. The launcher now stops at the top of the channel; one set of rules moves the ball from there.
+- **Work out the condition before tuning the number.** The dome is close to a parabola, and a ball rides the underside of a parabola only while its sideways speed is above that of a projectile tracing the same curve, about 390 px/s here. That gave the launch speeds directly (350 to 850) and explained why the first try at 700 never rode: turning onto the dome costs a ball nearly a third of its speed.
+- **A boundary that reflects cannot guide.** The dome reflected and damped, like the walls. Guiding is a different rule: remove the part of the velocity that points into the surface and keep the rest. A fast ball then follows the curve by itself and a slow one leaves it where gravity wins, with no special case for either.
+- **Measure straight down only on flat ground.** The old check compared the top of the ball with the dome directly above it. At the dome's steep ends that is not the nearest point, and a ball could sit partly through it. The distance is now taken across the curve.
+- **A change in play changes what a scripted run meets.** With balls reaching the whole field, the screenshot round unlocked more achievements, and a toast lay over the Back button the script tapped next: the tap dismissed the toast and the script was on the wrong screen. The script now waits for toasts to finish before it navigates. The integration workflow did not run for this change by its path filter and was started by hand; a change to how balls move should always run it.
+- **Check a new way to aim for a sure thing.** Power now decides where the ball comes down, so every power was flown 600 times: no power puts more than about one ball in eight into a 2,000 slot.
+
 ## 2026-10-12 — the PR for issue #98 (a toast no longer lies over an app bar)
 
 - **A rule written for the next screen was not applied to the screens already there.** `CLAUDE.md` said a screen with something at its top edge anchors its toasts. Only the game screen did; three screens with an app bar had been there all along. When a rule is written down, grep for everything it already covers.

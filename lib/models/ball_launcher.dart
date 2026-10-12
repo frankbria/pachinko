@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:vector_math/vector_math_64.dart';
 import '../utils/constants.dart';
 import 'ball.dart';
@@ -43,24 +42,6 @@ class BallLauncher {
           startY - (progress * (startY - GameConstants.launchChannelEndY));
       _launchPath.add(Vector2(startX, y));
     }
-
-    // Curve at the top (quarter circle from right to left)
-    const curveSegments = 15;
-    const curveRadius = 40.0;
-    const curveStartX = startX;
-    const curveEndY = GameConstants.launchChannelEndY;
-
-    for (int i = 1; i <= curveSegments; i++) {
-      final angle = (i / curveSegments) * (3.14159 / 2); // 90 degrees
-      final x = curveStartX - (curveRadius * (1 - math.cos(angle)));
-      final y = curveEndY - (curveRadius * math.sin(angle));
-      _launchPath.add(Vector2(x, y));
-    }
-
-    // Entry point to peg field
-    const entryX = curveStartX - curveRadius;
-    const entryY = curveEndY - curveRadius;
-    _launchPath.add(Vector2(entryX, entryY));
   }
 
   void startCharging() {
@@ -96,8 +77,7 @@ class BallLauncher {
   bool updateBallPath(double deltaTime) {
     if (_phase != LaunchPhase.traveling || _currentBall == null) return false;
 
-    // Speed based on launch power (200-500 pixels/second)
-    final speed = 200.0 + (_launchPower / _maxPower) * 300.0;
+    final speed = _launchSpeed;
 
     // Calculate total distance traveled
     _pathProgress += speed * deltaTime;
@@ -114,9 +94,11 @@ class BallLauncher {
 
     // Check if we've reached the end of the path
     if (_pathProgress >= totalDistance) {
-      // Ball is now free-falling in the peg field
-      final finalVelocity = _calculateReleaseVelocity();
-      _currentBall!.velocity = finalVelocity;
+      // The top of the channel: the ball is let go at the speed it came up
+      // with, and the physics has it from here. Where it comes down depends
+      // on how far that speed carries it along the dome
+      _currentBall!.position = _launchPath.last.clone();
+      _currentBall!.velocity = Vector2(0, -speed);
       _phase = LaunchPhase.released;
       return true; // Ball is now released to physics
     }
@@ -147,57 +129,13 @@ class BallLauncher {
     return false; // Ball still traveling on guided path
   }
 
-  Vector2 _calculateReleaseVelocity() {
-    // Calculate velocity based on the current path direction
-    if (_launchPath.length < 2) {
-      return Vector2(0, 150); // Fallback for edge case
-    }
-
-    // Use multiple segments for smooth velocity calculation
-    // This ensures the velocity naturally follows the curve
-    if (_launchPath.length >= 5) {
-      // Average direction over last 4 segments for very smooth transition
-      final points = [
-        _launchPath[_launchPath.length - 5],
-        _launchPath[_launchPath.length - 4],
-        _launchPath[_launchPath.length - 3],
-        _launchPath[_launchPath.length - 2],
-        _launchPath[_launchPath.length - 1],
-      ];
-
-      // Calculate weighted average direction (more weight on recent segments)
-      var totalDirection = Vector2.zero();
-      var totalWeight = 0.0;
-
-      for (int i = 0; i < points.length - 1; i++) {
-        final segmentDir = (points[i + 1] - points[i]).normalized();
-        final weight = (i + 1).toDouble(); // Linear weight increase
-        totalDirection += segmentDir * weight;
-        totalWeight += weight;
-      }
-
-      final direction = (totalDirection / totalWeight).normalized();
-
-      // Smooth speed calculation with gradual power scaling
-      // Base speed: 180 px/s, max speed: 280 px/s
-      final powerRatio = _launchPower / _maxPower;
-      final baseSpeed = 180.0 + (powerRatio * 100.0);
-
-      // Apply cubic easing for even smoother feel
-      final easedPower = powerRatio * powerRatio * (3.0 - 2.0 * powerRatio);
-      final finalSpeed = baseSpeed * (0.85 + easedPower * 0.15);
-
-      return direction * finalSpeed;
-    }
-
-    // Fallback for shorter paths
-    final secondToLast = _launchPath[_launchPath.length - 2];
-    final lastPoint = _launchPath[_launchPath.length - 1];
-    final direction = (lastPoint - secondToLast).normalized();
-    const baseSpeed = 200.0;
-
-    return direction * baseSpeed;
-  }
+  /// The speed the ball travels up the channel and leaves it with: between
+  /// [GameConstants.launchSpeedMin] and [GameConstants.launchSpeedMax],
+  /// by the launch power.
+  double get _launchSpeed =>
+      GameConstants.launchSpeedMin +
+      (_launchPower / _maxPower) *
+          (GameConstants.launchSpeedMax - GameConstants.launchSpeedMin);
 
   void reset() {
     _phase = LaunchPhase.ready;
