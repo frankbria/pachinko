@@ -829,7 +829,10 @@ void main() {
       expect(gameState.canLaunchBall, isFalse);
     });
 
-    test('given single-ball launch turned off and GameState paused with a ball in play, when canLaunchBall checked, then returns true', () {
+    test('given single-ball launch turned off and GameState paused with a ball in play, when canLaunchBall checked, then returns false', () {
+      // Pause used to be the only way to launch a second ball with the
+      // setting off. Since #39 the setting allows it during play, and pause
+      // stops launches in both modes
       // Given
       final gameState = GameState();
       addTearDown(gameState.dispose);
@@ -841,7 +844,7 @@ void main() {
       gameState.pauseGame();
 
       // Then
-      expect(gameState.canLaunchBall, isTrue);
+      expect(gameState.canLaunchBall, isFalse);
     });
 
     test('given GameState paused with active balls, when resumeGame called, then phase changes to playing', () {
@@ -915,6 +918,93 @@ void main() {
 
       // Then
       expect(listenerCallCount, greaterThan(0));
+    });
+  });
+
+  group('Launch Modes -', () {
+    /// One ball at a time is the default. With the setting off the player may
+    /// launch while balls are in play, but never while the game is paused or
+    /// while the launcher is still carrying the last ball up its channel.
+    late GameState state;
+
+    setUp(() {
+      state = GameState()..startNewGame();
+    });
+
+    Ball ball() => Ball(position: Vector2(200, 100));
+
+    test('given one ball at a time, when a ball is in play, then no other can be launched, paused or not', () {
+      state.launchBall(ball());
+
+      expect(state.canLaunchBall, isFalse);
+      state.pauseGame();
+      expect(state.canLaunchBall, isFalse);
+    });
+
+    test('given many balls allowed, when a ball is in play, then another can be launched without pausing', () {
+      state.singleBallLaunch = false;
+      state.launchBall(ball());
+      expect(state.phase, GamePhase.playing);
+
+      expect(state.canLaunchBall, isTrue);
+      state.launchBall(ball());
+
+      expect(state.activeBalls, hasLength(2));
+      expect(state.ballsRemaining, 18);
+    });
+
+    test('given many balls allowed, when the game is paused, then no ball can be launched until it is resumed', () {
+      state.singleBallLaunch = false;
+      state.launchBall(ball());
+
+      state.pauseGame();
+      expect(state.isPaused, isTrue);
+      expect(state.canLaunchBall, isFalse);
+      state.launchBall(ball());
+      expect(state.activeBalls, hasLength(1));
+
+      state.resumeGame();
+      expect(state.isPaused, isFalse);
+      expect(state.canLaunchBall, isTrue);
+    });
+
+    test('given many balls allowed, when the launcher is still carrying a ball, then the next launch waits', () {
+      state.singleBallLaunch = false;
+      state.launchBall(ball());
+
+      state.launcherBusy = true;
+      expect(state.canLaunchBall, isFalse);
+
+      state.launcherBusy = false;
+      expect(state.canLaunchBall, isTrue);
+    });
+
+    test('given many balls allowed, when the last ball has been launched, then no more can be', () {
+      state.singleBallLaunch = false;
+      for (int i = 0; i < 20; i++) {
+        state.launchBall(ball());
+      }
+
+      expect(state.ballsRemaining, 0);
+      expect(state.canLaunchBall, isFalse);
+    });
+
+    test('given a paused game with a busy launcher, when the level is restarted or changed, then both are cleared', () {
+      state.launchBall(ball());
+      state.pauseGame();
+      state.launcherBusy = true;
+
+      state.resetLevel();
+      expect(state.isPaused, isFalse);
+      expect(state.launcherBusy, isFalse);
+      expect(state.canLaunchBall, isTrue);
+
+      state.launchBall(ball());
+      state.pauseGame();
+      state.launcherBusy = true;
+      state.loadLevel(2);
+      expect(state.isPaused, isFalse);
+      expect(state.launcherBusy, isFalse);
     });
   });
 

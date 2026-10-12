@@ -34,10 +34,23 @@ class GameState extends ChangeNotifier {
 
   /// Whether a ball can only be launched once no ball is in play.
   ///
-  /// On by default. Pause puts the phase back to [GamePhase.ready] with the
-  /// ball still on the board, so without this a second ball could be launched
-  /// while paused. Turn it off to allow that.
+  /// On by default. Off, the player may launch while balls are in play, but
+  /// not while the game is paused and not while the launcher is still
+  /// carrying the last ball (see [launcherBusy]). The settings screen
+  /// changes it through `GameManager.setSingleBallLaunch`.
   bool singleBallLaunch = true;
+
+  /// Whether the launcher is carrying a ball up its channel. It carries one
+  /// at a time, so the next launch waits for it. `GameManager` sets this at
+  /// a launch and clears it when the ball leaves the channel.
+  bool launcherBusy = false;
+
+  /// Pause puts the phase back to [GamePhase.ready] with the balls still on
+  /// the board; this is what tells a paused game from one that is ready.
+  bool _paused = false;
+
+  /// Whether the game is paused. No ball can be launched while it is.
+  bool get isPaused => _paused;
 
   // Bonus screen auto-dismiss timer
   Timer? _bonusDisplayTimer;
@@ -63,9 +76,11 @@ class GameState extends ChangeNotifier {
   GamePhase get phase => _phase;
   bool get specialBonusTriggered => _specialBonusTriggered;
   double get bonusOverlayOpacity => _bonusOverlayOpacity;
+  /// The one gate for launching a ball.
   bool get canLaunchBall {
-    if (_phase != GamePhase.ready || _ballsRemaining <= 0) return false;
-    return !singleBallLaunch || _activeBalls.isEmpty;
+    if (_paused || launcherBusy || _ballsRemaining <= 0) return false;
+    if (singleBallLaunch) return _phase == GamePhase.ready && _activeBalls.isEmpty;
+    return _phase == GamePhase.ready || _phase == GamePhase.playing;
   }
   bool get isGameOver => _ballsRemaining <= 0 && _activeBalls.isEmpty;
   List<FloatingText> get floatingTexts => List.unmodifiable(_floatingTexts);
@@ -79,6 +94,8 @@ class GameState extends ChangeNotifier {
     // A ball still in play belongs to the level being left
     _activeBalls.clear();
     _phase = GamePhase.ready;
+    _paused = false;
+    launcherBusy = false;
     _specialBonusTriggered = false;
     _bonusBallsToAdd = 0;
     _clearEffects();
@@ -247,6 +264,8 @@ class GameState extends ChangeNotifier {
     _activeBalls.clear();
     _ballsRemaining = _totalBalls;
     _phase = GamePhase.ready;
+    _paused = false;
+    launcherBusy = false;
     _specialBonusTriggered = false;
     _bonusBallsToAdd = 0;
     _clearEffects();
@@ -265,12 +284,14 @@ class GameState extends ChangeNotifier {
 
   void pauseGame() {
     if (_phase == GamePhase.playing) {
-      _phase = GamePhase.ready; // Simple pause implementation
+      _phase = GamePhase.ready;
+      _paused = true;
       notifyListeners();
     }
   }
 
   void resumeGame() {
+    _paused = false;
     if (_activeBalls.isNotEmpty) {
       _phase = GamePhase.playing;
       notifyListeners();

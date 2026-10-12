@@ -24,6 +24,7 @@ import 'package:pachinko_game/screens/achievements_screen.dart';
 import 'package:pachinko_game/screens/game_screen.dart';
 import 'package:pachinko_game/screens/high_scores_screen.dart';
 import 'package:pachinko_game/screens/menu_screen.dart';
+import 'package:pachinko_game/screens/settings_screen.dart';
 import 'package:pachinko_game/services/achievement_service.dart';
 import 'package:pachinko_game/services/audio_service.dart';
 import 'package:pachinko_game/services/game_manager.dart';

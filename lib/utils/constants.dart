@@ -141,6 +141,10 @@ class GameConstants {
 
 class GameStrings {
   static const String appName = 'Pachinko Game';
+  static const String settings = 'Settings';
+  static const String singleBallLaunch = 'One ball at a time';
+  static const String singleBallLaunchHint =
+      'Wait for the ball in play to land before launching the next. Turn off to launch as many as you like.';
   static const String play = 'Play';
   static const String pause = 'Pause';
   static const String resume = 'Resume';
