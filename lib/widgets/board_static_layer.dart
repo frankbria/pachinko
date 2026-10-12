@@ -100,10 +100,15 @@ void paintBoardStaticLayer(Canvas canvas, Level level) {
   _paintFelt(canvas);
   _paintRail(canvas);
   _paintLevelSign(canvas, level.levelNumber);
-  // Every glow before any slot, so that no slot is washed by its neighbour's
+  // Every glow before any slot, so that no slot is washed by its neighbour's.
+  // Clipped to the board: the edge slots' glows are wider than the space
+  // beside them, and nothing the board draws may cross its sides
+  canvas.save();
+  canvas.clipRect(const Rect.fromLTWH(0, 0, GameConstants.boardWidth, GameConstants.boardHeight));
   for (final slot in level.slots) {
     _paintLightSpill(canvas, slot.bounds, slot.color);
   }
+  canvas.restore();
   for (final slot in level.slots) {
     _paintSlot(canvas, slot.bounds, slot.color, slot.pointValue);
   }

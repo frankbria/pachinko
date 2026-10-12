@@ -241,6 +241,49 @@ void main() {
     });
   });
 
+  test('given the static layer of any level, then nothing in it crosses the board\'s edges either', () {
+    // The light from the two edge slots is wider than the space beside them
+    // and has to be clipped. Bounds are taken inside whatever clip is in force
+    const board = Rect.fromLTWH(0, 0, GameConstants.boardWidth, GameConstants.boardHeight);
+    for (final number in [1, 2, 3, 9]) {
+      final canvas = TestRecordingCanvas();
+      paintBoardStaticLayer(canvas, level(number));
+
+      final clips = <Rect?>[null];
+      int clipped = 0;
+      for (final call in recorded(canvas)) {
+        if (call.memberName == #save) {
+          clips.add(clips.last);
+        } else if (call.memberName == #restore) {
+          clips.removeLast();
+        } else if (call.memberName == #clipRect) {
+          final clip = call.positionalArguments[0] as Rect;
+          clips[clips.length - 1] = clips.last?.intersect(clip) ?? clip;
+        }
+        Rect? bounds;
+        if (call.memberName == #drawRect) {
+          bounds = call.positionalArguments[0] as Rect;
+        } else if (call.memberName == #drawRRect) {
+          bounds = (call.positionalArguments[0] as RRect).outerRect;
+        } else if (call.memberName == #drawCircle) {
+          bounds = Rect.fromCircle(
+            center: call.positionalArguments[0] as Offset,
+            radius: call.positionalArguments[1] as double,
+          );
+        }
+        if (bounds == null) continue;
+        if (clips.last != null) {
+          if (!board.contains(bounds.topLeft) || !board.contains(bounds.bottomRight)) clipped++;
+          bounds = bounds.intersect(clips.last!);
+        }
+        expect(bounds.left, greaterThanOrEqualTo(board.left), reason: 'level $number: ${call.memberName} at $bounds');
+        expect(bounds.right, lessThanOrEqualTo(board.right), reason: 'level $number: ${call.memberName} at $bounds');
+        expect(bounds.bottom, lessThanOrEqualTo(board.bottom), reason: 'level $number: ${call.memberName} at $bounds');
+      }
+      expect(clipped, greaterThan(0), reason: 'the edge slots\' glows are the case in point');
+    }
+  });
+
   test('text painted on the board is at least 12 logical pixels', () {
     final sizes = <String, List<double>>{};
     for (final file in ['pachinko_board.dart', 'board_static_layer.dart', 'board_effects.dart']) {
