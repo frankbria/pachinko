@@ -22,7 +22,7 @@ class Slot {
     if (pointValue >= 100) return 0.5;
     return 0.35;
   }
-  
+
   Slot({
     required this.position,
     required this.width,
@@ -47,9 +47,9 @@ class Slot {
 
   bool containsPoint(Vector2 point) {
     return point.x >= position.x - width / 2 &&
-           point.x <= position.x + width / 2 &&
-           point.y >= position.y - height / 2 &&
-           point.y <= position.y + height / 2;
+        point.x <= position.x + width / 2 &&
+        point.y >= position.y - height / 2 &&
+        point.y <= position.y + height / 2;
   }
 
   void addBall() {
@@ -62,10 +62,10 @@ class Slot {
   }
 
   Rect get bounds => Rect.fromCenter(
-    center: Offset(position.x, position.y),
-    width: width,
-    height: height,
-  );
+        center: Offset(position.x, position.y),
+        width: width,
+        height: height,
+      );
 
   double get centerX => position.x;
   double get centerY => position.y;

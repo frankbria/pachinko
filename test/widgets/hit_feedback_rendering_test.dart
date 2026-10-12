@@ -13,14 +13,16 @@ import 'package:pachinko_game/widgets/pachinko_board.dart';
 /// What the board draws when something is hit: a gold ring on a pin, a slot
 /// lit in its tier colour, and a score popup that stays inside the board.
 void main() {
-  List<Invocation> recorded(TestRecordingCanvas canvas, [Symbol? name]) => canvas.invocations
-      .map((entry) => entry.invocation)
-      .where((invocation) => name == null || invocation.memberName == name)
-      .toList();
+  List<Invocation> recorded(TestRecordingCanvas canvas, [Symbol? name]) =>
+      canvas.invocations
+          .map((entry) => entry.invocation)
+          .where((invocation) => name == null || invocation.memberName == name)
+          .toList();
 
   int rgb(Color colour) => colour.toARGB32() & 0xFFFFFF;
 
-  Future<CustomPainter> pumpBoard(WidgetTester tester, GameManager manager) async {
+  Future<CustomPainter> pumpBoard(
+      WidgetTester tester, GameManager manager) async {
     manager.startGame();
     await tester.pumpWidget(ChangeNotifierProvider<GameManager>.value(
       value: manager,
@@ -28,34 +30,43 @@ void main() {
     ));
     await tester.pump(const Duration(milliseconds: 50));
     return tester
-        .widget<CustomPaint>(find.descendant(of: find.byType(PachinkoBoard), matching: find.byType(CustomPaint)))
+        .widget<CustomPaint>(find.descendant(
+            of: find.byType(PachinkoBoard), matching: find.byType(CustomPaint)))
         .painter!;
   }
 
   group('Peg hit', () {
-    testWidgets('given a pin that has just been hit, then a gold ring spreads from it and it glows; at rest again, nothing is drawn',
+    testWidgets(
+        'given a pin that has just been hit, then a gold ring spreads from it and it glows; at rest again, nothing is drawn',
         (tester) async {
       final manager = GameManager();
       addTearDown(manager.dispose);
       final painter = await pumpBoard(tester, manager);
-      final pin = manager.gameState.currentLevel!.pegs.firstWhere((peg) => peg.type == PegType.normal);
+      final pin = manager.gameState.currentLevel!.pegs
+          .firstWhere((peg) => peg.type == PegType.normal);
       final centre = Offset(pin.position.x, pin.position.y);
       List<Invocation> atPin() {
         final canvas = TestRecordingCanvas();
         painter.paint(canvas, const Size(400, 600));
-        return recorded(canvas, #drawCircle).where((circle) => circle.positionalArguments[0] == centre).toList();
+        return recorded(canvas, #drawCircle)
+            .where((circle) => circle.positionalArguments[0] == centre)
+            .toList();
       }
 
       pin.onHit();
       await tester.pump(const Duration(milliseconds: 100));
       await tester.pump(const Duration(milliseconds: 100));
       final hit = atPin();
-      Paint paintOf(Invocation circle) => circle.positionalArguments[2] as Paint;
-      double radiusOf(Invocation circle) => circle.positionalArguments[1] as double;
+      Paint paintOf(Invocation circle) =>
+          circle.positionalArguments[2] as Paint;
+      double radiusOf(Invocation circle) =>
+          circle.positionalArguments[1] as double;
 
-      final rings = hit.where((circle) => paintOf(circle).style == PaintingStyle.stroke);
+      final rings =
+          hit.where((circle) => paintOf(circle).style == PaintingStyle.stroke);
       expect(rings, hasLength(1));
-      expect(rgb(paintOf(rings.single).color), rgb(GameConstants.specialPegColor));
+      expect(
+          rgb(paintOf(rings.single).color), rgb(GameConstants.specialPegColor));
       expect(radiusOf(rings.single), greaterThan(pin.radius));
       expect(
         hit.where((circle) =>
@@ -66,7 +77,8 @@ void main() {
         reason: 'no flat disc over the pin',
       );
       expect(
-        hit.where((circle) => paintOf(circle).shader != null && radiusOf(circle) > pin.radius),
+        hit.where((circle) =>
+            paintOf(circle).shader != null && radiusOf(circle) > pin.radius),
         hasLength(1),
         reason: 'a glow for the moment of the hit',
       );
@@ -78,9 +90,12 @@ void main() {
   });
 
   group('Slot lighting', () {
-    Level level(int number) => Level.generate(number, GameConstants.boardWidth, GameConstants.boardHeight);
+    Level level(int number) => Level.generate(
+        number, GameConstants.boardWidth, GameConstants.boardHeight);
 
-    test('given a lit slot, then its pocket is filled with its tier colour as strongly as it is lit, with its value on top', () {
+    test(
+        'given a lit slot, then its pocket is filled with its tier colour as strongly as it is lit, with its value on top',
+        () {
       final level1 = level(1);
       final slot = level1.slots[3];
       slot.glow = 0.5;
@@ -96,7 +111,10 @@ void main() {
         slot.glow = 1.0;
         final again = TestRecordingCanvas();
         paintSlotLights(again, level1.slots);
-        return (recorded(again, #drawRRect).single.positionalArguments[1] as Paint).color.a;
+        return (recorded(again, #drawRRect).single.positionalArguments[1]
+                as Paint)
+            .color
+            .a;
       }();
       expect(paint.color.a, closeTo(full / 2, 0.01));
       expect(recorded(canvas, #drawParagraph), hasLength(1));
@@ -110,7 +128,9 @@ void main() {
       expect(recorded(canvas), isEmpty);
     });
 
-    testWidgets('given a game, when a slot is lit, then the board draws its light', (tester) async {
+    testWidgets(
+        'given a game, when a slot is lit, then the board draws its light',
+        (tester) async {
       final manager = GameManager();
       addTearDown(manager.dispose);
       final painter = await pumpBoard(tester, manager);
@@ -120,7 +140,8 @@ void main() {
         painter.paint(canvas, const Size(400, 600));
         return recorded(canvas, #drawRRect).any((call) =>
             (call.positionalArguments[0] as RRect).outerRect == slot.bounds &&
-            rgb((call.positionalArguments[1] as Paint).color) == rgb(slot.color));
+            rgb((call.positionalArguments[1] as Paint).color) ==
+                rgb(slot.color));
       }
 
       expect(lit(), isFalse);
@@ -133,16 +154,23 @@ void main() {
     ui.Paragraph popup(double x, double fontSize, {String text = '+2000'}) {
       final canvas = TestRecordingCanvas();
       paintScorePopup(canvas,
-          text: text, centreTop: Offset(x, 400), colour: GameConstants.magentaColor, fontSize: fontSize, opacity: 1);
+          text: text,
+          centreTop: Offset(x, 400),
+          colour: GameConstants.magentaColor,
+          fontSize: fontSize,
+          opacity: 1);
       final call = recorded(canvas, #drawParagraph).single;
       final at = call.positionalArguments[1] as Offset;
       final paragraph = call.positionalArguments[0] as ui.Paragraph;
       expect(at.dx, greaterThanOrEqualTo(0), reason: 'left edge at x = $x');
-      expect(at.dx + paragraph.longestLine, lessThanOrEqualTo(GameConstants.boardWidth), reason: 'right edge at x = $x');
+      expect(at.dx + paragraph.longestLine,
+          lessThanOrEqualTo(GameConstants.boardWidth),
+          reason: 'right edge at x = $x');
       return paragraph;
     }
 
-    test('given popups over the edge slots, then they stay inside the board', () {
+    test('given popups over the edge slots, then they stay inside the board',
+        () {
       // The 2000 slots are the outermost and their popups the largest
       final size = FloatingText.sizeFor(2000);
       popup(28.6, size);
@@ -150,7 +178,9 @@ void main() {
       popup(200, size);
     });
 
-    test('given a small and a large score, then the larger is drawn in larger type', () {
+    test(
+        'given a small and a large score, then the larger is drawn in larger type',
+        () {
       expect(FloatingText.sizeFor(50), lessThan(FloatingText.sizeFor(200)));
       expect(FloatingText.sizeFor(200), lessThan(FloatingText.sizeFor(1000)));
       expect(FloatingText.sizeFor(1000), lessThan(FloatingText.sizeFor(2000)));
@@ -160,16 +190,20 @@ void main() {
       );
     });
 
-    testWidgets('given a popup on the board, then the board draws it at its own size', (tester) async {
+    testWidgets(
+        'given a popup on the board, then the board draws it at its own size',
+        (tester) async {
       final manager = GameManager();
       addTearDown(manager.dispose);
       final painter = await pumpBoard(tester, manager);
       double popupHeight(double fontSize) {
-        manager.gameState.addFloatingText('+50', const Offset(200, 300), GameConstants.slateColor, fontSize: fontSize);
+        manager.gameState.addFloatingText(
+            '+50', const Offset(200, 300), GameConstants.slateColor,
+            fontSize: fontSize);
         final canvas = TestRecordingCanvas();
         painter.paint(canvas, const Size(400, 600));
-        final call = recorded(canvas, #drawParagraph)
-            .lastWhere((text) => (text.positionalArguments[1] as Offset).dy == 300);
+        final call = recorded(canvas, #drawParagraph).lastWhere(
+            (text) => (text.positionalArguments[1] as Offset).dy == 300);
         manager.gameState.resetLevel();
         return (call.positionalArguments[0] as ui.Paragraph).height;
       }

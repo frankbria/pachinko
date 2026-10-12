@@ -6,7 +6,8 @@ import 'package:pachinko_game/models/achievement.dart';
 
 void main() {
   group('AchievementToast', () {
-    testWidgets('given achievement toast, when rendered, then shows achievement name',
+    testWidgets(
+        'given achievement toast, when rendered, then shows achievement name',
         (tester) async {
       // Arrange
       final achievement = Achievement(
@@ -76,7 +77,8 @@ void main() {
       expect(dismissed, true);
     });
 
-    testWidgets('given achievement toast, when 3.5s elapsed, then auto-dismisses',
+    testWidgets(
+        'given achievement toast, when 3.5s elapsed, then auto-dismisses',
         (tester) async {
       // Arrange
       bool dismissed = false;
@@ -108,7 +110,8 @@ void main() {
       expect(dismissed, true);
     });
 
-    testWidgets('given achievement toast, when rendered, then shows trophy icon',
+    testWidgets(
+        'given achievement toast, when rendered, then shows trophy icon',
         (tester) async {
       // Arrange
       final achievement = Achievement(
@@ -170,16 +173,19 @@ void main() {
 
       // Assert - Find the Container with gold border
       final container = tester.widget<Container>(
-        find.descendant(
-          of: find.byType(GestureDetector),
-          matching: find.byType(Container),
-        ).first,
+        find
+            .descendant(
+              of: find.byType(GestureDetector),
+              matching: find.byType(Container),
+            )
+            .first,
       );
 
       final decoration = container.decoration as BoxDecoration;
       expect(decoration.border, isNotNull);
       // The gold role, not a literal of its own (issue #32)
-      expect((decoration.border as Border).top.color, GameConstants.secondaryColor);
+      expect((decoration.border as Border).top.color,
+          GameConstants.secondaryColor);
 
       // Cleanup
       await tester.pump(const Duration(milliseconds: 3500));

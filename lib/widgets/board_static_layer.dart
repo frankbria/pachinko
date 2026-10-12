@@ -58,7 +58,10 @@ void paintSphere(
         ..shader = ui.Gradient.radial(
           centre,
           glowRadius,
-          [glowColour.withValues(alpha: 0.45), glowColour.withValues(alpha: 0.0)],
+          [
+            glowColour.withValues(alpha: 0.45),
+            glowColour.withValues(alpha: 0.0)
+          ],
         ),
     );
   }
@@ -105,7 +108,8 @@ void paintBoardStaticLayer(Canvas canvas, Level level) {
   // Clipped to the board: the edge slots' glows are wider than the space
   // beside them, and nothing the board draws may cross its sides
   canvas.save();
-  canvas.clipRect(const Rect.fromLTWH(0, 0, GameConstants.boardWidth, GameConstants.boardHeight));
+  canvas.clipRect(const Rect.fromLTWH(
+      0, 0, GameConstants.boardWidth, GameConstants.boardHeight));
   for (final slot in level.slots) {
     _paintLightSpill(canvas, slot.bounds, slot.color);
   }
@@ -115,7 +119,8 @@ void paintBoardStaticLayer(Canvas canvas, Level level) {
   }
   for (final peg in level.pegs) {
     if (peg.type == PegType.special) continue;
-    paintSphere(canvas, Offset(peg.position.x, peg.position.y), peg.radius, peg.color);
+    paintSphere(
+        canvas, Offset(peg.position.x, peg.position.y), peg.radius, peg.color);
   }
 }
 
@@ -126,7 +131,8 @@ void _paintFelt(Canvas canvas, LevelBand band) {
     GameConstants.topCurveStartY,
   );
   canvas.drawRect(
-    const Rect.fromLTWH(0, 0, GameConstants.boardWidth, GameConstants.boardHeight),
+    const Rect.fromLTWH(
+        0, 0, GameConstants.boardWidth, GameConstants.boardHeight),
     Paint()
       ..shader = ui.Gradient.radial(
         domeCentre,
@@ -138,7 +144,8 @@ void _paintFelt(Canvas canvas, LevelBand band) {
 
 /// The walls and the dome as one chrome rail over a soft glow.
 void _paintRail(Canvas canvas, LevelBand band) {
-  const channelRight = GameConstants.launchChannelStartX + GameConstants.launchChannelWidth;
+  const channelRight =
+      GameConstants.launchChannelStartX + GameConstants.launchChannelWidth;
   final outline = Path()
     ..moveTo(GameConstants.topCurveStartX, GameConstants.launchChannelStartY)
     ..lineTo(GameConstants.topCurveStartX, GameConstants.topCurveStartY)
@@ -150,9 +157,10 @@ void _paintRail(Canvas canvas, LevelBand band) {
     )
     ..lineTo(channelRight, GameConstants.launchChannelEndY)
     ..lineTo(channelRight, GameConstants.launchChannelStartY);
-  const innerWallBottom = Offset(GameConstants.launchChannelStartX, GameConstants.launchChannelStartY);
-  const innerWallTop =
-      Offset(GameConstants.launchChannelStartX, GameConstants.launchChannelInnerWallTopY);
+  const innerWallBottom = Offset(
+      GameConstants.launchChannelStartX, GameConstants.launchChannelStartY);
+  const innerWallTop = Offset(GameConstants.launchChannelStartX,
+      GameConstants.launchChannelInnerWallTopY);
 
   Paint stroke(double width) => Paint()
     ..style = PaintingStyle.stroke
@@ -192,7 +200,8 @@ void _paintLevelSign(Canvas canvas, int levelNumber, LevelBand band) {
     ),
     textDirection: TextDirection.ltr,
   )..layout();
-  const domeCentreX = (GameConstants.topCurveStartX + GameConstants.topCurveEndX) / 2;
+  const domeCentreX =
+      (GameConstants.topCurveStartX + GameConstants.topCurveEndX) / 2;
   sign.paint(canvas, Offset(domeCentreX - sign.width / 2, 46));
 }
 
@@ -255,7 +264,8 @@ void _paintSlot(Canvas canvas, Rect bounds, Color colour, int pointValue) {
     ),
     textDirection: TextDirection.ltr,
   )..layout();
-  value.paint(canvas, bounds.center - Offset(value.width / 2, value.height / 2));
+  value.paint(
+      canvas, bounds.center - Offset(value.width / 2, value.height / 2));
   value.dispose();
 }
 

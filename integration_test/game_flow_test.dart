@@ -41,9 +41,10 @@ void main() {
 
   tearDownAll(() {
     totalStopwatch.stop();
-    debugPrint('Total integration test execution time: ${totalStopwatch.elapsed.inSeconds} seconds');
+    debugPrint(
+        'Total integration test execution time: ${totalStopwatch.elapsed.inSeconds} seconds');
     expect(totalStopwatch.elapsed.inSeconds, lessThan(300),
-      reason: 'Integration tests should complete in < 5 minutes');
+        reason: 'Integration tests should complete in < 5 minutes');
   });
 
   group('Complete Game Flow Tests', () {
@@ -52,8 +53,9 @@ void main() {
     /// THEN all major features work: menu → play → launch → score → level complete
     ///
     /// This test verifies the entire happy path through the game.
-    testWidgets('givenMenuScreen_whenCompleteGameFlowExecuted_thenAllFeaturesWork',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenMenuScreen_whenCompleteGameFlowExecuted_thenAllFeaturesWork',
+        (WidgetTester tester) async {
       app.main();
       await settle(tester);
 
@@ -68,7 +70,9 @@ void main() {
       expect(find.byType(GameScreen), findsOneWidget);
 
       // Get GameManager to check state
-      final gameManager = Provider.of<GameManager>(tester.element(find.byType(GameScreen)), listen: false);
+      final gameManager = Provider.of<GameManager>(
+          tester.element(find.byType(GameScreen)),
+          listen: false);
 
       // Verify initial state
       expect(gameManager.gameState.ballsRemaining, equals(20));
@@ -82,7 +86,7 @@ void main() {
     ///
     /// Tests that game loop continues and state changes are valid.
     testWidgets('givenGameActive_whenPlayedOverTime_thenStateUpdatesCorrectly',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       app.main();
       await settle(tester);
 
@@ -110,8 +114,9 @@ void main() {
     /// THEN ball appears and physics simulation activates
     ///
     /// Tests ball launching mechanics with real physics engine.
-    testWidgets('givenGameActive_whenUserLaunchesBall_thenBallAppearsAndMovesWithPhysics',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenGameActive_whenUserLaunchesBall_thenBallAppearsAndMovesWithPhysics',
+        (WidgetTester tester) async {
       app.main();
       await settle(tester);
 
@@ -141,8 +146,9 @@ void main() {
     /// THEN ball position changes due to gravity and collisions
     ///
     /// Verifies that physics engine applies forces over multiple frames.
-    testWidgets('givenBallInFlight_whenPhysicsSimulates_thenBallPositionChanges',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenBallInFlight_whenPhysicsSimulates_thenBallPositionChanges',
+        (WidgetTester tester) async {
       app.main();
       await settle(tester);
 
@@ -178,7 +184,7 @@ void main() {
     ///
     /// Tests integration between physics and scoring system.
     testWidgets('givenBallLaunched_whenBallLandsInSlot_thenScoreIncreases',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       app.main();
       await settle(tester);
 
@@ -192,7 +198,9 @@ void main() {
 
       // Launch a ball and wait for it to land. A ball that drops through a
       // gap between two slots scores nothing, so try up to three.
-      for (int i = 0; i < 3 && gameManager.gameState.score == initialScore; i++) {
+      for (int i = 0;
+          i < 3 && gameManager.gameState.score == initialScore;
+          i++) {
         await dragLauncher(tester, 80);
         expect(gameManager.gameState.activeBalls, hasLength(1));
         await pumpUntil(tester, () => gameManager.gameState.activeBalls.isEmpty,
@@ -206,8 +214,9 @@ void main() {
     /// GIVEN multiple balls have been launched
     /// WHEN balls land in different slots
     /// THEN total score accumulates correctly
-    testWidgets('givenMultipleBallsLaunched_whenBallsScore_thenScoreAccumulates',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenMultipleBallsLaunched_whenBallsScore_thenScoreAccumulates',
+        (WidgetTester tester) async {
       app.main();
       await settle(tester);
 
@@ -238,8 +247,9 @@ void main() {
     /// THEN special pegs are highlighted
     ///
     /// Verifies special peg rendering and identification.
-    testWidgets('givenLevelWithSpecialPegs_whenLevelLoaded_thenSpecialPegsHighlighted',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenLevelWithSpecialPegs_whenLevelLoaded_thenSpecialPegsHighlighted',
+        (WidgetTester tester) async {
       app.main();
       await settle(tester);
 
@@ -253,8 +263,10 @@ void main() {
       final level = gameManager.gameState.currentLevel;
       expect(level, isNotNull);
 
-      final specialPegCount = level!.pegs.where((peg) => peg.type == PegType.special).length;
-      expect(specialPegCount, greaterThan(0)); // Levels should have special pegs
+      final specialPegCount =
+          level!.pegs.where((peg) => peg.type == PegType.special).length;
+      expect(
+          specialPegCount, greaterThan(0)); // Levels should have special pegs
     });
 
     /// GIVEN game is being played
@@ -264,7 +276,7 @@ void main() {
     /// Note: Hitting all special pegs in integration test is difficult due to
     /// physics variability. This test verifies bonus tracking system exists.
     testWidgets('givenGamePlaying_whenBonusTracked_thenBonusSystemActive',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       app.main();
       await settle(tester);
 
@@ -288,8 +300,9 @@ void main() {
     /// THEN level 2 loads with different pattern
     ///
     /// Tests level transition flow.
-    testWidgets('givenLevel1_whenNextLevelSelected_thenLevel2LoadsWithDifferentPattern',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenLevel1_whenNextLevelSelected_thenLevel2LoadsWithDifferentPattern',
+        (WidgetTester tester) async {
       app.main();
       await settle(tester);
 
@@ -331,7 +344,7 @@ void main() {
     ///
     /// Verifies level variety across first 5 levels.
     testWidgets('givenLevels1Through5_whenLoaded_thenEachHasValidConfiguration',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       app.main();
       await settle(tester);
 
@@ -364,7 +377,7 @@ void main() {
     /// WHEN level changes
     /// THEN level number in HUD updates
     testWidgets('givenLevelNumber_whenLevelChanges_thenHUDUpdates',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       app.main();
       await settle(tester);
 
@@ -393,7 +406,7 @@ void main() {
     /// WHEN checking game state
     /// THEN game should not be in game over state initially
     testWidgets('givenGameRunning_whenCheckingGameState_thenNotGameOver',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       app.main();
       await settle(tester);
 
@@ -413,8 +426,9 @@ void main() {
     /// THEN balls remaining decreases correctly
     ///
     /// Verifies ball consumption mechanics.
-    testWidgets('givenGamePlaying_whenBallsLaunched_thenBallsRemainingDecreases',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenGamePlaying_whenBallsLaunched_thenBallsRemainingDecreases',
+        (WidgetTester tester) async {
       app.main();
       await settle(tester);
 
@@ -445,7 +459,7 @@ void main() {
     ///
     /// Tests that navigation preserves active game state.
     testWidgets('givenActiveGame_whenNavigateBackAndReturn_thenStatePreserved',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       app.main();
       await settle(tester);
 
@@ -475,20 +489,23 @@ void main() {
       await settle(tester);
 
       final contextAfter = tester.element(find.byType(GameScreen));
-      final gameManagerAfter = Provider.of<GameManager>(contextAfter, listen: false);
+      final gameManagerAfter =
+          Provider.of<GameManager>(contextAfter, listen: false);
 
       // Note: GameManager.startGame() resets state, so this test verifies
       // that a new game starts correctly (expected behavior)
       // State preservation would require different implementation
-      expect(gameManagerAfter.gameState.currentLevelNumber, equals(1)); // New game starts at level 1
-      expect(gameManagerAfter.gameState.ballsRemaining, equals(20)); // New game has 20 balls
+      expect(gameManagerAfter.gameState.currentLevelNumber,
+          equals(1)); // New game starts at level 1
+      expect(gameManagerAfter.gameState.ballsRemaining,
+          equals(20)); // New game has 20 balls
     });
 
     /// GIVEN user is on game screen
     /// WHEN user resets the game
     /// THEN state resets to initial values
     testWidgets('givenGameScreen_whenUserResetsGame_thenStateResetsCorrectly',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       app.main();
       await settle(tester);
 

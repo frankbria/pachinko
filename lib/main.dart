@@ -79,22 +79,25 @@ class _PachinkoAppState extends State<PachinkoApp> {
         // StorageService provider (nullable until initialized)
         Provider<StorageService?>.value(value: _storageService),
         // AchievementService provider (nullable until initialized, with ChangeNotifier)
-        ChangeNotifierProvider<AchievementService?>.value(value: _achievementService),
+        ChangeNotifierProvider<AchievementService?>.value(
+            value: _achievementService),
         // GameManager is created the first time something asks for it, which
         // can be before storage has loaded. The proxy hands it each service
         // when that service arrives, so the saved settings are applied and
         // scores are saved whichever came first
-        ChangeNotifierProxyProvider2<StorageService?, AchievementService?, GameManager>(
+        ChangeNotifierProxyProvider2<StorageService?, AchievementService?,
+            GameManager>(
           create: (context) => GameManager(
             audioService: _audioService,
             storageService: _storageService,
             achievementService: _achievementService,
           ),
-          update: (context, storageService, achievementService, gameManager) => gameManager!
-            ..attachServices(
-              storageService: storageService,
-              achievementService: achievementService,
-            ),
+          update: (context, storageService, achievementService, gameManager) =>
+              gameManager!
+                ..attachServices(
+                  storageService: storageService,
+                  achievementService: achievementService,
+                ),
         ),
       ],
       child: MaterialApp(

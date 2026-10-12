@@ -37,9 +37,14 @@ void main() {
       // Then
       expect(highScore.level, equals(level));
       expect(highScore.score, equals(score));
-      expect(highScore.timestamp.isAfter(beforeCreation) ||
-          highScore.timestamp.isAtSameMomentAs(beforeCreation), isTrue);
-      expect(highScore.timestamp.isBefore(DateTime.now().add(const Duration(seconds: 1))), isTrue);
+      expect(
+          highScore.timestamp.isAfter(beforeCreation) ||
+              highScore.timestamp.isAtSameMomentAs(beforeCreation),
+          isTrue);
+      expect(
+          highScore.timestamp
+              .isBefore(DateTime.now().add(const Duration(seconds: 1))),
+          isTrue);
     });
   });
 
@@ -121,7 +126,8 @@ void main() {
       final comparison = highScore1.compareTo(highScore2);
 
       // Then - highScore2 should come before highScore1 (higher score = lower sort order)
-      expect(comparison, greaterThan(0)); // 5000 < 7000, so highScore1 comes after
+      expect(
+          comparison, greaterThan(0)); // 5000 < 7000, so highScore1 comes after
     });
 
     test('givenHighScoreList_whenSorted_thenHighestScoreFirst', () {

@@ -22,13 +22,13 @@ class GameConstants {
   static const double airResistance = 0.999;
   static const double bounceDamping = 0.7;
   static const double minVelocity = 10.0;
-  
+
   // Ball constants
   static const double ballRadius = 8.0;
   static const double ballMass = 1.0;
   static const double launchForceMin = 300.0;
   static const double launchForceMax = 800.0;
-  
+
   // Peg constants
   static const double pegRadiusMin = 8.0;
   static const double pegRadiusMax = 15.0;
@@ -37,16 +37,17 @@ class GameConstants {
   /// Smallest gap, edge to edge, between two pegs or between a peg and a
   /// field wall. A gap narrower than a ball is a pocket the ball rests in.
   static const double minPegGap = ballRadius * 2 + 2.0;
-  
+
   // Board constants
   static const double boardWidth = 400.0;
   static const double boardHeight = 600.0;
   static const double launchAreaHeight = 80.0;
   static const double slotAreaHeight = 80.0;
-  
+
   // Launch channel constants
   static const double launchChannelWidth = 30.0;
-  static const double launchChannelStartX = boardWidth - launchChannelWidth - 10.0;
+  static const double launchChannelStartX =
+      boardWidth - launchChannelWidth - 10.0;
   static const double launchChannelStartY = boardHeight - slotAreaHeight - 50.0;
   static const double launchChannelEndY = 110.0;
 
@@ -54,7 +55,8 @@ class GameConstants {
   /// [launchChannelEndY]: the mouth under the dome then looks too narrow for
   /// a ball (the owner's decision on the visual overhaul, #22).
   static const double launchChannelInnerWallTopY = 135.0;
-  static const double ballLaunchX = launchChannelStartX + launchChannelWidth / 2;
+  static const double ballLaunchX =
+      launchChannelStartX + launchChannelWidth / 2;
   static const double ballLaunchY = launchChannelStartY;
 
   // Field boundary constants (playfield area where balls interact with pegs/slots)
@@ -69,7 +71,8 @@ class GameConstants {
   static const double topCurveStartX = 30.0;
   static const double topCurveStartY = 110.0;
   static const double topCurveControlX = 210.0;
-  static const double topCurveControlY = -100.0; // Above the board, so the curve bows upward
+  static const double topCurveControlY =
+      -100.0; // Above the board, so the curve bows upward
   static const double topCurveEndX = 390.0;
   static const double topCurveEndY = 110.0;
 
@@ -82,7 +85,7 @@ class GameConstants {
   static const double bonusBallSpawnY = 70.0;
   static const double bonusBallSpawnMinX = 120.0;
   static const double bonusBallSpawnMaxX = 300.0;
-  
+
   // Palette: every colour in the game comes from this set
   static const Color goldColor = Color(0xFFFFD34D);
   static const Color magentaColor = Color(0xFFFF3D9A);
@@ -119,7 +122,11 @@ class GameConstants {
   /// colour to stand out on it, and no rim is gold or brass: gold is score
   /// and prizes, brass is pins. A test checks both.
   static const List<LevelBand> levelBands = [
-    LevelBand(name: 'Midnight', felt: feltColor, feltShade: feltShadeColor, rim: primaryColor),
+    LevelBand(
+        name: 'Midnight',
+        felt: feltColor,
+        feltShade: feltShadeColor,
+        rim: primaryColor),
     LevelBand(
       name: 'Lagoon',
       felt: Color(0xFF0E3B3F),
@@ -153,37 +160,37 @@ class GameConstants {
   static const Color secondaryColor = goldColor;
   static const Color surfaceColor = Color(0xFF171C36);
   static const Color errorColor = Color(0xFFCF6679);
-  
+
   // Animation durations (in milliseconds)
   static const int launchAnimationDuration = 300;
   static const int pegHitAnimationDuration = 200;
   static const int scoreAnimationDuration = 500;
   static const int ballLandAnimationDuration = 150;
-  
+
   // Debug options
   static const bool showDebugGrid = false;
   static const bool showPegSpacing = false;
-  
+
   // Physics time step
   static const double physicsTimeStep = 1.0 / 60.0; // 60 FPS
   static const int maxPhysicsIterations = 5;
-  
+
   // Scoring
   static const Map<int, int> slotPointValues = {
     0: 2000, // Edge slots (hardest to reach)
-    1: 200,  // Second slots
-    2: 50,   // Third slots (easiest to reach)
+    1: 200, // Second slots
+    2: 50, // Third slots (easiest to reach)
     3: 1000, // Center slot (medium difficulty)
-    4: 50,   // Third slots (easiest to reach)
-    5: 200,  // Second slots
+    4: 50, // Third slots (easiest to reach)
+    5: 200, // Second slots
     6: 2000, // Edge slots (hardest to reach)
   };
-  
+
   // Level progression
   static const int baseLegsPerLevel = 40;
   static const int additionalPegsPerLevel = 5;
   static const double pegDensityIncrease = 0.1;
-  
+
   // Audio
   static const double masterVolume = 0.7;
   static const double sfxVolume = 0.8;

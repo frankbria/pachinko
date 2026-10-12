@@ -20,107 +20,113 @@ class MenuScreen extends StatelessWidget {
             // Six buttons are taller than a small phone held sideways
             child: SingleChildScrollView(
               child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // The title as a magenta neon sign. The padding is wider than
-                // the glow, so the sign and its glow both fit any screen
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 28.0),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      GameStrings.appName,
-                      style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                        color: Color.lerp(GameConstants.magentaColor, GameConstants.inkColor, 0.75),
-                        fontWeight: FontWeight.bold,
-                        shadows: [
-                          const Shadow(blurRadius: 8.0, color: GameConstants.magentaColor),
-                          Shadow(
-                            blurRadius: 24.0,
-                            color: GameConstants.magentaColor.withValues(alpha: 0.8),
-                          ),
-                        ],
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // The title as a magenta neon sign. The padding is wider than
+                  // the glow, so the sign and its glow both fit any screen
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 32.0, vertical: 28.0),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        GameStrings.appName,
+                        style:
+                            Theme.of(context).textTheme.displayLarge?.copyWith(
+                          color: Color.lerp(GameConstants.magentaColor,
+                              GameConstants.inkColor, 0.75),
+                          fontWeight: FontWeight.bold,
+                          shadows: [
+                            const Shadow(
+                                blurRadius: 8.0,
+                                color: GameConstants.magentaColor),
+                            Shadow(
+                              blurRadius: 24.0,
+                              color: GameConstants.magentaColor
+                                  .withValues(alpha: 0.8),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 20),
-                
-                // Subtitle
-                Text(
-                  'Physics-based Pachinko Game',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: GameConstants.mutedColor,
+                  const SizedBox(height: 20),
+
+                  // Subtitle
+                  Text(
+                    'Physics-based Pachinko Game',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: GameConstants.mutedColor,
+                        ),
                   ),
-                ),
-                
-                const SizedBox(height: 60),
-                
-                // Play Button
-                _MenuButton(
-                  title: GameStrings.play,
-                  icon: Icons.play_arrow,
-                  onPressed: () => _startGame(context),
-                  isPrimary: true,
-                ),
-                
-                const SizedBox(height: 20),
-                
-                // Level Select Button
-                _MenuButton(
-                  title: 'Select Level',
-                  icon: Icons.list,
-                  onPressed: () => _showLevelSelect(context),
-                ),
-                
-                const SizedBox(height: 20),
-                
-                // Instructions Button
-                _MenuButton(
-                  title: 'How to Play',
-                  icon: Icons.help_outline,
-                  onPressed: () => _showInstructions(context),
-                ),
 
-                const SizedBox(height: 20),
+                  const SizedBox(height: 60),
 
-                // High Scores Button
-                _MenuButton(
-                  title: 'High Scores',
-                  icon: Icons.emoji_events,
-                  onPressed: () => _showHighScores(context),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Achievements Button
-                _MenuButton(
-                  title: 'Achievements',
-                  icon: Icons.workspace_premium,
-                  onPressed: () => _showAchievements(context),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Settings Button
-                _MenuButton(
-                  title: GameStrings.settings,
-                  icon: Icons.settings,
-                  onPressed: () => _showSettings(context),
-                ),
-
-                const SizedBox(height: 60),
-                
-                // Game Info
-                Text(
-                  'Launch balls, hit pegs, score points!',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: GameConstants.mutedColor,
+                  // Play Button
+                  _MenuButton(
+                    title: GameStrings.play,
+                    icon: Icons.play_arrow,
+                    onPressed: () => _startGame(context),
+                    isPrimary: true,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
+
+                  const SizedBox(height: 20),
+
+                  // Level Select Button
+                  _MenuButton(
+                    title: 'Select Level',
+                    icon: Icons.list,
+                    onPressed: () => _showLevelSelect(context),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Instructions Button
+                  _MenuButton(
+                    title: 'How to Play',
+                    icon: Icons.help_outline,
+                    onPressed: () => _showInstructions(context),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // High Scores Button
+                  _MenuButton(
+                    title: 'High Scores',
+                    icon: Icons.emoji_events,
+                    onPressed: () => _showHighScores(context),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Achievements Button
+                  _MenuButton(
+                    title: 'Achievements',
+                    icon: Icons.workspace_premium,
+                    onPressed: () => _showAchievements(context),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Settings Button
+                  _MenuButton(
+                    title: GameStrings.settings,
+                    icon: Icons.settings,
+                    onPressed: () => _showSettings(context),
+                  ),
+
+                  const SizedBox(height: 60),
+
+                  // Game Info
+                  Text(
+                    'Launch balls, hit pegs, score points!',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: GameConstants.mutedColor,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             ),
           ),
@@ -132,7 +138,7 @@ class MenuScreen extends StatelessWidget {
   void _startGame(BuildContext context) {
     final gameManager = context.read<GameManager>();
     gameManager.startGame();
-    
+
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const GameScreen(),
@@ -168,7 +174,8 @@ class MenuScreen extends StatelessWidget {
                 itemCount: 20,
                 itemBuilder: (_, index) {
                   final levelNumber = index + 1;
-                  return _levelTile(context, dialogContext, levelNumber, best[levelNumber]);
+                  return _levelTile(
+                      context, dialogContext, levelNumber, best[levelNumber]);
                 },
               );
             },
@@ -184,7 +191,8 @@ class MenuScreen extends StatelessWidget {
     );
   }
 
-  Widget _levelTile(BuildContext context, BuildContext dialogContext, int levelNumber, int? best) {
+  Widget _levelTile(BuildContext context, BuildContext dialogContext,
+      int levelNumber, int? best) {
     return GestureDetector(
       onTap: () {
         Navigator.of(dialogContext).pop();
@@ -233,7 +241,7 @@ class MenuScreen extends StatelessWidget {
   void _startGameFromLevel(BuildContext context, int level) {
     final gameManager = context.read<GameManager>();
     gameManager.startGame(level: level);
-    
+
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const GameScreen(),
@@ -254,7 +262,8 @@ class MenuScreen extends StatelessWidget {
               _heading(Icons.flag, 'Objective'),
               _body('Score as many points as possible with 20 balls.'),
               _heading(Icons.touch_app, 'Controls'),
-              _body('• Drag from the launcher: the longer the drag, the more power\n'
+              _body(
+                  '• Drag from the launcher: the longer the drag, the more power\n'
                   '• Release to launch\n'
                   '• Pegs change the ball\'s direction'),
               _heading(Icons.auto_awesome, 'Special Features'),
@@ -288,13 +297,15 @@ class MenuScreen extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               title,
-              style: const TextStyle(color: GameConstants.inkColor, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                  color: GameConstants.inkColor, fontWeight: FontWeight.bold),
             ),
           ],
         ),
       );
 
-  Widget _body(String text) => Text(text, style: const TextStyle(color: GameConstants.mutedColor));
+  Widget _body(String text) =>
+      Text(text, style: const TextStyle(color: GameConstants.mutedColor));
 
   void _showHighScores(BuildContext context) {
     Navigator.of(context).push(
@@ -344,8 +355,11 @@ class _MenuButton extends StatelessWidget {
         icon: Icon(icon),
         label: Text(title),
         style: ElevatedButton.styleFrom(
-          backgroundColor: isPrimary ? GameConstants.primaryColor : GameConstants.surfaceColor,
-          foregroundColor: isPrimary ? GameConstants.onPrimaryColor : GameConstants.inkColor,
+          backgroundColor: isPrimary
+              ? GameConstants.primaryColor
+              : GameConstants.surfaceColor,
+          foregroundColor:
+              isPrimary ? GameConstants.onPrimaryColor : GameConstants.inkColor,
           elevation: isPrimary ? 8 : 0,
           shadowColor: GameConstants.primaryColor.withValues(alpha: 0.5),
           shape: RoundedRectangleBorder(
@@ -353,7 +367,9 @@ class _MenuButton extends StatelessWidget {
             // Dark glass: a hairline rim in place of a shadow
             side: isPrimary
                 ? BorderSide.none
-                : BorderSide(color: GameConstants.mutedColor.withValues(alpha: 0.35), width: 1.5),
+                : BorderSide(
+                    color: GameConstants.mutedColor.withValues(alpha: 0.35),
+                    width: 1.5),
           ),
         ),
       ),

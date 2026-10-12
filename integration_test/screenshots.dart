@@ -43,12 +43,14 @@ void main() {
     });
     final report = binding.reportData ??= <String, dynamic>{};
     final screenshots = report['screenshots'] ??= <dynamic>[];
-    (screenshots as List<dynamic>).add(<String, dynamic>{'screenshotName': name, 'bytes': bytes});
+    (screenshots as List<dynamic>)
+        .add(<String, dynamic>{'screenshotName': name, 'bytes': bytes});
   }
 
   /// Opens the screen behind the menu button [label], captures it as [name]
   /// and comes back.
-  Future<void> openFromMenu(WidgetTester tester, String label, String name) async {
+  Future<void> openFromMenu(
+      WidgetTester tester, String label, String name) async {
     await tester.ensureVisible(find.text(label));
     await tester.tap(find.text(label));
     await settle(tester);
@@ -57,7 +59,8 @@ void main() {
     await settle(tester);
   }
 
-  testWidgets('screenshots of the menu, four levels and one full round', (tester) async {
+  testWidgets('screenshots of the menu, four levels and one full round',
+      (tester) async {
     app.main();
     await settle(tester);
     await capture(tester, '01-menu');
@@ -85,8 +88,9 @@ void main() {
 
     await tester.tap(find.text(GameStrings.play));
     await settle(tester);
-    final gameManager =
-        Provider.of<GameManager>(tester.element(find.byType(GameScreen)), listen: false);
+    final gameManager = Provider.of<GameManager>(
+        tester.element(find.byType(GameScreen)),
+        listen: false);
 
     // Levels 1, 6, 11 and 16 are the first of each band of colours
     for (final level in [16, 11, 9, 6, 3, 2, 1]) {
@@ -113,7 +117,8 @@ void main() {
     }
     await drag.up();
     await pumpUntil(tester, () => gameManager.gameState.activeBalls.isEmpty,
-        timeout: const Duration(seconds: 60), what: 'the full-power ball to land');
+        timeout: const Duration(seconds: 60),
+        what: 'the full-power ball to land');
 
     int launched = 0;
     while (gameManager.gameState.ballsRemaining > 0) {
@@ -124,7 +129,8 @@ void main() {
       if (launched == 5) {
         // Just after the ball leaves the launch channel; a fixed wait can
         // outlast a fast ball
-        await pumpUntil(tester, () => gameManager.ballLauncher.currentBall == null,
+        await pumpUntil(
+            tester, () => gameManager.ballLauncher.currentBall == null,
             what: 'ball $launched to leave the channel');
         await tester.pump(const Duration(milliseconds: 300));
         await capture(tester, 'level-1-ball-in-play');

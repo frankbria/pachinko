@@ -19,10 +19,12 @@ import 'package:vector_math/vector_math_64.dart';
 /// - Game over: Verify condition (ballsRemaining <= 0 && activeBalls.isEmpty)
 void main() {
   group('GameState Initialization -', () {
-    test('given GameState constructor, when created, then initializes with default values', () {
+    test(
+        'given GameState constructor, when created, then initializes with default values',
+        () {
       /// Validates initial state setup before any game starts
       /// Default state: score=0, balls=20, phase=loading, no active balls, no level loaded
-      
+
       // Given / When
       final gameState = GameState();
 
@@ -39,10 +41,12 @@ void main() {
       expect(gameState.canLaunchBall, isFalse); // phase != ready
     });
 
-    test('given GameState, when startNewGame called, then initializes game with level 1', () {
+    test(
+        'given GameState, when startNewGame called, then initializes game with level 1',
+        () {
       /// Validates startNewGame() resets score, balls, and loads first level
       /// Sets phase to ready for ball launching
-      
+
       // Given
       final gameState = GameState();
 
@@ -58,9 +62,11 @@ void main() {
       expect(gameState.canLaunchBall, isTrue);
     });
 
-    test('given GameState, when startNewGame called with custom level, then loads specified level', () {
+    test(
+        'given GameState, when startNewGame called with custom level, then loads specified level',
+        () {
       /// Validates startNewGame() can start at any level number
-      
+
       // Given
       final gameState = GameState();
 
@@ -77,7 +83,7 @@ void main() {
   group('Score Management -', () {
     test('given GameState, when addScore called, then score increases', () {
       /// Validates addScore() correctly adds points to cumulative score
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -89,9 +95,11 @@ void main() {
       expect(gameState.score, equals(100));
     });
 
-    test('given GameState, when addScore called multiple times, then score accumulates', () {
+    test(
+        'given GameState, when addScore called multiple times, then score accumulates',
+        () {
       /// Validates cumulative scoring across multiple addScore() calls
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -105,10 +113,12 @@ void main() {
       expect(gameState.score, equals(400));
     });
 
-    test('given GameState with listener, when addScore called, then notifyListeners triggered', () {
+    test(
+        'given GameState with listener, when addScore called, then notifyListeners triggered',
+        () {
       /// Validates ChangeNotifier behavior: addScore() calls notifyListeners()
       /// Uses listener callback counter to verify notification
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -127,9 +137,11 @@ void main() {
   });
 
   group('Ball Launching -', () {
-    test('given GameState ready, when launchBall called, then ballsRemaining decrements', () {
+    test(
+        'given GameState ready, when launchBall called, then ballsRemaining decrements',
+        () {
       /// Validates launchBall() decrements ballsRemaining counter
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -144,9 +156,11 @@ void main() {
       expect(gameState.ballsRemaining, equals(19));
     });
 
-    test('given GameState ready, when launchBall called, then ball added to activeBalls', () {
+    test(
+        'given GameState ready, when launchBall called, then ball added to activeBalls',
+        () {
       /// Validates launchBall() adds ball to active balls list
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -160,9 +174,11 @@ void main() {
       expect(gameState.activeBalls.contains(ball), isTrue);
     });
 
-    test('given GameState ready, when launchBall called, then phase changes to playing', () {
+    test(
+        'given GameState ready, when launchBall called, then phase changes to playing',
+        () {
       /// Validates launchBall() triggers phase transition: ready → playing
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -175,10 +191,12 @@ void main() {
       expect(gameState.phase, equals(GamePhase.playing));
     });
 
-    test('given GameState with canLaunchBall false, when launchBall called, then no effect', () {
+    test(
+        'given GameState with canLaunchBall false, when launchBall called, then no effect',
+        () {
       /// Validates launchBall() guard condition: only works when canLaunchBall is true
       /// canLaunchBall requires phase==ready AND ballsRemaining>0
-      
+
       // Given
       final gameState = GameState();
       // Don't call startNewGame - phase will be loading
@@ -193,9 +211,11 @@ void main() {
       expect(gameState.activeBalls, isEmpty);
     });
 
-    test('given GameState ready with listener, when launchBall called, then notifyListeners triggered', () {
+    test(
+        'given GameState ready with listener, when launchBall called, then notifyListeners triggered',
+        () {
       /// Validates ChangeNotifier behavior: launchBall() calls notifyListeners()
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -211,7 +231,9 @@ void main() {
       expect(listenerCallCount, greaterThan(0));
     });
 
-    test('given GameState with multiple balls launched, when tracking, then ballsRemaining decrements correctly', () {
+    test(
+        'given GameState with multiple balls launched, when tracking, then ballsRemaining decrements correctly',
+        () {
       /// Validates ball tracking across multiple launches
 
       // Given
@@ -233,9 +255,11 @@ void main() {
   });
 
   group('Ball Removal and Phase Transitions -', () {
-    test('given GameState with active ball, when removeBall called, then ball removed from activeBalls', () {
+    test(
+        'given GameState with active ball, when removeBall called, then ball removed from activeBalls',
+        () {
       /// Validates removeBall() removes ball from active list
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -250,9 +274,11 @@ void main() {
       expect(gameState.activeBalls.length, equals(0));
     });
 
-    test('given GameState with last active ball, when removeBall called and balls remain, then phase returns to ready', () {
+    test(
+        'given GameState with last active ball, when removeBall called and balls remain, then phase returns to ready',
+        () {
       /// Validates phase transition: when all balls removed but more balls available, return to ready
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -268,7 +294,9 @@ void main() {
       expect(gameState.phase, equals(GamePhase.ready));
     });
 
-    test('given GameState with last ball, when removeBall called and no balls remain, then phase changes to gameOver', () {
+    test(
+        'given GameState with last ball, when removeBall called and no balls remain, then phase changes to gameOver',
+        () {
       /// Validates game over condition: ballsRemaining==0 && activeBalls.isEmpty
 
       // Given
@@ -278,7 +306,8 @@ void main() {
       // Launch all 20 balls
       for (int i = 0; i < 20; i++) {
         gameState.launchBall(Ball(position: Vector2(200.0 + i, 300)));
-        if (i < 19) gameState.updatePhase(GamePhase.ready); // Reset phase for next launch
+        if (i < 19)
+          gameState.updatePhase(GamePhase.ready); // Reset phase for next launch
       }
       expect(gameState.ballsRemaining, equals(0));
       expect(gameState.activeBalls.length, equals(20));
@@ -294,9 +323,11 @@ void main() {
       expect(gameState.isGameOver, isTrue);
     });
 
-    test('given GameState with listener, when removeBall called, then notifyListeners triggered', () {
+    test(
+        'given GameState with listener, when removeBall called, then notifyListeners triggered',
+        () {
       /// Validates ChangeNotifier behavior: removeBall() calls notifyListeners()
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -316,10 +347,12 @@ void main() {
   });
 
   group('Bonus Mechanics -', () {
-    test('given GameState level 1, when triggerSpecialBonus called, then adds 5 bonus balls', () {
+    test(
+        'given GameState level 1, when triggerSpecialBonus called, then adds 5 bonus balls',
+        () {
       /// Validates bonus formula: 5 + (level ~/ 2)
       /// Level 1: 5 + (1 ~/ 2) = 5 + 0 = 5 bonus balls
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame(level: 1);
@@ -332,9 +365,11 @@ void main() {
       expect(gameState.activeBalls.length, equals(initialActiveBalls + 5));
     });
 
-    test('given GameState level 2, when triggerSpecialBonus called, then adds 6 bonus balls', () {
+    test(
+        'given GameState level 2, when triggerSpecialBonus called, then adds 6 bonus balls',
+        () {
       /// Level 2: 5 + (2 ~/ 2) = 5 + 1 = 6 bonus balls
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame(level: 2);
@@ -346,9 +381,11 @@ void main() {
       expect(gameState.activeBalls.length, equals(6));
     });
 
-    test('given GameState level 4, when triggerSpecialBonus called, then adds 7 bonus balls', () {
+    test(
+        'given GameState level 4, when triggerSpecialBonus called, then adds 7 bonus balls',
+        () {
       /// Level 4: 5 + (4 ~/ 2) = 5 + 2 = 7 bonus balls
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame(level: 4);
@@ -360,9 +397,11 @@ void main() {
       expect(gameState.activeBalls.length, equals(7));
     });
 
-    test('given GameState level 10, when triggerSpecialBonus called, then adds 10 bonus balls', () {
+    test(
+        'given GameState level 10, when triggerSpecialBonus called, then adds 10 bonus balls',
+        () {
       /// Level 10: 5 + (10 ~/ 2) = 5 + 5 = 10 bonus balls
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame(level: 10);
@@ -374,9 +413,11 @@ void main() {
       expect(gameState.activeBalls.length, equals(10));
     });
 
-    test('given GameState, when triggerSpecialBonus called, then specialBonusTriggered becomes true', () {
+    test(
+        'given GameState, when triggerSpecialBonus called, then specialBonusTriggered becomes true',
+        () {
       /// Validates bonus trigger flag prevents multiple bonus activations
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -389,9 +430,11 @@ void main() {
       expect(gameState.specialBonusTriggered, isTrue);
     });
 
-    test('given bonus already triggered, when triggerSpecialBonus called again, then no additional balls added', () {
+    test(
+        'given bonus already triggered, when triggerSpecialBonus called again, then no additional balls added',
+        () {
       /// Validates guard condition: bonus can only trigger once per level
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -405,9 +448,11 @@ void main() {
       expect(gameState.activeBalls.length, equals(ballsAfterFirstBonus));
     });
 
-    test('given GameState with listener, when triggerSpecialBonus called, then notifyListeners triggered', () {
+    test(
+        'given GameState with listener, when triggerSpecialBonus called, then notifyListeners triggered',
+        () {
       /// Validates ChangeNotifier behavior: triggerSpecialBonus() calls notifyListeners()
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -423,7 +468,9 @@ void main() {
       expect(listenerCallCount, greaterThan(0));
     });
 
-    test('given level 1, when triggerSpecialBonus called, then bonus balls spawn above the peg field inside the playfield', () {
+    test(
+        'given level 1, when triggerSpecialBonus called, then bonus balls spawn above the peg field inside the playfield',
+        () {
       // Given
       final gameState = GameState();
       addTearDown(gameState.dispose);
@@ -438,12 +485,16 @@ void main() {
         // Above the first peg row (pegs start below launchChannelEndY)
         expect(ball.position.y, lessThan(GameConstants.launchChannelEndY));
         // Inside the playfield walls, not in the launch channel
-        expect(ball.position.x, greaterThan(GameConstants.fieldLeftBoundaryX + ball.radius));
-        expect(ball.position.x, lessThan(GameConstants.fieldRightBoundaryX - ball.radius));
+        expect(ball.position.x,
+            greaterThan(GameConstants.fieldLeftBoundaryX + ball.radius));
+        expect(ball.position.x,
+            lessThan(GameConstants.fieldRightBoundaryX - ball.radius));
       }
     });
 
-    test('given level 20, when triggerSpecialBonus called, then all 15 bonus balls spawn at distinct positions inside the playfield', () {
+    test(
+        'given level 20, when triggerSpecialBonus called, then all 15 bonus balls spawn at distinct positions inside the playfield',
+        () {
       // Given
       final gameState = GameState();
       addTearDown(gameState.dispose);
@@ -458,16 +509,20 @@ void main() {
       expect(xs, hasLength(15));
       for (final ball in gameState.activeBalls) {
         expect(ball.position.y, lessThan(GameConstants.launchChannelEndY));
-        expect(ball.position.x, greaterThan(GameConstants.fieldLeftBoundaryX + ball.radius));
-        expect(ball.position.x, lessThan(GameConstants.fieldRightBoundaryX - ball.radius));
+        expect(ball.position.x,
+            greaterThan(GameConstants.fieldLeftBoundaryX + ball.radius));
+        expect(ball.position.x,
+            lessThan(GameConstants.fieldRightBoundaryX - ball.radius));
       }
     });
   });
 
   group('Level Progression -', () {
-    test('given GameState on level 1, when nextLevel called, then level increments to 2', () {
+    test(
+        'given GameState on level 1, when nextLevel called, then level increments to 2',
+        () {
       /// Validates nextLevel() increments currentLevelNumber
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame(level: 1);
@@ -482,7 +537,7 @@ void main() {
 
     test('given GameState, when nextLevel called, then new level loaded', () {
       /// Validates nextLevel() loads a new Level instance
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame(level: 1);
@@ -496,9 +551,11 @@ void main() {
       expect(gameState.currentLevel, isNot(same(oldLevel)));
     });
 
-    test('given GameState, when nextLevel called, then balls reset to totalBalls', () {
+    test(
+        'given GameState, when nextLevel called, then balls reset to totalBalls',
+        () {
       /// Validates nextLevel() resets ballsRemaining for new level
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -515,7 +572,9 @@ void main() {
       expect(gameState.ballsRemaining, equals(20));
     });
 
-    test('given a ball in play, when loadLevel called, then no ball is carried onto the new level', () {
+    test(
+        'given a ball in play, when loadLevel called, then no ball is carried onto the new level',
+        () {
       /// A ball left in activeBalls would drain through the new level's pegs
       /// and score there, and it blocks the launcher while it is in play
       // Given
@@ -533,7 +592,9 @@ void main() {
       expect(gameState.canLaunchBall, isTrue);
     });
 
-    test('given a ball in play, when nextLevel called, then no ball is carried onto the new level', () {
+    test(
+        'given a ball in play, when nextLevel called, then no ball is carried onto the new level',
+        () {
       // Given
       final gameState = GameState();
       addTearDown(gameState.dispose);
@@ -550,7 +611,7 @@ void main() {
 
     test('given GameState, when nextLevel called, then phase set to ready', () {
       /// Validates nextLevel() resets phase to ready for new level
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -563,9 +624,11 @@ void main() {
       expect(gameState.phase, equals(GamePhase.ready));
     });
 
-    test('given GameState, when nextLevel called, then specialBonusTriggered reset', () {
+    test(
+        'given GameState, when nextLevel called, then specialBonusTriggered reset',
+        () {
       /// Validates nextLevel() resets bonus trigger flag for new level
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -581,9 +644,11 @@ void main() {
   });
 
   group('Game Over Conditions -', () {
-    test('given GameState with balls remaining, when checked, then isGameOver returns false', () {
+    test(
+        'given GameState with balls remaining, when checked, then isGameOver returns false',
+        () {
       /// Validates game over condition: false when ballsRemaining > 0
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -593,9 +658,11 @@ void main() {
       expect(gameState.isGameOver, isFalse);
     });
 
-    test('given GameState with active balls, when checked, then isGameOver returns false', () {
+    test(
+        'given GameState with active balls, when checked, then isGameOver returns false',
+        () {
       /// Validates game over condition: false when activeBalls not empty
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -606,7 +673,9 @@ void main() {
       expect(gameState.isGameOver, isFalse);
     });
 
-    test('given GameState with no balls and no active balls, when checked, then isGameOver returns true', () {
+    test(
+        'given GameState with no balls and no active balls, when checked, then isGameOver returns true',
+        () {
       /// Validates game over condition: true when ballsRemaining <= 0 AND activeBalls.isEmpty
 
       // Given
@@ -630,7 +699,9 @@ void main() {
       expect(gameState.isGameOver, isTrue);
     });
 
-    test('given GameState game over, when canLaunchBall checked, then returns false', () {
+    test(
+        'given GameState game over, when canLaunchBall checked, then returns false',
+        () {
       /// Validates canLaunchBall: false when game over (ballsRemaining <= 0)
 
       // Given
@@ -655,9 +726,11 @@ void main() {
   });
 
   group('Reset Functionality -', () {
-    test('given GameState with hit pegs, when resetLevel called, then level state resets', () {
+    test(
+        'given GameState with hit pegs, when resetLevel called, then level state resets',
+        () {
       /// Validates resetLevel() calls currentLevel.reset()
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -672,7 +745,9 @@ void main() {
       expect(gameState.specialBonusTriggered, isFalse);
     });
 
-    test('given GameState with active balls, when resetLevel called, then activeBalls cleared', () {
+    test(
+        'given GameState with active balls, when resetLevel called, then activeBalls cleared',
+        () {
       /// Validates resetLevel() clears all active balls
 
       // Given
@@ -691,9 +766,11 @@ void main() {
       expect(gameState.activeBalls, isEmpty);
     });
 
-    test('given GameState with used balls, when resetLevel called, then ballsRemaining reset to totalBalls', () {
+    test(
+        'given GameState with used balls, when resetLevel called, then ballsRemaining reset to totalBalls',
+        () {
       /// Validates resetLevel() restores full ball count
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -708,9 +785,11 @@ void main() {
       expect(gameState.ballsRemaining, equals(20));
     });
 
-    test('given GameState with listener, when resetLevel called, then notifyListeners triggered', () {
+    test(
+        'given GameState with listener, when resetLevel called, then notifyListeners triggered',
+        () {
       /// Validates ChangeNotifier behavior: resetLevel() calls notifyListeners()
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -726,12 +805,15 @@ void main() {
       expect(listenerCallCount, greaterThan(0));
     });
 
-    test('given GameState with floating texts and confetti, when resetLevel called, then effects are cleared', () {
+    test(
+        'given GameState with floating texts and confetti, when resetLevel called, then effects are cleared',
+        () {
       // Given
       final gameState = GameState();
       addTearDown(gameState.dispose);
       gameState.startNewGame(level: 1);
-      gameState.addFloatingText('+50', const Offset(100, 100), const Color(0xFFFFFFFF));
+      gameState.addFloatingText(
+          '+50', const Offset(100, 100), const Color(0xFFFFFFFF));
       gameState.spawnConfetti(Vector2(200, 300), 10);
       gameState.triggerSpecialBonus();
       expect(gameState.floatingTexts, isNotEmpty);
@@ -748,12 +830,15 @@ void main() {
       expect(gameState.bonusOverlayOpacity, 0.0);
     });
 
-    test('given GameState with floating texts, when a new game starts, then effects are cleared', () {
+    test(
+        'given GameState with floating texts, when a new game starts, then effects are cleared',
+        () {
       // Given
       final gameState = GameState();
       addTearDown(gameState.dispose);
       gameState.startNewGame(level: 1);
-      gameState.addFloatingText('+50', const Offset(100, 100), const Color(0xFFFFFFFF));
+      gameState.addFloatingText(
+          '+50', const Offset(100, 100), const Color(0xFFFFFFFF));
 
       // When
       gameState.startNewGame(level: 2);
@@ -766,7 +851,7 @@ void main() {
   group('Phase Transitions -', () {
     test('given GameState, when updatePhase called, then phase changes', () {
       /// Validates direct phase update via updatePhase()
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -779,9 +864,11 @@ void main() {
       expect(gameState.phase, equals(GamePhase.playing));
     });
 
-    test('given GameState with listener, when updatePhase called, then notifyListeners triggered', () {
+    test(
+        'given GameState with listener, when updatePhase called, then notifyListeners triggered',
+        () {
       /// Validates ChangeNotifier behavior: updatePhase() calls notifyListeners()
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -799,9 +886,11 @@ void main() {
   });
 
   group('Pause and Resume -', () {
-    test('given GameState playing, when pauseGame called, then phase changes to ready', () {
+    test(
+        'given GameState playing, when pauseGame called, then phase changes to ready',
+        () {
       /// Validates pause functionality changes phase to ready (simple pause implementation)
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -814,7 +903,9 @@ void main() {
       expect(gameState.phase, equals(GamePhase.ready));
     });
 
-    test('given GameState paused with a ball in play, when canLaunchBall checked, then returns false', () {
+    test(
+        'given GameState paused with a ball in play, when canLaunchBall checked, then returns false',
+        () {
       // Given
       final gameState = GameState();
       addTearDown(gameState.dispose);
@@ -829,7 +920,9 @@ void main() {
       expect(gameState.canLaunchBall, isFalse);
     });
 
-    test('given single-ball launch turned off and GameState paused with a ball in play, when canLaunchBall checked, then returns false', () {
+    test(
+        'given single-ball launch turned off and GameState paused with a ball in play, when canLaunchBall checked, then returns false',
+        () {
       // Pause used to be the only way to launch a second ball with the
       // setting off. Since #39 the setting allows it during play, and pause
       // stops launches in both modes
@@ -847,9 +940,11 @@ void main() {
       expect(gameState.canLaunchBall, isFalse);
     });
 
-    test('given GameState paused with active balls, when resumeGame called, then phase changes to playing', () {
+    test(
+        'given GameState paused with active balls, when resumeGame called, then phase changes to playing',
+        () {
       /// Validates resume functionality restores playing phase when balls are active
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -864,9 +959,11 @@ void main() {
       expect(gameState.phase, equals(GamePhase.playing));
     });
 
-    test('given GameState paused with no active balls, when resumeGame called, then phase unchanged', () {
+    test(
+        'given GameState paused with no active balls, when resumeGame called, then phase unchanged',
+        () {
       /// Validates resume guard condition: only resume if activeBalls not empty
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -881,9 +978,11 @@ void main() {
       expect(gameState.phase, equals(GamePhase.ready));
     });
 
-    test('given GameState, when pauseGame called with listener, then notifyListeners triggered', () {
+    test(
+        'given GameState, when pauseGame called with listener, then notifyListeners triggered',
+        () {
       /// Validates ChangeNotifier behavior: pauseGame() calls notifyListeners()
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -900,9 +999,11 @@ void main() {
       expect(listenerCallCount, greaterThan(0));
     });
 
-    test('given GameState, when resumeGame called with listener, then notifyListeners triggered', () {
+    test(
+        'given GameState, when resumeGame called with listener, then notifyListeners triggered',
+        () {
       /// Validates ChangeNotifier behavior: resumeGame() calls notifyListeners()
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -943,9 +1044,13 @@ void main() {
       expect(state.slotsLit, isTrue);
     });
 
-    test('given lit slots, when time passes, then a 2000 slot outlasts a 50 slot and both go out', () {
-      final high = state.currentLevel!.slots.firstWhere((slot) => slot.pointValue == 2000);
-      final low = state.currentLevel!.slots.firstWhere((slot) => slot.pointValue == 50);
+    test(
+        'given lit slots, when time passes, then a 2000 slot outlasts a 50 slot and both go out',
+        () {
+      final high = state.currentLevel!.slots
+          .firstWhere((slot) => slot.pointValue == 2000);
+      final low =
+          state.currentLevel!.slots.firstWhere((slot) => slot.pointValue == 50);
       state.lightSlot(high);
       state.lightSlot(low);
 
@@ -962,7 +1067,8 @@ void main() {
       expect(state.slotsLit, isFalse);
     });
 
-    test('given a lit slot, when the level is restarted, then the light is out', () {
+    test('given a lit slot, when the level is restarted, then the light is out',
+        () {
       final slot = state.currentLevel!.slots.first;
       state.lightSlot(slot);
 
@@ -993,7 +1099,9 @@ void main() {
 
     Ball ball() => Ball(position: Vector2(200, 100));
 
-    test('given one ball at a time, when a ball is in play, then no other can be launched, paused or not', () {
+    test(
+        'given one ball at a time, when a ball is in play, then no other can be launched, paused or not',
+        () {
       state.launchBall(ball());
 
       expect(state.canLaunchBall, isFalse);
@@ -1001,7 +1109,9 @@ void main() {
       expect(state.canLaunchBall, isFalse);
     });
 
-    test('given many balls allowed, when a ball is in play, then another can be launched without pausing', () {
+    test(
+        'given many balls allowed, when a ball is in play, then another can be launched without pausing',
+        () {
       state.singleBallLaunch = false;
       state.launchBall(ball());
       expect(state.phase, GamePhase.playing);
@@ -1013,7 +1123,9 @@ void main() {
       expect(state.ballsRemaining, 18);
     });
 
-    test('given many balls allowed, when the game is paused, then no ball can be launched until it is resumed', () {
+    test(
+        'given many balls allowed, when the game is paused, then no ball can be launched until it is resumed',
+        () {
       state.singleBallLaunch = false;
       state.launchBall(ball());
 
@@ -1028,7 +1140,9 @@ void main() {
       expect(state.canLaunchBall, isTrue);
     });
 
-    test('given many balls allowed, when the launcher is still carrying a ball, then the next launch waits', () {
+    test(
+        'given many balls allowed, when the launcher is still carrying a ball, then the next launch waits',
+        () {
       state.singleBallLaunch = false;
       state.launchBall(ball());
 
@@ -1039,7 +1153,9 @@ void main() {
       expect(state.canLaunchBall, isTrue);
     });
 
-    test('given many balls allowed, when the last ball has been launched, then no more can be', () {
+    test(
+        'given many balls allowed, when the last ball has been launched, then no more can be',
+        () {
       state.singleBallLaunch = false;
       for (int i = 0; i < 20; i++) {
         state.launchBall(ball());
@@ -1049,7 +1165,9 @@ void main() {
       expect(state.canLaunchBall, isFalse);
     });
 
-    test('given a paused game with a busy launcher, when the level is restarted or changed, then both are cleared', () {
+    test(
+        'given a paused game with a busy launcher, when the level is restarted or changed, then both are cleared',
+        () {
       state.launchBall(ball());
       state.pauseGame();
       state.launcherBusy = true;
@@ -1069,9 +1187,11 @@ void main() {
   });
 
   group('ChangeNotifier Behavior -', () {
-    test('given GameState with listener, when loadLevel called, then notifyListeners triggered', () {
+    test(
+        'given GameState with listener, when loadLevel called, then notifyListeners triggered',
+        () {
       /// Validates ChangeNotifier behavior: loadLevel() calls notifyListeners()
-      
+
       // Given
       final gameState = GameState();
       int listenerCallCount = 0;
@@ -1086,9 +1206,11 @@ void main() {
       expect(listenerCallCount, greaterThan(0));
     });
 
-    test('given GameState with multiple listeners, when state changes, then all listeners notified', () {
+    test(
+        'given GameState with multiple listeners, when state changes, then all listeners notified',
+        () {
       /// Validates multiple listeners can be attached and all receive notifications
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -1109,9 +1231,11 @@ void main() {
       expect(listener2CallCount, greaterThan(0));
     });
 
-    test('given GameState with listener removed, when state changes, then removed listener not called', () {
+    test(
+        'given GameState with listener removed, when state changes, then removed listener not called',
+        () {
       /// Validates listener removal works correctly
-      
+
       // Given
       final gameState = GameState();
       gameState.startNewGame();
@@ -1119,10 +1243,11 @@ void main() {
       void listener() {
         listenerCallCount++;
       }
+
       gameState.addListener(listener);
       gameState.addScore(50); // Trigger once
       final initialCallCount = listenerCallCount;
-      
+
       // When - remove listener and trigger again
       gameState.removeListener(listener);
       gameState.addScore(50);
@@ -1133,7 +1258,9 @@ void main() {
   });
 
   group('Bonus Screen Auto-Dismiss -', () {
-    test('given bonus triggered, when 2.5 seconds elapse, then bonus flag resets', () async {
+    test(
+        'given bonus triggered, when 2.5 seconds elapse, then bonus flag resets',
+        () async {
       /// Validates bonus overlay auto-dismisses after 2.5 seconds
 
       // Given
@@ -1151,7 +1278,9 @@ void main() {
       expect(gameState.bonusOverlayOpacity, equals(0.0));
     });
 
-    test('given bonus triggered, when less than 2 seconds elapse, then bonus still visible', () async {
+    test(
+        'given bonus triggered, when less than 2 seconds elapse, then bonus still visible',
+        () async {
       /// Validates bonus overlay stays visible during timer period
 
       // Given
@@ -1167,7 +1296,9 @@ void main() {
       expect(gameState.bonusOverlayOpacity, equals(1.0));
     });
 
-    test('given bonus triggered twice in quick succession, when timer runs, then only one dismissal occurs', () async {
+    test(
+        'given bonus triggered twice in quick succession, when timer runs, then only one dismissal occurs',
+        () async {
       /// Validates timer cancellation prevents multiple dismissals
       /// Second trigger should cancel first timer and start new one
 
@@ -1182,7 +1313,8 @@ void main() {
       gameState.resetLevel();
       gameState.startNewGame();
 
-      gameState.triggerSpecialBonus(); // Trigger again (should cancel first timer)
+      gameState
+          .triggerSpecialBonus(); // Trigger again (should cancel first timer)
 
       // When - wait 2.6 seconds from SECOND trigger
       await Future.delayed(const Duration(milliseconds: 2600));
@@ -1192,7 +1324,9 @@ void main() {
       expect(gameState.bonusOverlayOpacity, equals(0.0));
     });
 
-    test('given bonus triggered, when resetLevel called, then timer cancelled and bonus cleared', () {
+    test(
+        'given bonus triggered, when resetLevel called, then timer cancelled and bonus cleared',
+        () {
       /// Validates resetLevel() cancels pending bonus timer
 
       // Given
@@ -1209,7 +1343,9 @@ void main() {
       expect(gameState.bonusOverlayOpacity, equals(0.0));
     });
 
-    test('given bonus triggered, when GameState disposed, then timer cancelled without error', () {
+    test(
+        'given bonus triggered, when GameState disposed, then timer cancelled without error',
+        () {
       /// Validates dispose() properly cleans up timer
 
       // Given
@@ -1221,7 +1357,9 @@ void main() {
       expect(() => gameState.dispose(), returnsNormally);
     });
 
-    test('given bonus triggered, when dismissed by timer, then notifyListeners triggered', () async {
+    test(
+        'given bonus triggered, when dismissed by timer, then notifyListeners triggered',
+        () async {
       /// Validates ChangeNotifier notification on auto-dismiss
 
       // Given
@@ -1240,13 +1378,17 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 2600));
 
       // Then - listener called on both trigger and dismiss
-      expect(callCountAfterBonus, greaterThan(callCountBeforeBonus)); // Called on trigger
-      expect(listenerCallCount, greaterThan(callCountAfterBonus)); // Called on auto-dismiss
+      expect(callCountAfterBonus,
+          greaterThan(callCountBeforeBonus)); // Called on trigger
+      expect(listenerCallCount,
+          greaterThan(callCountAfterBonus)); // Called on auto-dismiss
     });
   });
 
   group('Visual Feedback -', () {
-    test('given GameState, when addFloatingText called, then floating text added to list', () {
+    test(
+        'given GameState, when addFloatingText called, then floating text added to list',
+        () {
       /// Validates addFloatingText() adds text to floatingTexts list
 
       // Given
@@ -1266,7 +1408,9 @@ void main() {
       expect(gameState.floatingTexts.first.text, equals('+100'));
     });
 
-    test('given GameState with floating text, when updateFloatingTexts called with time, then texts updated', () {
+    test(
+        'given GameState with floating text, when updateFloatingTexts called with time, then texts updated',
+        () {
       /// Validates updateFloatingTexts() updates text animations
 
       // Given
@@ -1286,7 +1430,9 @@ void main() {
       expect(gameState.floatingTexts.length, equals(initialTexts));
     });
 
-    test('given GameState with expired floating text, when updateFloatingTexts called, then expired texts removed', () {
+    test(
+        'given GameState with expired floating text, when updateFloatingTexts called, then expired texts removed',
+        () {
       /// Validates updateFloatingTexts() removes expired texts
 
       // Given
@@ -1306,7 +1452,9 @@ void main() {
       expect(gameState.floatingTexts, isEmpty);
     });
 
-    test('given GameState, when spawnConfetti called, then correct number of particles created', () {
+    test(
+        'given GameState, when spawnConfetti called, then correct number of particles created',
+        () {
       /// Validates spawnConfetti() creates requested number of particles
 
       // Given
@@ -1321,7 +1469,9 @@ void main() {
       expect(gameState.confettiParticles.length, equals(50));
     });
 
-    test('given GameState with confetti, when updateConfetti called with time, then particles updated', () {
+    test(
+        'given GameState with confetti, when updateConfetti called with time, then particles updated',
+        () {
       /// Validates updateConfetti() updates particle physics
 
       // Given
@@ -1337,7 +1487,9 @@ void main() {
       expect(gameState.confettiParticles.length, equals(initialParticles));
     });
 
-    test('given GameState with expired confetti, when updateConfetti called, then expired particles removed', () {
+    test(
+        'given GameState with expired confetti, when updateConfetti called, then expired particles removed',
+        () {
       /// Validates updateConfetti() removes expired particles
 
       // Given
@@ -1353,7 +1505,9 @@ void main() {
       expect(gameState.confettiParticles, isEmpty);
     });
 
-    test('given GameState, when ball counter highlight triggered, then ballCountHighlighted is true', () {
+    test(
+        'given GameState, when ball counter highlight triggered, then ballCountHighlighted is true',
+        () {
       /// Validates triggerSpecialBonus() activates ball counter highlight
 
       // Given
@@ -1368,7 +1522,9 @@ void main() {
       expect(gameState.ballCountHighlighted, isTrue);
     });
 
-    test('given GameState with ball counter highlight, when timer expires, then highlight deactivates', () {
+    test(
+        'given GameState with ball counter highlight, when timer expires, then highlight deactivates',
+        () {
       /// Validates updateBallCountHighlight() deactivates after duration
 
       // Given
@@ -1384,7 +1540,9 @@ void main() {
       expect(gameState.ballCountHighlighted, isFalse);
     });
 
-    test('given GameState with ball counter highlight, when timer running, then highlight remains active', () {
+    test(
+        'given GameState with ball counter highlight, when timer running, then highlight remains active',
+        () {
       /// Validates updateBallCountHighlight() keeps highlight during timer
 
       // Given
@@ -1400,7 +1558,9 @@ void main() {
       expect(gameState.ballCountHighlighted, isTrue);
     });
 
-    test('given GameState with listener, when addFloatingText called, then notifyListeners triggered', () {
+    test(
+        'given GameState with listener, when addFloatingText called, then notifyListeners triggered',
+        () {
       /// Validates ChangeNotifier behavior: addFloatingText() calls notifyListeners()
 
       // Given
@@ -1422,7 +1582,9 @@ void main() {
       expect(listenerCallCount, greaterThan(0));
     });
 
-    test('given GameState with listener, when spawnConfetti called, then notifyListeners triggered', () {
+    test(
+        'given GameState with listener, when spawnConfetti called, then notifyListeners triggered',
+        () {
       /// Validates ChangeNotifier behavior: spawnConfetti() calls notifyListeners()
 
       // Given
@@ -1442,7 +1604,9 @@ void main() {
   });
 
   group('Level Score Accounting -', () {
-    test('given a new game, when points are scored, then levelScore equals score', () {
+    test(
+        'given a new game, when points are scored, then levelScore equals score',
+        () {
       // Given
       final gameState = GameState();
       addTearDown(gameState.dispose);
@@ -1456,7 +1620,9 @@ void main() {
       expect(gameState.levelScore, equals(500));
     });
 
-    test('given points scored on level 1, when nextLevel called, then score carries over and levelScore restarts at 0', () {
+    test(
+        'given points scored on level 1, when nextLevel called, then score carries over and levelScore restarts at 0',
+        () {
       // Given
       final gameState = GameState();
       addTearDown(gameState.dispose);
@@ -1476,7 +1642,9 @@ void main() {
       expect(gameState.levelScore, equals(9000));
     });
 
-    test('given points scored on level 2 of a run, when resetLevel called, then score returns to the level-start total', () {
+    test(
+        'given points scored on level 2 of a run, when resetLevel called, then score returns to the level-start total',
+        () {
       // Given
       final gameState = GameState();
       addTearDown(gameState.dispose);
@@ -1493,7 +1661,9 @@ void main() {
       expect(gameState.levelScore, equals(0));
     });
 
-    test('given a finished run, when startNewGame called, then score and levelScore are 0', () {
+    test(
+        'given a finished run, when startNewGame called, then score and levelScore are 0',
+        () {
       // Given
       final gameState = GameState();
       addTearDown(gameState.dispose);

@@ -24,15 +24,32 @@ import 'package:pachinko_game/models/peg.dart';
 import 'package:pachinko_game/services/physics_engine.dart';
 
 class Tally {
-  int rounds = 0, bonusRounds = 0, balls = 0, stuck = 0, gap = 0, score = 0, prizePegs = 0, pegs = 0;
+  int rounds = 0,
+      bonusRounds = 0,
+      balls = 0,
+      stuck = 0,
+      gap = 0,
+      score = 0,
+      prizePegs = 0,
+      pegs = 0;
   int over10k = 0, over50k = 0, over100k = 0, best = 0;
   final slots = <int, int>{50: 0, 200: 0, 1000: 0, 2000: 0};
   void add(Tally o) {
-    rounds += o.rounds; bonusRounds += o.bonusRounds; balls += o.balls; stuck += o.stuck;
-    gap += o.gap; score += o.score; prizePegs += o.prizePegs; pegs += o.pegs;
-    over10k += o.over10k; over50k += o.over50k; over100k += o.over100k; best = max(best, o.best);
+    rounds += o.rounds;
+    bonusRounds += o.bonusRounds;
+    balls += o.balls;
+    stuck += o.stuck;
+    gap += o.gap;
+    score += o.score;
+    prizePegs += o.prizePegs;
+    pegs += o.pegs;
+    over10k += o.over10k;
+    over50k += o.over50k;
+    over100k += o.over100k;
+    best = max(best, o.best);
     o.slots.forEach((k, v) => slots[k] = slots[k]! + v);
   }
+
   String share(int n) => '${(100 * n / rounds).toStringAsFixed(1)}%';
   String band(String name) =>
       '$name | ${share(bonusRounds)} | ${(balls / rounds).toStringAsFixed(1)} | ${(score / rounds).round()} | '
@@ -67,7 +84,8 @@ void main() {
     final state = GameState()..startNewGame(level: levelNumber);
     final level = state.currentLevel!;
     tally.pegs = level.pegs.length;
-    tally.prizePegs = level.pegs.where((peg) => peg.type == PegType.special).length;
+    tally.prizePegs =
+        level.pegs.where((peg) => peg.type == PegType.special).length;
     final engine = PhysicsEngine();
     final powers = Random(seed);
 
@@ -122,19 +140,32 @@ void main() {
   test('scoring simulation', () {
     final byPattern = {0: Tally(), 1: Tally(), 2: Tally()};
     final all = Tally();
-    final bands = {'levels 1-10': Tally(), 'levels 11-20': Tally(), 'levels 21-40': Tally(), 'levels 41-60': Tally()};
+    final bands = {
+      'levels 1-10': Tally(),
+      'levels 11-20': Tally(),
+      'levels 21-40': Tally(),
+      'levels 41-60': Tally()
+    };
     for (int n = 1; n <= levels; n++) {
       for (int r = 0; r < rounds; r++) {
         final t = playRound(n, n * 1000 + r);
         byPattern[n % 3]!.add(t);
         all.add(t);
-        bands[n <= 10 ? 'levels 1-10' : n <= 20 ? 'levels 11-20' : n <= 40 ? 'levels 21-40' : 'levels 41-60']!.add(t);
+        bands[n <= 10
+                ? 'levels 1-10'
+                : n <= 20
+                    ? 'levels 11-20'
+                    : n <= 40
+                        ? 'levels 21-40'
+                        : 'levels 41-60']!
+            .add(t);
       }
     }
     // ignore: avoid_print
     print('SIM levels 1..$levels, $rounds rounds each');
     // ignore: avoid_print
-    print('SIM pattern | pegs | prize pegs | bonus rounds | balls/round | 50 | 200 | 1000 | 2000 | gap | stuck | score/round | score/ball');
+    print(
+        'SIM pattern | pegs | prize pegs | bonus rounds | balls/round | 50 | 200 | 1000 | 2000 | gap | stuck | score/round | score/ball');
     for (final k in [1, 2, 0]) {
       // ignore: avoid_print
       print('SIM ${byPattern[k]!.row(names[k]!)}');
@@ -142,7 +173,8 @@ void main() {
     // ignore: avoid_print
     print('SIM ${all.row('all')}');
     // ignore: avoid_print
-    print('BAND levels | bonus rounds | balls/round | score/round | rounds over 10k | over 50k | over 100k | best round');
+    print(
+        'BAND levels | bonus rounds | balls/round | score/round | rounds over 10k | over 50k | over 100k | best round');
     bands.forEach((name, tally) {
       // ignore: avoid_print
       if (tally.rounds > 0) print('BAND ${tally.band(name)}');

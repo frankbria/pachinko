@@ -129,7 +129,8 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('given toast overlay, when context accessed, then of() returns state',
+    testWidgets(
+        'given toast overlay, when context accessed, then of() returns state',
         (tester) async {
       // Arrange
       AchievementToastOverlayState? foundState;
@@ -213,7 +214,8 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('given no overlay ancestor, when of() called, then returns null',
+    testWidgets(
+        'given no overlay ancestor, when of() called, then returns null',
         (tester) async {
       // Arrange
       AchievementToastOverlayState? foundState;

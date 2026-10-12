@@ -30,10 +30,13 @@ void main() {
       expect(scheme.onPrimary, equals(GameConstants.onPrimaryColor));
       expect(scheme.secondary, equals(GameConstants.secondaryColor));
       expect(scheme.surface, equals(GameConstants.surfaceColor));
-      expect(theme.scaffoldBackgroundColor, equals(GameConstants.backgroundColor));
+      expect(
+          theme.scaffoldBackgroundColor, equals(GameConstants.backgroundColor));
     });
 
-    testWidgets('given a dialog, then its action text is readable on the dialog surface', (tester) async {
+    testWidgets(
+        'given a dialog, then its action text is readable on the dialog surface',
+        (tester) async {
       await tester.pumpWidget(MaterialApp(
         theme: theme,
         home: AlertDialog(
@@ -43,31 +46,53 @@ void main() {
       ));
 
       final surface = tester
-          .widget<Material>(find.descendant(of: find.byType(AlertDialog), matching: find.byType(Material)).first)
+          .widget<Material>(find
+              .descendant(
+                  of: find.byType(AlertDialog), matching: find.byType(Material))
+              .first)
           .color!;
-      final action = tester.widget<RichText>(find.descendant(of: find.byType(TextButton), matching: find.byType(RichText)));
+      final action = tester.widget<RichText>(find.descendant(
+          of: find.byType(TextButton), matching: find.byType(RichText)));
 
-      expect(contrast(action.text.style!.color!, surface), greaterThanOrEqualTo(4.5));
+      expect(contrast(action.text.style!.color!, surface),
+          greaterThanOrEqualTo(4.5));
     });
 
-    test('given a control on the primary colour, then its content is readable', () {
-      expect(contrast(scheme.onPrimary, scheme.primary), greaterThanOrEqualTo(4.5));
+    test('given a control on the primary colour, then its content is readable',
+        () {
+      expect(contrast(scheme.onPrimary, scheme.primary),
+          greaterThanOrEqualTo(4.5));
     });
 
-    test('given body text, then it is readable on the surface and on the background', () {
-      expect(contrast(scheme.onSurface, scheme.surface), greaterThanOrEqualTo(4.5));
-      expect(contrast(scheme.onSurface, theme.scaffoldBackgroundColor), greaterThanOrEqualTo(4.5));
-      expect(contrast(scheme.onSurfaceVariant, scheme.surface), greaterThanOrEqualTo(4.5));
+    test(
+        'given body text, then it is readable on the surface and on the background',
+        () {
+      expect(contrast(scheme.onSurface, scheme.surface),
+          greaterThanOrEqualTo(4.5));
+      expect(contrast(scheme.onSurface, theme.scaffoldBackgroundColor),
+          greaterThanOrEqualTo(4.5));
+      expect(contrast(scheme.onSurfaceVariant, scheme.surface),
+          greaterThanOrEqualTo(4.5));
     });
   });
 
   group('Game theme type -', () {
-    test('given display, headline, title and label styles, then they use Oxanium', () {
+    test(
+        'given display, headline, title and label styles, then they use Oxanium',
+        () {
       final styles = [
-        text.displayLarge, text.displayMedium, text.displaySmall,
-        text.headlineLarge, text.headlineMedium, text.headlineSmall,
-        text.titleLarge, text.titleMedium, text.titleSmall,
-        text.labelLarge, text.labelMedium, text.labelSmall,
+        text.displayLarge,
+        text.displayMedium,
+        text.displaySmall,
+        text.headlineLarge,
+        text.headlineMedium,
+        text.headlineSmall,
+        text.titleLarge,
+        text.titleMedium,
+        text.titleSmall,
+        text.labelLarge,
+        text.labelMedium,
+        text.labelSmall,
       ];
       for (final style in styles) {
         expect(style!.fontFamily, equals(displayFontFamily));
@@ -80,7 +105,9 @@ void main() {
       }
     });
 
-    test('given the project, then Oxanium is bundled in regular and bold with its licence', () {
+    test(
+        'given the project, then Oxanium is bundled in regular and bold with its licence',
+        () {
       final pubspec = File('pubspec.yaml').readAsStringSync();
       expect(pubspec, contains('family: $displayFontFamily'));
       for (final name in ['Oxanium-Regular.ttf', 'Oxanium-Bold.ttf']) {

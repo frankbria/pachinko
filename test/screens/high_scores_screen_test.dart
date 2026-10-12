@@ -53,8 +53,10 @@ void main() {
         HighScore(level: 2, score: 7000, timestamp: DateTime(2025, 11, 16)),
       ];
 
-      when(mockStorageService.getHighScores(1)).thenAnswer((_) async => [scores[0]]);
-      when(mockStorageService.getHighScores(2)).thenAnswer((_) async => [scores[1]]);
+      when(mockStorageService.getHighScores(1))
+          .thenAnswer((_) async => [scores[0]]);
+      when(mockStorageService.getHighScores(2))
+          .thenAnswer((_) async => [scores[1]]);
       for (int i = 3; i <= 20; i++) {
         when(mockStorageService.getHighScores(i)).thenAnswer((_) async => []);
       }
@@ -82,7 +84,8 @@ void main() {
 
       // Then
       expect(find.textContaining('No high scores yet!'), findsOneWidget);
-      expect(find.textContaining('Play to set your first record'), findsOneWidget);
+      expect(
+          find.textContaining('Play to set your first record'), findsOneWidget);
     });
   });
 
@@ -96,9 +99,12 @@ void main() {
         HighScore(level: 3, score: 5000, timestamp: DateTime(2025, 11, 16)),
       ];
 
-      when(mockStorageService.getHighScores(1)).thenAnswer((_) async => [scores[0]]);
-      when(mockStorageService.getHighScores(2)).thenAnswer((_) async => [scores[1]]);
-      when(mockStorageService.getHighScores(3)).thenAnswer((_) async => [scores[2]]);
+      when(mockStorageService.getHighScores(1))
+          .thenAnswer((_) async => [scores[0]]);
+      when(mockStorageService.getHighScores(2))
+          .thenAnswer((_) async => [scores[1]]);
+      when(mockStorageService.getHighScores(3))
+          .thenAnswer((_) async => [scores[2]]);
       for (int i = 4; i <= 20; i++) {
         when(mockStorageService.getHighScores(i)).thenAnswer((_) async => []);
       }
@@ -108,7 +114,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Then - Verify sorted order (highest first)
-      final listTiles = tester.widgetList<ListTile>(find.byType(ListTile)).toList();
+      final listTiles =
+          tester.widgetList<ListTile>(find.byType(ListTile)).toList();
       expect(listTiles.length, equals(3));
 
       // First item should be 9000 points
@@ -130,7 +137,8 @@ void main() {
       final timestamp = DateTime(2025, 11, 17, 15, 30);
       final score = HighScore(level: 5, score: 8500, timestamp: timestamp);
 
-      when(mockStorageService.getHighScores(5)).thenAnswer((_) async => [score]);
+      when(mockStorageService.getHighScores(5))
+          .thenAnswer((_) async => [score]);
       for (int i = 1; i <= 20; i++) {
         if (i != 5) {
           when(mockStorageService.getHighScores(i)).thenAnswer((_) async => []);
@@ -142,7 +150,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Then
-      expect(find.textContaining('Level 5'), findsOneWidget); // Level, beside the date
+      expect(find.textContaining('Level 5'),
+          findsOneWidget); // Level, beside the date
       expect(find.text('8,500 points'), findsOneWidget); // Score
       expect(find.textContaining('11/17/2025'), findsOneWidget); // Timestamp
     });
@@ -165,7 +174,8 @@ void main() {
 
       // Then
       expect(find.text('Clear All Scores?'), findsOneWidget);
-      expect(find.text('This will delete all high score data permanently.'), findsOneWidget);
+      expect(find.text('This will delete all high score data permanently.'),
+          findsOneWidget);
       expect(find.text('Cancel'), findsOneWidget);
       expect(find.text('Clear'), findsOneWidget);
     });
@@ -174,7 +184,8 @@ void main() {
         (WidgetTester tester) async {
       // Given
       final score = HighScore(level: 1, score: 5000, timestamp: DateTime.now());
-      when(mockStorageService.getHighScores(1)).thenAnswer((_) async => [score]);
+      when(mockStorageService.getHighScores(1))
+          .thenAnswer((_) async => [score]);
       for (int i = 2; i <= 20; i++) {
         when(mockStorageService.getHighScores(i)).thenAnswer((_) async => []);
       }
@@ -193,16 +204,19 @@ void main() {
       verify(mockStorageService.clearData()).called(1);
     });
 
-    testWidgets('givenConfirmation_whenCleared_thenScoresReloadOnlyAfterClearCompletes',
+    testWidgets(
+        'givenConfirmation_whenCleared_thenScoresReloadOnlyAfterClearCompletes',
         (WidgetTester tester) async {
       // Given
       final clearCompleter = Completer<void>();
       final score = HighScore(level: 1, score: 5000, timestamp: DateTime.now());
-      when(mockStorageService.getHighScores(1)).thenAnswer((_) async => [score]);
+      when(mockStorageService.getHighScores(1))
+          .thenAnswer((_) async => [score]);
       for (int i = 2; i <= 20; i++) {
         when(mockStorageService.getHighScores(i)).thenAnswer((_) async => []);
       }
-      when(mockStorageService.clearData()).thenAnswer((_) => clearCompleter.future);
+      when(mockStorageService.clearData())
+          .thenAnswer((_) => clearCompleter.future);
 
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
@@ -247,7 +261,8 @@ void main() {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const HighScoresScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const HighScoresScreen()),
                       );
                     },
                     child: const Text('Open High Scores'),

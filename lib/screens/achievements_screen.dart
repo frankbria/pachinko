@@ -44,7 +44,8 @@ class AchievementsScreen extends StatelessWidget {
                 padding: EdgeInsets.all(24.0),
                 child: Text(
                   'No achievements available',
-                  style: TextStyle(fontSize: 18, color: GameConstants.mutedColor),
+                  style:
+                      TextStyle(fontSize: 18, color: GameConstants.mutedColor),
                 ),
               ),
             )
@@ -71,7 +72,8 @@ class AchievementsScreen extends StatelessWidget {
                       _buildStatItem(
                         icon: Icons.workspace_premium,
                         label: 'Unlocked',
-                        value: '${unlockedAchievements.length}/${allAchievements.length}',
+                        value:
+                            '${unlockedAchievements.length}/${allAchievements.length}',
                       ),
                     ],
                   ),
@@ -165,20 +167,24 @@ class AchievementsScreen extends StatelessWidget {
         ),
         title: Text(
           achievement.name,
-          style: const TextStyle(color: GameConstants.inkColor, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+              color: GameConstants.inkColor, fontWeight: FontWeight.bold),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(achievement.description, style: const TextStyle(color: GameConstants.mutedColor)),
+            Text(achievement.description,
+                style: const TextStyle(color: GameConstants.mutedColor)),
             const SizedBox(height: 4),
             Row(
               children: [
-                const Icon(Icons.calendar_today, size: 12, color: GameConstants.mutedColor),
+                const Icon(Icons.calendar_today,
+                    size: 12, color: GameConstants.mutedColor),
                 const SizedBox(width: 4),
                 Text(
                   unlockedDateStr,
-                  style: const TextStyle(fontSize: 12, color: GameConstants.mutedColor),
+                  style: const TextStyle(
+                      fontSize: 12, color: GameConstants.mutedColor),
                 ),
               ],
             ),
@@ -186,7 +192,8 @@ class AchievementsScreen extends StatelessWidget {
         ),
         trailing: Text(
           '${achievement.pointValue} points',
-          style: const TextStyle(color: GameConstants.secondaryColor, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+              color: GameConstants.secondaryColor, fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -218,14 +225,17 @@ class AchievementsScreen extends StatelessWidget {
                 Expanded(
                   child: LinearProgressIndicator(
                     value: achievement.progress / 100,
-                    backgroundColor: GameConstants.mutedColor.withValues(alpha: 0.25),
-                    valueColor: const AlwaysStoppedAnimation<Color>(GameConstants.primaryColor),
+                    backgroundColor:
+                        GameConstants.mutedColor.withValues(alpha: 0.25),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                        GameConstants.primaryColor),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   '${achievement.progress}%',
-                  style: const TextStyle(fontSize: 12, color: GameConstants.mutedColor),
+                  style: const TextStyle(
+                      fontSize: 12, color: GameConstants.mutedColor),
                 ),
               ],
             ),

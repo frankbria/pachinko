@@ -28,7 +28,9 @@ double distanceToTopCurve(Vector2 point) {
 
 void main() {
   group('Level Initialization -', () {
-    test('given level constructor, when created with values, then initializes correctly', () {
+    test(
+        'given level constructor, when created with values, then initializes correctly',
+        () {
       // Given
       final pegs = <Peg>[];
       final slots = <Slot>[];
@@ -52,7 +54,9 @@ void main() {
       expect(level.boardHeight, equals(600.0));
     });
 
-    test('given level constructor, when created with default dimensions, then uses 400x600', () {
+    test(
+        'given level constructor, when created with default dimensions, then uses 400x600',
+        () {
       // Given / When
       final level = Level(
         levelNumber: 1,
@@ -67,7 +71,9 @@ void main() {
       expect(level.boardHeight, equals(600.0));
     });
 
-    test('given generated level, when launchX and launchY accessed, then returns constants', () {
+    test(
+        'given generated level, when launchX and launchY accessed, then returns constants',
+        () {
       // Given
       final level = Level.generate(1, 400.0, 600.0);
 
@@ -91,7 +97,9 @@ void main() {
     /// - Pattern selection is consistent
     ///
     /// This allows for reproducible gameplay and level designs.
-    test('given same level number, when generated twice, then produces identical peg positions', () {
+    test(
+        'given same level number, when generated twice, then produces identical peg positions',
+        () {
       // Given
       const levelNumber = 5;
 
@@ -104,12 +112,16 @@ void main() {
 
       // Then - peg positions match
       for (int i = 0; i < level1.pegs.length; i++) {
-        expect(level1.pegs[i].position.x, closeTo(level2.pegs[i].position.x, 0.01));
-        expect(level1.pegs[i].position.y, closeTo(level2.pegs[i].position.y, 0.01));
+        expect(level1.pegs[i].position.x,
+            closeTo(level2.pegs[i].position.x, 0.01));
+        expect(level1.pegs[i].position.y,
+            closeTo(level2.pegs[i].position.y, 0.01));
       }
     });
 
-    test('given same level number, when generated twice, then produces identical special peg count', () {
+    test(
+        'given same level number, when generated twice, then produces identical special peg count',
+        () {
       // Given
       const levelNumber = 7;
 
@@ -121,7 +133,9 @@ void main() {
       expect(level1.specialPegs.length, equals(level2.specialPegs.length));
     });
 
-    test('given different level numbers, when generated, then produces different peg layouts', () {
+    test(
+        'given different level numbers, when generated, then produces different peg layouts',
+        () {
       // Given / When
       final level1 = Level.generate(1, 400.0, 600.0);
       final level2 = Level.generate(2, 400.0, 600.0);
@@ -130,13 +144,16 @@ void main() {
       // Note: May have same count coincidentally, so check first peg position difference
       bool hasDifferentPosition = false;
       if (level1.pegs.isNotEmpty && level2.pegs.isNotEmpty) {
-        final distance = (level1.pegs[0].position - level2.pegs[0].position).length;
+        final distance =
+            (level1.pegs[0].position - level2.pegs[0].position).length;
         hasDifferentPosition = distance > 1.0;
       }
       expect(hasDifferentPosition, isTrue);
     });
 
-    test('given same level number, when generated, then produces same level name', () {
+    test(
+        'given same level number, when generated, then produces same level name',
+        () {
       // Given
       const levelNumber = 3;
 
@@ -202,7 +219,9 @@ void main() {
       expect(level5.pegs.length, greaterThan(level2.pegs.length));
     });
 
-    test('given sequential levels, when generated, then cycles through patterns', () {
+    test(
+        'given sequential levels, when generated, then cycles through patterns',
+        () {
       // Given / When
       final level0 = Level.generate(0, 400.0, 600.0);
       final level1 = Level.generate(1, 400.0, 600.0);
@@ -218,10 +237,13 @@ void main() {
 
       // Level 0 and 3 use same pattern (hexagonal), but different seeds
       // so they won't have identical layouts
-      final pos0 = level0.pegs.isNotEmpty ? level0.pegs[0].position : Vector2.zero();
-      final pos3 = level3.pegs.isNotEmpty ? level3.pegs[0].position : Vector2.zero();
+      final pos0 =
+          level0.pegs.isNotEmpty ? level0.pegs[0].position : Vector2.zero();
+      final pos3 =
+          level3.pegs.isNotEmpty ? level3.pegs[0].position : Vector2.zero();
       final distance = (pos0 - pos3).length;
-      expect(distance, greaterThan(1.0)); // Different due to different random seed
+      expect(
+          distance, greaterThan(1.0)); // Different due to different random seed
     });
   });
 
@@ -237,7 +259,9 @@ void main() {
       expect(level.specialPegs.length, lessThanOrEqualTo(4));
     });
 
-    test('given generated level, when created, then special pegs are highlighted', () {
+    test(
+        'given generated level, when created, then special pegs are highlighted',
+        () {
       // Given / When
       final level = Level.generate(1, 400.0, 600.0);
 
@@ -247,7 +271,9 @@ void main() {
       }
     });
 
-    test('given generated level, when created, then special pegs have special type', () {
+    test(
+        'given generated level, when created, then special pegs have special type',
+        () {
       // Given / When
       final level = Level.generate(1, 400.0, 600.0);
 
@@ -257,7 +283,9 @@ void main() {
       }
     });
 
-    test('given generated level, when created, then special pegs included in main pegs list', () {
+    test(
+        'given generated level, when created, then special pegs included in main pegs list',
+        () {
       // Given / When
       final level = Level.generate(1, 400.0, 600.0);
 
@@ -267,7 +295,9 @@ void main() {
       }
     });
 
-    test('given generated level, when created, then special pegs have radius 15', () {
+    test(
+        'given generated level, when created, then special pegs have radius 15',
+        () {
       // Given / When
       final level = Level.generate(1, 400.0, 600.0);
 
@@ -279,26 +309,35 @@ void main() {
   });
 
   group('Spatial Constraints -', () {
-    test('given generated level, when special pegs placed, then maintains 50px spacing between special pegs', () {
+    test(
+        'given generated level, when special pegs placed, then maintains 50px spacing between special pegs',
+        () {
       /// Validates that all special pegs maintain minimum 50px spacing from each other
       /// This is critical for gameplay balance and preventing clustering
-      
+
       // Given / When
       final level = Level.generate(1, 400.0, 600.0);
 
       // Then - check all pairs of special pegs
       for (int i = 0; i < level.specialPegs.length; i++) {
         for (int j = i + 1; j < level.specialPegs.length; j++) {
-          final distance = (level.specialPegs[i].position - level.specialPegs[j].position).length;
-          expect(distance, greaterThanOrEqualTo(50.0 - 0.1)); // Small tolerance for floating point
+          final distance =
+              (level.specialPegs[i].position - level.specialPegs[j].position)
+                  .length;
+          expect(
+              distance,
+              greaterThanOrEqualTo(
+                  50.0 - 0.1)); // Small tolerance for floating point
         }
       }
     });
 
-    test('given generated level, when special pegs placed, then maintains spacing from regular pegs', () {
+    test(
+        'given generated level, when special pegs placed, then maintains spacing from regular pegs',
+        () {
       /// Special pegs should maintain minimum 35px spacing from regular pegs
       /// This ensures proper ball flow and prevents overlap
-      
+
       // Given / When
       final level = Level.generate(1, 400.0, 600.0);
       const minSpacing = 35.0;
@@ -307,17 +346,19 @@ void main() {
       for (final specialPeg in level.specialPegs) {
         for (final regularPeg in level.pegs) {
           if (regularPeg == specialPeg) continue; // Skip self-comparison
-          
+
           final distance = (specialPeg.position - regularPeg.position).length;
-          expect(distance, greaterThan(minSpacing - 5.0)); // Tolerance for 50-attempt limit
+          expect(distance,
+              greaterThan(minSpacing - 5.0)); // Tolerance for 50-attempt limit
         }
       }
     });
 
-    test('given generated level, when pegs placed, then no overlapping pegs', () {
+    test('given generated level, when pegs placed, then no overlapping pegs',
+        () {
       /// Validates that no two pegs overlap
       /// Uses 35px minimum spacing with tolerance for 50-attempt limit
-      
+
       // Given / When
       final level = Level.generate(1, 400.0, 600.0);
       const minDistance = 35.0;
@@ -325,34 +366,46 @@ void main() {
       // Then - check all pairs of pegs for overlap
       for (int i = 0; i < level.pegs.length; i++) {
         for (int j = i + 1; j < level.pegs.length; j++) {
-          final distance = (level.pegs[i].position - level.pegs[j].position).length;
+          final distance =
+              (level.pegs[i].position - level.pegs[j].position).length;
           // Allow tolerance due to 50-attempt limit in peg placement
           expect(distance, greaterThan(minDistance - 5.0));
         }
       }
     });
 
-    test('given levels 1 to 100, when generated, then each has 2 to 4 prize pegs', () {
+    test(
+        'given levels 1 to 100, when generated, then each has 2 to 4 prize pegs',
+        () {
       /// A dense field can leave no free spot for a prize peg. A level without
       /// one has no bonus, so the generator clears room when it has to.
       for (int n = 1; n <= 100; n++) {
         final level = Level.generate(n, 400.0, 600.0);
-        expect(level.specialPegs.length, inInclusiveRange(2, 4), reason: 'level $n');
-        expect(level.pegs.where((peg) => peg.type == PegType.special), level.specialPegs, reason: 'level $n');
+        expect(level.specialPegs.length, inInclusiveRange(2, 4),
+            reason: 'level $n');
+        expect(level.pegs.where((peg) => peg.type == PegType.special),
+            level.specialPegs,
+            reason: 'level $n');
       }
     });
 
-    test('given levels 1 to 100, when prize pegs are placed, then each level keeps at least 24 regular pegs', () {
+    test(
+        'given levels 1 to 100, when prize pegs are placed, then each level keeps at least 24 regular pegs',
+        () {
       /// Making room for a prize peg removes the regular pegs around it. The
       /// generator takes the least crowded of its candidates, which usually
       /// costs one peg; taking any candidate thins a triangle level to 19.
       for (int n = 1; n <= 100; n++) {
         final level = Level.generate(n, 400.0, 600.0);
-        expect(level.pegs.length - level.specialPegs.length, greaterThanOrEqualTo(24), reason: 'level $n');
+        expect(level.pegs.length - level.specialPegs.length,
+            greaterThanOrEqualTo(24),
+            reason: 'level $n');
       }
     });
 
-    test('given levels 1 to 100, when generated, then a ball fits between any two pegs and between a peg and a wall or the top curve', () {
+    test(
+        'given levels 1 to 100, when generated, then a ball fits between any two pegs and between a peg and a wall or the top curve',
+        () {
       /// A gap narrower than a ball is a pocket: the ball comes to rest in it
       /// and the session soft-locks (issue #16).
       for (int n = 1; n <= 100; n++) {
@@ -375,7 +428,9 @@ void main() {
             reason: 'level $n: peg $i and the curved top boundary',
           );
           for (int j = i + 1; j < pegs.length; j++) {
-            final gap = (peg.position - pegs[j].position).length - peg.radius - pegs[j].radius;
+            final gap = (peg.position - pegs[j].position).length -
+                peg.radius -
+                pegs[j].radius;
             expect(
               gap,
               greaterThan(GameConstants.ballRadius * 2),
@@ -386,7 +441,9 @@ void main() {
       }
     });
 
-    test('given a board wider than the field, when generated, then every peg still leaves room at the right wall', () {
+    test(
+        'given a board wider than the field, when generated, then every peg still leaves room at the right wall',
+        () {
       /// The field walls are fixed by the physics, whatever width the generator
       /// is asked for, so the generators must not rely on their own x ranges.
       for (int n = 1; n <= 30; n++) {
@@ -394,16 +451,19 @@ void main() {
           expect(
             GameConstants.fieldRightBoundaryX - peg.position.x - peg.radius,
             greaterThan(GameConstants.ballRadius * 2),
-            reason: 'level $n: ${peg.type.name} peg at x=${peg.position.x.round()}',
+            reason:
+                'level $n: ${peg.type.name} peg at x=${peg.position.x.round()}',
           );
         }
       }
     });
 
-    test('given generated level, when pegs placed, then all within board bounds', () {
+    test(
+        'given generated level, when pegs placed, then all within board bounds',
+        () {
       /// Ensures all pegs are positioned within the playable board area
       /// Prevents pegs from being placed outside visible area
-      
+
       // Given / When
       final level = Level.generate(1, 400.0, 600.0);
 
@@ -416,10 +476,12 @@ void main() {
       }
     });
 
-    test('given generated level, when special pegs placed, then not clustered in one region', () {
+    test(
+        'given generated level, when special pegs placed, then not clustered in one region',
+        () {
       /// Validates that special pegs are distributed across the board
       /// Checks that max distance between any two special pegs is reasonable
-      
+
       // Given / When
       final level = Level.generate(1, 400.0, 600.0);
 
@@ -429,13 +491,15 @@ void main() {
         double maxDistance = 0.0;
         for (int i = 0; i < level.specialPegs.length; i++) {
           for (int j = i + 1; j < level.specialPegs.length; j++) {
-            final distance = (level.specialPegs[i].position - level.specialPegs[j].position).length;
+            final distance =
+                (level.specialPegs[i].position - level.specialPegs[j].position)
+                    .length;
             if (distance > maxDistance) {
               maxDistance = distance;
             }
           }
         }
-        
+
         // At least one pair should be reasonably far apart (not all clustered)
         // Board is 400x600, so max diagonal is ~721px
         // Expect at least some spread (>100px between furthest pair)
@@ -453,7 +517,9 @@ void main() {
     /// - y < launchChannelStartY + 30
     ///
     /// No special pegs should be placed in this zone to avoid interference.
-    test('given generated level, when special pegs placed, then none in launch channel', () {
+    test(
+        'given generated level, when special pegs placed, then none in launch channel',
+        () {
       // Given / When
       final level = Level.generate(13, 400.0, 600.0);
 
@@ -465,13 +531,16 @@ void main() {
         final tooFarRight = specialPeg.position.x > level.boardWidth - 100;
         if (tooFarRight) {
           // If near right edge, should be either very high or very low (not mid-height where channel is)
-          final inMidHeight = specialPeg.position.y > 150 && specialPeg.position.y < 450;
+          final inMidHeight =
+              specialPeg.position.y > 150 && specialPeg.position.y < 450;
           expect(inMidHeight, isFalse);
         }
       }
     });
 
-    test('given generated level, when pegs generated, then regular pegs avoid launch channel', () {
+    test(
+        'given generated level, when pegs generated, then regular pegs avoid launch channel',
+        () {
       // Given / When
       final level = Level.generate(14, 400.0, 600.0);
 
@@ -480,11 +549,16 @@ void main() {
 
       // Regular pegs are generated by PegPatterns which also avoids launch channel
       // Verify by checking that not ALL pegs are clustered on left side
-      final rightSidePegs = level.pegs.where((peg) => peg.position.x > level.boardWidth / 2).length;
-      expect(rightSidePegs, greaterThan(0)); // Some pegs should be on right side
+      final rightSidePegs = level.pegs
+          .where((peg) => peg.position.x > level.boardWidth / 2)
+          .length;
+      expect(
+          rightSidePegs, greaterThan(0)); // Some pegs should be on right side
     });
 
-    test('given generated level, when created, then has valid peg layout with channel clear', () {
+    test(
+        'given generated level, when created, then has valid peg layout with channel clear',
+        () {
       // Given / When
       final level = Level.generate(15, 400.0, 600.0);
 
@@ -512,7 +586,9 @@ void main() {
       expect(level.slots.length, equals(7));
     });
 
-    test('given generated level, when slots created, then edge slots have 2000 points', () {
+    test(
+        'given generated level, when slots created, then edge slots have 2000 points',
+        () {
       // Given / When
       final level = Level.generate(17, 400.0, 600.0);
 
@@ -521,7 +597,9 @@ void main() {
       expect(level.slots[6].pointValue, equals(2000));
     });
 
-    test('given generated level, when slots created, then center slot has 1000 points', () {
+    test(
+        'given generated level, when slots created, then center slot has 1000 points',
+        () {
       // Given / When
       final level = Level.generate(18, 400.0, 600.0);
 
@@ -529,7 +607,9 @@ void main() {
       expect(level.slots[3].pointValue, equals(1000));
     });
 
-    test('given generated level, when slots created, then near-edge slots have 200 points', () {
+    test(
+        'given generated level, when slots created, then near-edge slots have 200 points',
+        () {
       // Given / When
       final level = Level.generate(19, 400.0, 600.0);
 
@@ -538,7 +618,9 @@ void main() {
       expect(level.slots[5].pointValue, equals(200));
     });
 
-    test('given generated level, when slots created, then middle-side slots have 50 points', () {
+    test(
+        'given generated level, when slots created, then middle-side slots have 50 points',
+        () {
       // Given / When
       final level = Level.generate(20, 400.0, 600.0);
 
@@ -547,7 +629,8 @@ void main() {
       expect(level.slots[4].pointValue, equals(50));
     });
 
-    test('given generated level, when slots created, then positioned at bottom', () {
+    test('given generated level, when slots created, then positioned at bottom',
+        () {
       // Given / When
       final level = Level.generate(21, 400.0, 600.0);
 
@@ -558,7 +641,9 @@ void main() {
       }
     });
 
-    test('given generated level, when slots created, then evenly distributed across width', () {
+    test(
+        'given generated level, when slots created, then evenly distributed across width',
+        () {
       // Given / When
       final level = Level.generate(22, 400.0, 600.0);
       final slotWidth = level.boardWidth / 7;
@@ -572,10 +657,12 @@ void main() {
   });
 
   group('Valid Peg Positioning -', () {
-    test('given level generation, when called, then completes within reasonable time', () {
+    test(
+        'given level generation, when called, then completes within reasonable time',
+        () {
       /// Validates that the 50-attempt limit prevents infinite loops
       /// Generation should complete even if not all special pegs can be placed
-      
+
       // Given / When - measure generation time
       final stopwatch = Stopwatch()..start();
       final level = Level.generate(2, 400.0, 600.0);
@@ -588,10 +675,12 @@ void main() {
       expect(level.slots.length, equals(7));
     });
 
-    test('given dense peg layout, when special peg placement attempted, then gracefully handles failure', () {
+    test(
+        'given dense peg layout, when special peg placement attempted, then gracefully handles failure',
+        () {
       /// Tests that generation doesn't crash when special pegs can't be placed
       /// The 50-attempt limit should result in fewer special pegs, not errors
-      
+
       // Given / When - use random pattern (level 2) which is densest
       final level = Level.generate(2, 400.0, 600.0);
 
@@ -603,10 +692,11 @@ void main() {
       expect(level.specialPegs.length, lessThanOrEqualTo(4));
     });
 
-    test('given generated level, when inspected, then has playable peg count', () {
+    test('given generated level, when inspected, then has playable peg count',
+        () {
       /// Ensures the level has enough pegs to be playable
       /// Pattern-based generation should create at least 20 pegs
-      
+
       // Given / When
       final level = Level.generate(0, 400.0, 600.0);
 
@@ -616,10 +706,12 @@ void main() {
   });
 
   group('Special Pegs Completion -', () {
-    test('given level with special pegs, when none hit, then allSpecialPegsHit returns false', () {
+    test(
+        'given level with special pegs, when none hit, then allSpecialPegsHit returns false',
+        () {
       /// Tests the completion tracking for special pegs bonus mechanic
       /// Initially, no pegs should be marked as hit
-      
+
       // Given
       final level = Level.generate(1, 400.0, 600.0);
 
@@ -631,10 +723,12 @@ void main() {
       }
     });
 
-    test('given level with special pegs, when some hit, then allSpecialPegsHit returns false', () {
+    test(
+        'given level with special pegs, when some hit, then allSpecialPegsHit returns false',
+        () {
       /// Tests that partial completion doesn't trigger the bonus
       /// All special pegs must be hit for the bonus
-      
+
       // Given
       final level = Level.generate(1, 400.0, 600.0);
 
@@ -647,10 +741,12 @@ void main() {
       }
     });
 
-    test('given level with special pegs, when all hit, then allSpecialPegsHit returns true', () {
+    test(
+        'given level with special pegs, when all hit, then allSpecialPegsHit returns true',
+        () {
       /// Tests that completion correctly detects when all special pegs are hit
       /// This triggers the bonus ball mechanic in gameplay
-      
+
       // Given
       final level = Level.generate(1, 400.0, 600.0);
 
@@ -665,10 +761,12 @@ void main() {
       }
     });
 
-    test('given level with no special pegs, when allSpecialPegsHit checked, then returns true', () {
+    test(
+        'given level with no special pegs, when allSpecialPegsHit checked, then returns true',
+        () {
       /// Edge case: empty list should satisfy .every() predicate
       /// This is consistent with Dart's .every() behavior
-      
+
       // Given - create level that might have 0 special pegs
       final level = Level.generate(2, 400.0, 600.0);
 
@@ -683,10 +781,11 @@ void main() {
   });
 
   group('Reset Functionality -', () {
-    test('given level with hit pegs, when reset called, then all pegs reset', () {
+    test('given level with hit pegs, when reset called, then all pegs reset',
+        () {
       /// Validates that reset() properly resets all peg states
       /// This is used when restarting a level
-      
+
       // Given
       final level = Level.generate(1, 400.0, 600.0);
       // Mark some pegs as hit
@@ -706,10 +805,12 @@ void main() {
       }
     });
 
-    test('given level with balls in slots, when reset called, then all slots reset', () {
+    test(
+        'given level with balls in slots, when reset called, then all slots reset',
+        () {
       /// Validates that reset() clears slot ball counts
       /// This ensures clean state for level retry
-      
+
       // Given
       final level = Level.generate(1, 400.0, 600.0);
       // Add balls to some slots

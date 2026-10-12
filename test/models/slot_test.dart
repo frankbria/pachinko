@@ -6,7 +6,9 @@ import 'dart:ui';
 
 void main() {
   group('Slot Initialization -', () {
-    test('given default parameters, when slot created, then initializes with correct values', () {
+    test(
+        'given default parameters, when slot created, then initializes with correct values',
+        () {
       // Given
       final position = Vector2(100.0, 200.0);
       const width = 50.0;
@@ -47,7 +49,9 @@ void main() {
       expect(slot.color, equals(customColor));
     });
 
-    test('given null color, when slot created, then derives color from pointValue', () {
+    test(
+        'given null color, when slot created, then derives color from pointValue',
+        () {
       // Given
       final position = Vector2(100.0, 200.0);
       const pointValue = 1000;
@@ -65,7 +69,9 @@ void main() {
       expect(slot.color, equals(GameConstants.slot1000Color));
     });
 
-    test('given custom ballCount, when slot created, then initializes with custom count', () {
+    test(
+        'given custom ballCount, when slot created, then initializes with custom count',
+        () {
       // Given
       final position = Vector2(100.0, 200.0);
       const initialBallCount = 5;
@@ -96,7 +102,9 @@ void main() {
     /// This differs from circle collision (Task 1.3 Peg model) which uses radial distance:
     /// - Circle: distance <= (r1 + r2) - single comparison
     /// - AABB: four independent boundary comparisons - all must be true
-    test('given ball inside slot bounds, when containsPoint called, then returns true', () {
+    test(
+        'given ball inside slot bounds, when containsPoint called, then returns true',
+        () {
       // Given
       final slot = Slot(
         position: Vector2(100.0, 200.0),
@@ -113,7 +121,9 @@ void main() {
       expect(result, isTrue);
     });
 
-    test('given ball outside slot bounds, when containsPoint called, then returns false', () {
+    test(
+        'given ball outside slot bounds, when containsPoint called, then returns false',
+        () {
       // Given
       final slot = Slot(
         position: Vector2(100.0, 200.0),
@@ -135,7 +145,9 @@ void main() {
     /// AABB boundary testing uses <= for inclusive boundaries.
     /// Left edge: x = centerX - width/2 = 100 - 25 = 75
     /// Using <= ensures point exactly at boundary is considered inside.
-    test('given ball exactly at left boundary, when containsPoint called, then returns true', () {
+    test(
+        'given ball exactly at left boundary, when containsPoint called, then returns true',
+        () {
       // Given
       final slot = Slot(
         position: Vector2(100.0, 200.0),
@@ -143,7 +155,8 @@ void main() {
         height: 30.0,
         pointValue: 100,
       );
-      final ballPosition = Vector2(75.0, 200.0); // Exactly at left edge (100 - 50/2)
+      final ballPosition =
+          Vector2(75.0, 200.0); // Exactly at left edge (100 - 50/2)
 
       // When
       final result = slot.containsPoint(ballPosition);
@@ -156,7 +169,9 @@ void main() {
     ///
     /// Right edge: x = centerX + width/2 = 100 + 25 = 125
     /// Using <= ensures point exactly at boundary is considered inside.
-    test('given ball exactly at right boundary, when containsPoint called, then returns true', () {
+    test(
+        'given ball exactly at right boundary, when containsPoint called, then returns true',
+        () {
       // Given
       final slot = Slot(
         position: Vector2(100.0, 200.0),
@@ -164,7 +179,8 @@ void main() {
         height: 30.0,
         pointValue: 100,
       );
-      final ballPosition = Vector2(125.0, 200.0); // Exactly at right edge (100 + 50/2)
+      final ballPosition =
+          Vector2(125.0, 200.0); // Exactly at right edge (100 + 50/2)
 
       // When
       final result = slot.containsPoint(ballPosition);
@@ -177,7 +193,9 @@ void main() {
     ///
     /// Top edge: y = centerY - height/2 = 200 - 15 = 185
     /// Using <= ensures point exactly at boundary is considered inside.
-    test('given ball exactly at top boundary, when containsPoint called, then returns true', () {
+    test(
+        'given ball exactly at top boundary, when containsPoint called, then returns true',
+        () {
       // Given
       final slot = Slot(
         position: Vector2(100.0, 200.0),
@@ -185,7 +203,8 @@ void main() {
         height: 30.0,
         pointValue: 100,
       );
-      final ballPosition = Vector2(100.0, 185.0); // Exactly at top edge (200 - 30/2)
+      final ballPosition =
+          Vector2(100.0, 185.0); // Exactly at top edge (200 - 30/2)
 
       // When
       final result = slot.containsPoint(ballPosition);
@@ -198,7 +217,9 @@ void main() {
     ///
     /// Bottom edge: y = centerY + height/2 = 200 + 15 = 215
     /// Using <= ensures point exactly at boundary is considered inside.
-    test('given ball exactly at bottom boundary, when containsPoint called, then returns true', () {
+    test(
+        'given ball exactly at bottom boundary, when containsPoint called, then returns true',
+        () {
       // Given
       final slot = Slot(
         position: Vector2(100.0, 200.0),
@@ -206,7 +227,8 @@ void main() {
         height: 30.0,
         pointValue: 100,
       );
-      final ballPosition = Vector2(100.0, 215.0); // Exactly at bottom edge (200 + 30/2)
+      final ballPosition =
+          Vector2(100.0, 215.0); // Exactly at bottom edge (200 + 30/2)
 
       // When
       final result = slot.containsPoint(ballPosition);
@@ -220,7 +242,9 @@ void main() {
     /// AABB corners are the intersection of two boundary edges.
     /// Top-left corner: (left, top) = (75, 185)
     /// All four boundary conditions must pass for corner to be inside.
-    test('given ball at top-left corner, when containsPoint called, then returns true', () {
+    test(
+        'given ball at top-left corner, when containsPoint called, then returns true',
+        () {
       // Given
       final slot = Slot(
         position: Vector2(100.0, 200.0),
@@ -237,7 +261,9 @@ void main() {
       expect(result, isTrue);
     });
 
-    test('given ball at bottom-right corner, when containsPoint called, then returns true', () {
+    test(
+        'given ball at bottom-right corner, when containsPoint called, then returns true',
+        () {
       // Given
       final slot = Slot(
         position: Vector2(100.0, 200.0),
@@ -254,7 +280,9 @@ void main() {
       expect(result, isTrue);
     });
 
-    test('given ball just outside left boundary, when containsPoint called, then returns false', () {
+    test(
+        'given ball just outside left boundary, when containsPoint called, then returns false',
+        () {
       // Given
       final slot = Slot(
         position: Vector2(100.0, 200.0),
@@ -271,7 +299,9 @@ void main() {
       expect(result, isFalse);
     });
 
-    test('given ball just outside right boundary, when containsPoint called, then returns false', () {
+    test(
+        'given ball just outside right boundary, when containsPoint called, then returns false',
+        () {
       // Given
       final slot = Slot(
         position: Vector2(100.0, 200.0),
@@ -301,14 +331,18 @@ void main() {
           pointValue: pointValue,
         );
 
-    test('given each slot value on the board, when slot created without color, then uses its tier color', () {
+    test(
+        'given each slot value on the board, when slot created without color, then uses its tier color',
+        () {
       expect(slotWorth(2000).color, equals(GameConstants.slot2000Color));
       expect(slotWorth(1000).color, equals(GameConstants.slot1000Color));
       expect(slotWorth(200).color, equals(GameConstants.slot200Color));
       expect(slotWorth(50).color, equals(GameConstants.slot50Color));
     });
 
-    test('given the 2000 and 1000 slots, when created without color, then their colors differ', () {
+    test(
+        'given the 2000 and 1000 slots, when created without color, then their colors differ',
+        () {
       expect(slotWorth(2000).color, isNot(equals(slotWorth(1000).color)));
     });
 
@@ -322,7 +356,9 @@ void main() {
       expect(tiers, hasLength(4));
     });
 
-    test('given values at the tier boundaries, when slot created without color, then falls in the lower tier below each threshold', () {
+    test(
+        'given values at the tier boundaries, when slot created without color, then falls in the lower tier below each threshold',
+        () {
       expect(slotWorth(1999).color, equals(GameConstants.slot1000Color));
       expect(slotWorth(999).color, equals(GameConstants.slot200Color));
       expect(slotWorth(100).color, equals(GameConstants.slot200Color));
@@ -331,7 +367,9 @@ void main() {
   });
 
   group('Ball Count Management -', () {
-    test('given new slot, when created with default ballCount, then ballCount is 0', () {
+    test(
+        'given new slot, when created with default ballCount, then ballCount is 0',
+        () {
       // Given / When
       final slot = Slot(
         position: Vector2(100.0, 200.0),
@@ -344,7 +382,9 @@ void main() {
       expect(slot.ballCount, equals(0));
     });
 
-    test('given slot with balls, when addBall called, then ballCount increments', () {
+    test(
+        'given slot with balls, when addBall called, then ballCount increments',
+        () {
       // Given
       final slot = Slot(
         position: Vector2(100.0, 200.0),
@@ -362,7 +402,9 @@ void main() {
       expect(slot.ballCount, equals(3));
     });
 
-    test('given slot with balls, when reset called, then ballCount returns to 0', () {
+    test(
+        'given slot with balls, when reset called, then ballCount returns to 0',
+        () {
       // Given
       final slot = Slot(
         position: Vector2(100.0, 200.0),
@@ -382,7 +424,11 @@ void main() {
     });
 
     test('given a lit slot, when reset called, then its light is out', () {
-      final slot = Slot(position: Vector2(100.0, 200.0), width: 50.0, height: 30.0, pointValue: 100);
+      final slot = Slot(
+          position: Vector2(100.0, 200.0),
+          width: 50.0,
+          height: 30.0,
+          pointValue: 100);
       slot.glow = 1.0;
 
       slot.reset();
@@ -400,7 +446,9 @@ void main() {
     /// - right = centerX + width/2
     /// - top = centerY - height/2
     /// - bottom = centerY + height/2
-    test('given slot with position, when centerX accessed, then returns x coordinate', () {
+    test(
+        'given slot with position, when centerX accessed, then returns x coordinate',
+        () {
       // Given
       final slot = Slot(
         position: Vector2(150.0, 250.0),
@@ -416,7 +464,9 @@ void main() {
       expect(centerX, equals(150.0));
     });
 
-    test('given slot with position, when centerY accessed, then returns y coordinate', () {
+    test(
+        'given slot with position, when centerY accessed, then returns y coordinate',
+        () {
       // Given
       final slot = Slot(
         position: Vector2(150.0, 250.0),
@@ -432,7 +482,9 @@ void main() {
       expect(centerY, equals(250.0));
     });
 
-    test('given slot with dimensions, when left accessed, then returns centerX minus half width', () {
+    test(
+        'given slot with dimensions, when left accessed, then returns centerX minus half width',
+        () {
       // Given
       final slot = Slot(
         position: Vector2(150.0, 250.0),
@@ -448,7 +500,9 @@ void main() {
       expect(left, equals(120.0)); // 150 - 60/2 = 120
     });
 
-    test('given slot with dimensions, when right accessed, then returns centerX plus half width', () {
+    test(
+        'given slot with dimensions, when right accessed, then returns centerX plus half width',
+        () {
       // Given
       final slot = Slot(
         position: Vector2(150.0, 250.0),
@@ -464,7 +518,9 @@ void main() {
       expect(right, equals(180.0)); // 150 + 60/2 = 180
     });
 
-    test('given slot with dimensions, when top accessed, then returns centerY minus half height', () {
+    test(
+        'given slot with dimensions, when top accessed, then returns centerY minus half height',
+        () {
       // Given
       final slot = Slot(
         position: Vector2(150.0, 250.0),
@@ -480,7 +536,9 @@ void main() {
       expect(top, equals(230.0)); // 250 - 40/2 = 230
     });
 
-    test('given slot with dimensions, when bottom accessed, then returns centerY plus half height', () {
+    test(
+        'given slot with dimensions, when bottom accessed, then returns centerY plus half height',
+        () {
       // Given
       final slot = Slot(
         position: Vector2(150.0, 250.0),
@@ -502,7 +560,9 @@ void main() {
     ///
     /// Bounds getter creates a Rect from center position using Rect.fromCenter.
     /// Used by rendering system to draw slot rectangles on canvas.
-    test('given slot with dimensions, when bounds accessed, then returns Rect with correct center', () {
+    test(
+        'given slot with dimensions, when bounds accessed, then returns Rect with correct center',
+        () {
       // Given
       final slot = Slot(
         position: Vector2(150.0, 250.0),
@@ -519,7 +579,9 @@ void main() {
       expect(bounds.center.dy, equals(250.0));
     });
 
-    test('given slot with dimensions, when bounds accessed, then returns Rect with correct dimensions', () {
+    test(
+        'given slot with dimensions, when bounds accessed, then returns Rect with correct dimensions',
+        () {
       // Given
       final slot = Slot(
         position: Vector2(150.0, 250.0),
@@ -536,7 +598,9 @@ void main() {
       expect(bounds.height, equals(40.0));
     });
 
-    test('given slot with dimensions, when bounds accessed, then Rect edges match position getters', () {
+    test(
+        'given slot with dimensions, when bounds accessed, then Rect edges match position getters',
+        () {
       // Given
       final slot = Slot(
         position: Vector2(150.0, 250.0),
@@ -549,9 +613,9 @@ void main() {
       final bounds = slot.bounds;
 
       // Then
-      expect(bounds.left, equals(slot.left));     // 120.0
-      expect(bounds.right, equals(slot.right));   // 180.0
-      expect(bounds.top, equals(slot.top));       // 230.0
+      expect(bounds.left, equals(slot.left)); // 120.0
+      expect(bounds.right, equals(slot.right)); // 180.0
+      expect(bounds.top, equals(slot.top)); // 230.0
       expect(bounds.bottom, equals(slot.bottom)); // 270.0
     });
   });

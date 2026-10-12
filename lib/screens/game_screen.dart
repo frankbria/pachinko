@@ -28,7 +28,8 @@ class _GameScreenState extends State<GameScreen> {
     _toasts = AchievementToastOverlay.of(context);
     _lifecycleListener = AppLifecycleListener(onHide: _pauseWhileHidden);
     // The header has no size until the first frame has been laid out
-    WidgetsBinding.instance.addPostFrameCallback((_) => _anchorToastsBelowHeader());
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _anchorToastsBelowHeader());
   }
 
   /// Tells the toast overlay how tall the score header is, so an achievement
@@ -74,7 +75,8 @@ class _GameScreenState extends State<GameScreen> {
             NotificationListener<SizeChangedLayoutNotification>(
               onNotification: (_) {
                 // Sent during layout, when the overlay cannot be rebuilt yet
-                WidgetsBinding.instance.addPostFrameCallback((_) => _anchorToastsBelowHeader());
+                WidgetsBinding.instance
+                    .addPostFrameCallback((_) => _anchorToastsBelowHeader());
                 return true;
               },
               child: SizeChangedLayoutNotifier(
@@ -82,7 +84,7 @@ class _GameScreenState extends State<GameScreen> {
                 child: _GameHUD(),
               ),
             ),
-            
+
             // Game Board
             Expanded(
               child: Stack(
@@ -91,16 +93,20 @@ class _GameScreenState extends State<GameScreen> {
                   // Rebuilt only when the level changes: the panel's colour is
                   // the level's band
                   Selector<GameManager, int>(
-                    selector: (context, gameManager) => gameManager.gameState.currentLevelNumber,
+                    selector: (context, gameManager) =>
+                        gameManager.gameState.currentLevelNumber,
                     builder: (context, levelNumber, child) => Container(
                       margin: const EdgeInsets.all(8.0),
                       decoration: BoxDecoration(
                         // The felt darkens to this at the board's foot, so the
                         // strip under the board continues it
-                        color: GameConstants.bandForLevel(levelNumber).feltShade,
+                        color:
+                            GameConstants.bandForLevel(levelNumber).feltShade,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: GameConstants.bandForLevel(levelNumber).rim.withValues(alpha: 0.3),
+                          color: GameConstants.bandForLevel(levelNumber)
+                              .rim
+                              .withValues(alpha: 0.3),
                           width: 2,
                         ),
                       ),
@@ -112,7 +118,7 @@ class _GameScreenState extends State<GameScreen> {
                 ],
               ),
             ),
-            
+
             // Game Controls
             _GameControls(),
           ],
@@ -226,8 +232,10 @@ class _HUDItem extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: highlighted ? GameConstants.bonusBallColor : GameConstants.mutedColor,
-              ),
+                    color: highlighted
+                        ? GameConstants.bonusBallColor
+                        : GameConstants.mutedColor,
+                  ),
             ),
           ),
           // A long score shrinks to fit its half of the tile
@@ -242,7 +250,8 @@ class _HUDItem extends StatelessWidget {
                       // and each later change runs from the number on screen
                       tween: Tween<double>(end: countTo!.toDouble()),
                       duration: const Duration(milliseconds: 400),
-                      builder: (context, shown, child) => _valueText(context, shown.round().toString()),
+                      builder: (context, shown, child) =>
+                          _valueText(context, shown.round().toString()),
                     ),
             ),
           ),
@@ -255,9 +264,9 @@ class _HUDItem extends StatelessWidget {
         shown,
         maxLines: 1,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-          color: highlighted ? GameConstants.bonusBallColor : valueColor,
-          fontWeight: FontWeight.bold,
-        ),
+              color: highlighted ? GameConstants.bonusBallColor : valueColor,
+              fontWeight: FontWeight.bold,
+            ),
       );
 }
 
@@ -271,14 +280,16 @@ class _RoundSummaryOverlay extends StatelessWidget {
     return Consumer<GameManager>(
       builder: (context, gameManager, child) {
         final gameState = gameManager.gameState;
-        if (gameState.phase != GamePhase.gameOver || gameState.ballsRemaining > 0) {
+        if (gameState.phase != GamePhase.gameOver ||
+            gameState.ballsRemaining > 0) {
           return const SizedBox.shrink();
         }
 
         return Padding(
           padding: const EdgeInsets.all(24.0),
           child: RoundSummaryPanel(
-            summary: RoundSummary.of(gameState, isNewBest: gameManager.roundIsNewBest),
+            summary: RoundSummary.of(gameState,
+                isNewBest: gameManager.roundIsNewBest),
             // Leaving does what Back does: the screen's dispose stops the loop
             onMenu: () => Navigator.of(context).pop(),
             onReplay: gameManager.resetGame,
@@ -296,7 +307,7 @@ class _GameControls extends StatelessWidget {
     return Consumer<GameManager>(
       builder: (context, gameManager, child) {
         final gameState = gameManager.gameState;
-        
+
         return Container(
           padding: const EdgeInsets.all(16.0),
           child: Row(
@@ -311,7 +322,7 @@ class _GameControls extends StatelessWidget {
                   foregroundColor: GameConstants.inkColor,
                 ),
               ),
-              
+
               // Pause/Resume button
               if (gameState.phase == GamePhase.playing)
                 IconButton(
@@ -322,7 +333,8 @@ class _GameControls extends StatelessWidget {
                     foregroundColor: GameConstants.onPrimaryColor,
                   ),
                 )
-              else if (gameState.phase == GamePhase.ready && gameState.activeBalls.isNotEmpty)
+              else if (gameState.phase == GamePhase.ready &&
+                  gameState.activeBalls.isNotEmpty)
                 IconButton(
                   onPressed: gameManager.resumeGame,
                   icon: const Icon(Icons.play_arrow),
@@ -331,7 +343,7 @@ class _GameControls extends StatelessWidget {
                     foregroundColor: GameConstants.onPrimaryColor,
                   ),
                 ),
-              
+
               // Reset button
               IconButton(
                 onPressed: gameManager.resetGame,

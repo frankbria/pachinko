@@ -38,7 +38,9 @@ void main() {
       expect(particle.velocity.y, closeTo(30.0, 0.1));
     });
 
-    test('given particle, when updated, then position changes based on velocity', () {
+    test(
+        'given particle, when updated, then position changes based on velocity',
+        () {
       // Arrange
       final particle = ConfettiParticle(
         position: Vector2(100, 100),
@@ -57,7 +59,10 @@ void main() {
       // Position: 100 + (-100 * 0.1) + (0.5 * 300 * 0.1²) = 100 - 10 + 1.5 = 91.5
       // Note: Actual implementation applies gravity then updates position, so result may vary slightly
       expect(particle.position.x, closeTo(105, 0.5));
-      expect(particle.position.y, closeTo(91.5, 2.0)); // Increased tolerance for implementation variation
+      expect(
+          particle.position.y,
+          closeTo(
+              91.5, 2.0)); // Increased tolerance for implementation variation
     });
 
     test('given particle, when updated, then rotation changes', () {
@@ -138,7 +143,8 @@ void main() {
       expect(particle.opacity, 1.0);
     });
 
-    test('given particle, when multiple updates, then accumulates correctly', () {
+    test('given particle, when multiple updates, then accumulates correctly',
+        () {
       // Arrange
       final particle = ConfettiParticle(
         position: Vector2(100, 100),

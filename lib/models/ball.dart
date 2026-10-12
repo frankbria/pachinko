@@ -28,7 +28,7 @@ class Ball {
     _trail.add(position.clone());
     if (_trail.length > maxTrailLength) _trail.removeAt(0);
   }
-  
+
   Ball({
     required this.position,
     Vector2? velocity,
@@ -37,21 +37,21 @@ class Ball {
     this.color = const Color(0xFFFFFFFF),
     this.isActive = true,
     this.hasLanded = false,
-  }) : velocity = velocity ?? Vector2.zero(),
-       acceleration = acceleration ?? Vector2.zero();
+  })  : velocity = velocity ?? Vector2.zero(),
+        acceleration = acceleration ?? Vector2.zero();
 
   void update(double deltaTime) {
     if (!isActive || hasLanded) return;
-    
+
     // Apply gravity
     acceleration.setValues(0, 980.0); // 980 pixels/second^2 downward
-    
+
     // Update velocity with acceleration
     velocity.add(acceleration * deltaTime);
-    
+
     // Update position with velocity
     position.add(velocity * deltaTime);
-    
+
     // Apply drag/air resistance
     velocity.scale(0.999);
   }

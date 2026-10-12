@@ -19,7 +19,8 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('Pachinko app launches with MenuScreen', (WidgetTester tester) async {
+  testWidgets('Pachinko app launches with MenuScreen',
+      (WidgetTester tester) async {
     await tester.pumpWidget(const PachinkoApp());
     await tester.pump();
 
@@ -29,7 +30,8 @@ void main() {
     expect(Provider.of<GameManager>(context, listen: false), isNotNull);
   });
 
-  testWidgets('given running app, when an achievement unlocks, then a toast is shown',
+  testWidgets(
+      'given running app, when an achievement unlocks, then a toast is shown',
       (WidgetTester tester) async {
     await tester.pumpWidget(const PachinkoApp());
     // Let the async service initialisation in PachinkoApp finish

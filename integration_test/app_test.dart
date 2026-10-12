@@ -27,8 +27,9 @@ void main() {
     /// GIVEN app is launched
     /// WHEN app initializes
     /// THEN app builds without errors and displays MaterialApp
-    testWidgets('givenAppLaunched_whenAppInitializes_thenAppBuildsWithoutErrors',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenAppLaunched_whenAppInitializes_thenAppBuildsWithoutErrors',
+        (WidgetTester tester) async {
       // Launch the app
       app.main();
       await settle(tester);
@@ -43,7 +44,7 @@ void main() {
     ///
     /// Verifies that the initial screen shows the app name and main navigation.
     testWidgets('givenAppLaunched_whenMenuDisplays_thenTitleAndButtonsPresent',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       app.main();
       await settle(tester);
 
@@ -67,7 +68,7 @@ void main() {
     ///
     /// Tests navigation from menu to game using real Provider and GameManager.
     testWidgets('givenMenuScreen_whenUserTapsPlayButton_thenGameScreenDisplays',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       app.main();
       await settle(tester);
 
@@ -87,7 +88,7 @@ void main() {
     /// WHEN user taps back button
     /// THEN MenuScreen is displayed again
     testWidgets('givenGameScreen_whenUserTapsBackButton_thenMenuScreenDisplays',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       app.main();
       await settle(tester);
 
@@ -110,8 +111,9 @@ void main() {
     /// THEN GameScreen displays with level 3 loaded
     ///
     /// Tests level selection flow using real game state.
-    testWidgets('givenMenuScreen_whenUserSelectsLevel3_thenGameScreenDisplaysLevel3',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenMenuScreen_whenUserSelectsLevel3_thenGameScreenDisplaysLevel3',
+        (WidgetTester tester) async {
       app.main();
       await settle(tester);
 

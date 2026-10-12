@@ -55,7 +55,9 @@ void main() {
     ];
   }
 
-  test('given levels 1 to 30, when 100 balls are launched on each, then none comes to rest', () {
+  test(
+      'given levels 1 to 30, when 100 balls are launched on each, then none comes to rest',
+      () {
     final stuck = <String>[];
     for (var n = 1; n <= 30; n++) {
       final level = Level.generate(n, 400.0, 600.0);
@@ -64,14 +66,17 @@ void main() {
       for (var i = 0; i < 100; i++) {
         final ball = launchedBall(powers.nextDouble() * 100);
         if (!leavesPlay(engine, level, ball)) {
-          stuck.add('level $n at (${ball.position.x.round()}, ${ball.position.y.round()})');
+          stuck.add(
+              'level $n at (${ball.position.x.round()}, ${ball.position.y.round()})');
         }
       }
     }
     expect(stuck, isEmpty);
   });
 
-  test('given levels 1 to 30, when 10 bonuses drop on each, then no bonus ball comes to rest', () {
+  test(
+      'given levels 1 to 30, when 10 bonuses drop on each, then no bonus ball comes to rest',
+      () {
     final stuck = <String>[];
     for (var n = 1; n <= 30; n++) {
       final level = Level.generate(n, 400.0, 600.0);
@@ -79,7 +84,8 @@ void main() {
       for (var round = 0; round < 10; round++) {
         for (final ball in bonusBalls(n)) {
           if (!leavesPlay(engine, level, ball)) {
-            stuck.add('level $n at (${ball.position.x.round()}, ${ball.position.y.round()})');
+            stuck.add(
+                'level $n at (${ball.position.x.round()}, ${ball.position.y.round()})');
           }
         }
       }
