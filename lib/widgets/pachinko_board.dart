@@ -4,8 +4,10 @@ import 'package:provider/provider.dart';
 import 'package:vector_math/vector_math_64.dart' as vm;
 import '../services/game_manager.dart';
 import '../models/game_state.dart';
+import '../models/level.dart';
 import '../models/peg.dart';
 import '../utils/constants.dart';
+import 'board_static_layer.dart';
 
 class PachinkoBoard extends StatefulWidget {
   const PachinkoBoard({super.key});
@@ -32,6 +34,9 @@ class _PachinkoBoardState extends State<PachinkoBoard>
   // What makes the board repaint. It repaints without rebuilding
   late final Listenable _repaint;
 
+  // The felt, rail, pins and slots, recorded once per level
+  final BoardStaticLayer _staticLayer = BoardStaticLayer();
+
   @override
   void initState() {
     super.initState();
@@ -47,6 +52,7 @@ class _PachinkoBoardState extends State<PachinkoBoard>
     _gameManager.removeListener(_syncPegTicker);
     _pegTicker.dispose();
     _pegFrame.dispose();
+    _staticLayer.dispose();
     super.dispose();
   }
 
@@ -94,6 +100,7 @@ class _PachinkoBoardState extends State<PachinkoBoard>
           return CustomPaint(
             painter: _PachinkoBoardPainter(
               gameManager: gameManager,
+              staticLayer: _staticLayer,
               repaint: _repaint,
               dragStart: _dragStart,
               dragEnd: _dragEnd,
@@ -162,12 +169,14 @@ class _PachinkoBoardState extends State<PachinkoBoard>
 
 class _PachinkoBoardPainter extends CustomPainter {
   final GameManager gameManager;
+  final BoardStaticLayer staticLayer;
   final vm.Vector2? dragStart;
   final vm.Vector2? dragEnd;
   final bool isDragging;
 
   _PachinkoBoardPainter({
     required this.gameManager,
+    required this.staticLayer,
     required Listenable repaint,
     this.dragStart,
     this.dragEnd,
@@ -189,20 +198,15 @@ class _PachinkoBoardPainter extends CustomPainter {
     canvas.save();
     canvas.scale(scale);
     
-    // Draw background
-    _drawBackground(canvas, size, scale);
-    
-    // Draw slots
-    _drawSlots(canvas, level);
-    
-    // Draw pegs
-    _drawPegs(canvas, level);
-    
+    // Felt, rail, pins and slots: recorded once per level and replayed
+    canvas.drawPicture(staticLayer.pictureFor(level));
+
+    _drawSlotCounts(canvas, level);
+    _drawAnimatedPegs(canvas, level);
+
     // Draw balls
     _drawBalls(canvas, gameState);
-    
-    // Draw launch channel and area
-    _drawLaunchChannel(canvas, level);
+
     _drawLaunchArea(canvas, level);
     
     // Draw launch power indicator
@@ -228,128 +232,61 @@ class _PachinkoBoardPainter extends CustomPainter {
     canvas.restore();
   }
 
-  void _drawBackground(Canvas canvas, Size size, double scale) {
-    final paint = Paint()
-      ..color = GameConstants.boardColor
-      ..style = PaintingStyle.fill;
-    
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, GameConstants.boardWidth, GameConstants.boardHeight),
-      paint,
-    );
-  }
-
-  void _drawSlots(Canvas canvas, level) {
+  /// How many balls each slot has caught. The slots themselves are in the
+  /// static layer; the count changes during a level.
+  void _drawSlotCounts(Canvas canvas, Level level) {
     for (final slot in level.slots) {
-      final paint = Paint()
-        ..color = slot.color
-        ..style = PaintingStyle.fill;
-      
-      final borderPaint = Paint()
-        ..color = Colors.white.withOpacity(0.5)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.0;
-      
-      final rect = Rect.fromCenter(
-        center: Offset(slot.position.x, slot.position.y),
-        width: slot.width,
-        height: slot.height,
-      );
-      
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(rect, const Radius.circular(4)),
-        paint,
-      );
-      
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(rect, const Radius.circular(4)),
-        borderPaint,
-      );
-      
-      // Draw point value
-      final textPainter = TextPainter(
+      if (slot.ballCount == 0) continue;
+
+      final ballCountPainter = TextPainter(
         text: TextSpan(
-          text: slot.pointValue.toString(),
+          text: '×${slot.ballCount}',
           style: const TextStyle(
-            color: Colors.white,
-            fontSize: 12,
+            color: GameConstants.inkColor,
+            fontSize: 10,
             fontWeight: FontWeight.bold,
           ),
         ),
         textDirection: TextDirection.ltr,
       );
-      textPainter.layout();
-      textPainter.paint(
+      ballCountPainter.layout();
+      ballCountPainter.paint(
         canvas,
         Offset(
-          slot.position.x - textPainter.width / 2,
-          slot.position.y - textPainter.height / 2,
+          slot.position.x - ballCountPainter.width / 2,
+          slot.position.y + 15,
         ),
       );
-      
-      // Draw ball count if any
-      if (slot.ballCount > 0) {
-        final ballCountPainter = TextPainter(
-          text: TextSpan(
-            text: '×${slot.ballCount}',
-            style: const TextStyle(
-              color: Colors.yellow,
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          textDirection: TextDirection.ltr,
-        );
-        ballCountPainter.layout();
-        ballCountPainter.paint(
-          canvas,
-          Offset(
-            slot.position.x - ballCountPainter.width / 2,
-            slot.position.y + 15,
-          ),
-        );
-      }
     }
   }
 
-  void _drawPegs(Canvas canvas, level) {
+  /// Prize pegs, and any pin in the middle of its hit pulse. A pin at rest is
+  /// in the static layer and is not drawn again here.
+  void _drawAnimatedPegs(Canvas canvas, Level level) {
     for (final peg in level.pegs) {
+      if (peg.type != PegType.special && !peg.isAnimating) continue;
+      final centre = Offset(peg.position.x, peg.position.y);
+
       // Draw pulse glow effect (on hit)
       if (peg.pulseGlowRadius > 0.0) {
         final pulsePaint = Paint()
-          ..color = peg.color.withOpacity(peg.pulseGlowOpacity)
+          ..color = peg.color.withValues(alpha: peg.pulseGlowOpacity)
           ..style = PaintingStyle.fill;
 
-        canvas.drawCircle(
-          Offset(peg.position.x, peg.position.y),
-          peg.pulseGlowRadius,
-          pulsePaint,
-        );
+        canvas.drawCircle(centre, peg.pulseGlowRadius, pulsePaint);
       }
 
       // Draw shimmer glow for special pegs
-      if (peg.type == PegType.special && peg.isHighlighted && peg.shimmerIntensity > 0.0) {
+      final glows = peg.type == PegType.special && peg.isHighlighted && peg.shimmerIntensity > 0.0;
+      if (glows) {
         final shimmerPaint = Paint()
-          ..color = GameConstants.specialPegColor.withOpacity(0.3 * peg.shimmerIntensity)
+          ..color = GameConstants.specialPegColor.withValues(alpha: 0.3 * peg.shimmerIntensity)
           ..style = PaintingStyle.fill;
 
-        canvas.drawCircle(
-          Offset(peg.position.x, peg.position.y),
-          peg.radius + (5 + 3 * peg.shimmerIntensity),
-          shimmerPaint,
-        );
+        canvas.drawCircle(centre, peg.radius + (5 + 3 * peg.shimmerIntensity), shimmerPaint);
       }
 
-      // Draw peg body
-      final paint = Paint()
-        ..color = peg.renderColor
-        ..style = PaintingStyle.fill;
-
-      canvas.drawCircle(
-        Offset(peg.position.x, peg.position.y),
-        peg.radius,
-        paint,
-      );
+      paintSphere(canvas, centre, peg.radius, peg.renderColor, castsShadow: !glows);
     }
   }
 
@@ -378,61 +315,6 @@ class _PachinkoBoardPainter extends CustomPainter {
         borderPaint,
       );
     }
-  }
-
-  void _drawLaunchChannel(Canvas canvas, level) {
-    // Draw launch channel walls
-    final wallPaint = Paint()
-      ..color = Colors.white.withOpacity(0.8)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.0;
-    
-    // Left wall of channel - lowered by 25 pixels total
-    canvas.drawLine(
-      Offset(GameConstants.launchChannelStartX, GameConstants.launchChannelStartY),
-      Offset(GameConstants.launchChannelStartX, 135.0),  // Left side at y=135
-      wallPaint,
-    );
-    
-    // Right wall of channel - keeps original height
-    canvas.drawLine(
-      Offset(GameConstants.launchChannelStartX + GameConstants.launchChannelWidth, GameConstants.launchChannelStartY),
-      Offset(GameConstants.launchChannelStartX + GameConstants.launchChannelWidth, GameConstants.launchChannelEndY),  // Right side at y=110
-      wallPaint,
-    );
-    
-    // Draw field boundaries - tightened for more challenging gameplay
-    final boundaryPaint = Paint()
-      ..color = Colors.white.withOpacity(0.8)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.0;
-
-    // Top curved boundary: quadratic bezier from left to right
-    // Starts at x=30 to connect with left launch channel wall
-    const topBoundaryStartX = GameConstants.topCurveStartX;
-    const topBoundaryStartY = GameConstants.topCurveStartY;
-    const topBoundaryControlX = GameConstants.topCurveControlX;
-    const topBoundaryControlY = GameConstants.topCurveControlY;
-    const topBoundaryEndX = GameConstants.topCurveEndX;
-    const topBoundaryEndY = GameConstants.topCurveEndY;
-
-    final boundaryPath = Path();
-    boundaryPath.moveTo(topBoundaryStartX, topBoundaryStartY);
-    boundaryPath.quadraticBezierTo(
-      topBoundaryControlX, topBoundaryControlY,  // Control point
-      topBoundaryEndX, topBoundaryEndY            // End point
-    );
-    canvas.drawPath(boundaryPath, boundaryPaint);
-
-    // Left vertical launch channel wall at x=30 (existing visual element)
-    canvas.drawLine(
-      Offset(30.0, GameConstants.launchChannelStartY),
-      Offset(GameConstants.topCurveStartX, GameConstants.topCurveStartY),  // Ends where the top boundary starts
-      boundaryPaint,
-    );
-
-    // Note: Field boundaries (left at x=25, right at x=360) are enforced
-    // in physics engine but not drawn - they're invisible gameplay boundaries
   }
 
   void _drawLaunchArea(Canvas canvas, level) {

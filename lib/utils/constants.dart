@@ -33,6 +33,11 @@ class GameConstants {
   static const double launchChannelStartX = boardWidth - launchChannelWidth - 10.0;
   static const double launchChannelStartY = boardHeight - slotAreaHeight - 50.0;
   static const double launchChannelEndY = 110.0;
+
+  /// Where the channel's inner wall stops. It must not rise to
+  /// [launchChannelEndY]: the mouth under the dome then looks too narrow for
+  /// a ball (the owner's decision on the visual overhaul, #22).
+  static const double launchChannelInnerWallTopY = 135.0;
   static const double ballLaunchX = launchChannelStartX + launchChannelWidth / 2;
   static const double ballLaunchY = launchChannelStartY;
 
@@ -73,6 +78,7 @@ class GameConstants {
   static const Color chromeColor = Color(0xFFE9EEF8);
   static const Color cabinetColor = Color(0xFF0A0C16);
   static const Color feltColor = Color(0xFF1D2760);
+  static const Color feltShadeColor = Color(0xFF0B0F24);
   static const Color inkColor = Color(0xFFF2F5FB);
   static const Color mutedColor = Color(0xFF8E98B3);
 

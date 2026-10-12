@@ -34,6 +34,7 @@ import 'package:pachinko_game/utils/game_theme.dart';
 import 'package:pachinko_game/utils/peg_patterns.dart';
 import 'package:pachinko_game/widgets/achievement_toast.dart';
 import 'package:pachinko_game/widgets/achievement_toast_overlay.dart';
+import 'package:pachinko_game/widgets/board_static_layer.dart';
 import 'package:pachinko_game/widgets/floating_text.dart';
 import 'package:pachinko_game/widgets/pachinko_board.dart';
 
