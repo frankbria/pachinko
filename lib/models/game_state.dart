@@ -277,9 +277,6 @@ class GameState extends ChangeNotifier {
   void _clearEffects() {
     _floatingTexts.clear();
     _confettiParticles.clear();
-    for (final slot in _currentLevel?.slots ?? const <Slot>[]) {
-      slot.glow = 0.0;
-    }
     _ballCountHighlighted = false;
     _ballCountHighlightTimer = 0.0;
     _bonusDisplayTimer?.cancel();

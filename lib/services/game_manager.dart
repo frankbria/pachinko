@@ -315,6 +315,8 @@ class GameManager extends ChangeNotifier {
   /// level's best so that the round summary can say so.
   Future<void> _recordScore(StorageService storage, int level, int score) async {
     final round = _round;
+    // No score stored counts as a best of zero: a first round without a point
+    // is saved, but the summary does not call it a best
     final best = (await storage.getBestScore(level))?.score ?? 0;
     await storage.saveHighScore(level, score);
     // The player may have moved on, or left, while storage answered

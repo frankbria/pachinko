@@ -13,6 +13,7 @@ import 'package:pachinko_game/models/slot.dart';
 import 'package:pachinko_game/models/level.dart';
 import 'package:pachinko_game/services/game_manager.dart';
 import 'package:pachinko_game/services/storage_service.dart';
+import 'package:pachinko_game/utils/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pachinko_game/services/physics_engine.dart';
 import 'package:pachinko_game/models/confetti_particle.dart';
@@ -1035,6 +1036,27 @@ void main() {
       manager.resetGame();
       await playRoundInto(1000);
       expect(manager.roundIsNewBest, isTrue);
+    }, timeout: const Timeout(Duration(minutes: 2)));
+
+    test('Given no stored score When the first round ends without a point Then it is not announced as a best', () async {
+      // Nothing is stored yet, so zero is technically the level's best. The
+      // summary would say "New best" over a score of 0, which reads as a joke
+      SharedPreferences.setMockInitialValues({});
+      final manager = GameManager(storageService: StorageService(prefs: await SharedPreferences.getInstance()));
+      addTearDown(manager.dispose);
+      manager.startGame();
+
+      while (manager.gameState.ballsRemaining > 0) {
+        // Below the slots: the ball leaves play without landing in one
+        manager.gameState.launchBall(Ball(position: Vector2(200, GameConstants.boardHeight + 50)));
+        manager.resumeGame();
+        await ticks(2);
+      }
+      await ticks(3);
+
+      expect(manager.gameState.phase, GamePhase.gameOver);
+      expect(manager.gameState.levelScore, 0);
+      expect(manager.roundIsNewBest, isFalse);
     }, timeout: const Timeout(Duration(minutes: 2)));
 
     test('Given storage that answers late When another round has finished meanwhile Then the old answer is not shown for it', () async {

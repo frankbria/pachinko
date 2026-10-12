@@ -58,6 +58,7 @@ class Slot {
 
   void reset() {
     ballCount = 0;
+    glow = 0.0;
   }
 
   Rect get bounds => Rect.fromCenter(
