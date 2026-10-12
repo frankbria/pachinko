@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 
 /// Audio service for managing game sound effects with pooling support
@@ -124,16 +125,24 @@ class AudioService {
   ///
   /// Uses round-robin player allocation for simultaneous playback support.
   /// Sets asset, applies current volume, and plays immediately.
+  ///
+  /// Never throws. Callers do not await a sound, so a failure in the player
+  /// (it was disposed while the sound was loading, or the platform has no
+  /// audio) would otherwise become an unhandled error.
   Future<void> _playSound(String assetPath) async {
     if (_audioPlayers.isEmpty) return;
 
     final player = _getNextPlayer();
 
-    // Set asset and play
-    await player.setAsset(assetPath);
-    await player.setVolume(_volume);
-    await player.seek(Duration.zero); // Reset to start
-    await player.play();
+    try {
+      // Set asset and play
+      await player.setAsset(assetPath);
+      await player.setVolume(_volume);
+      await player.seek(Duration.zero); // Reset to start
+      await player.play();
+    } catch (e) {
+      debugPrint('AudioService: could not play $assetPath: $e');
+    }
   }
 
   /// Plays ball launch sound effect
@@ -220,9 +229,16 @@ class AudioService {
   /// shutdown or when disposing Provider.
   ///
   /// After calling dispose(), do not use any playback methods.
+  ///
+  /// Never throws, for the same reason as [_playSound]: the app does not
+  /// await it. A player that fails to dispose does not keep the others alive.
   Future<void> dispose() async {
     for (final player in _audioPlayers) {
-      await player.dispose();
+      try {
+        await player.dispose();
+      } catch (e) {
+        debugPrint('AudioService: could not dispose a player: $e');
+      }
     }
   }
 }

@@ -147,6 +147,40 @@ void main() {
       });
     });
 
+    group('Playback Failures', () {
+      /// Sounds are played without being awaited. A failure inside the player
+      /// (it was disposed while a sound was loading, or the platform has no
+      /// audio) would otherwise surface as an unhandled error.
+      test('givenPlayerThatFails_whenSoundPlayed_thenTheFailureDoesNotEscape', () async {
+        // Given
+        when(mockPlayers[0].setAsset(any)).thenThrow(StateError('player disposed'));
+
+        // When / Then
+        await expectLater(audioService.playLaunch(), completes);
+      });
+
+      test('givenPlayerThatFailsToPlay_whenSoundPlayed_thenTheNextSoundStillPlays', () async {
+        // Given
+        when(mockPlayers[0].play()).thenThrow(StateError('player disposed'));
+
+        // When
+        await audioService.playLaunch();
+        await audioService.playPegHit();
+
+        // Then: the second sound went to the next player in the pool
+        verify(mockPlayers[1].play()).called(1);
+      });
+
+      test('givenPlayerThatFailsToDispose_whenDisposed_thenTheOthersAreStillDisposed', () async {
+        // Given
+        when(mockPlayers[0].dispose()).thenThrow(StateError('already disposed'));
+
+        // When / Then: dispose is not awaited by the app either
+        await expectLater(audioService.dispose(), completes);
+        verify(mockPlayers[4].dispose()).called(1);
+      });
+    });
+
     group('Volume Control', () {
       test('givenAudioService_whenSetVolumeCalled_thenAllPlayersVolumeUpdated', () async {
         // Given: AudioService with 5 players in pool

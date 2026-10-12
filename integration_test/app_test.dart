@@ -6,6 +6,8 @@ import 'package:pachinko_game/screens/menu_screen.dart';
 import 'package:pachinko_game/screens/game_screen.dart';
 import 'package:pachinko_game/utils/constants.dart';
 
+import 'helpers.dart';
+
 /// Integration tests for basic app launch and navigation functionality.
 ///
 /// These tests verify that the app launches correctly, displays the menu screen,
@@ -29,7 +31,7 @@ void main() {
       (WidgetTester tester) async {
       // Launch the app
       app.main();
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       // Verify MaterialApp is present
       expect(find.byType(MaterialApp), findsOneWidget);
@@ -43,7 +45,7 @@ void main() {
     testWidgets('givenAppLaunched_whenMenuDisplays_thenTitleAndButtonsPresent',
       (WidgetTester tester) async {
       app.main();
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       // Verify MenuScreen is displayed
       expect(find.byType(MenuScreen), findsOneWidget);
@@ -67,14 +69,14 @@ void main() {
     testWidgets('givenMenuScreen_whenUserTapsPlayButton_thenGameScreenDisplays',
       (WidgetTester tester) async {
       app.main();
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       // Verify starting on MenuScreen
       expect(find.byType(MenuScreen), findsOneWidget);
 
       // Tap play button
       await tester.tap(find.text(GameStrings.play));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       // Verify GameScreen is now displayed
       expect(find.byType(GameScreen), findsOneWidget);
@@ -87,16 +89,16 @@ void main() {
     testWidgets('givenGameScreen_whenUserTapsBackButton_thenMenuScreenDisplays',
       (WidgetTester tester) async {
       app.main();
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       // Navigate to game
       await tester.tap(find.text(GameStrings.play));
-      await tester.pumpAndSettle();
+      await settle(tester);
       expect(find.byType(GameScreen), findsOneWidget);
 
       // Tap back button
       await tester.tap(find.byIcon(Icons.arrow_back));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       // Verify back on MenuScreen
       expect(find.byType(MenuScreen), findsOneWidget);
@@ -111,18 +113,18 @@ void main() {
     testWidgets('givenMenuScreen_whenUserSelectsLevel3_thenGameScreenDisplaysLevel3',
       (WidgetTester tester) async {
       app.main();
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       // Open level select dialog
       await tester.tap(find.text('Select Level'));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       // Verify dialog is open
       expect(find.byType(AlertDialog), findsOneWidget);
 
       // Select level 3
       await tester.tap(find.text('3'));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       // Verify on GameScreen with level 3
       expect(find.byType(GameScreen), findsOneWidget);

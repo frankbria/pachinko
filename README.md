@@ -228,6 +228,9 @@ flutter test --exclude-tags golden
 # Run the golden image tests (baselines were generated on Linux)
 flutter test --tags golden
 
+# Run the integration tests (needs a running Android emulator or a device)
+flutter test integration_test -d emulator-5554 --timeout 120s
+
 # Run with coverage report
 flutter test --coverage --exclude-tags golden
 genhtml coverage/lcov.info -o coverage/html
