@@ -156,12 +156,26 @@ void main() {
         await tester.pump(const Duration(milliseconds: 550));
         await capture(tester, 'level-1-bonus-balls');
       }
+      if (launched == 12) {
+        // A ball in the right 2,000 slot cannot be counted on, so this one
+        // is set down just above it once it has left the channel. Its popup
+        // rises where the launcher's hint is written, and the hint steps
+        // aside
+        await pumpUntil(
+            tester, () => gameManager.ballLauncher.currentBall == null,
+            what: 'ball $launched to leave the channel');
+        final slot = gameManager.gameState.currentLevel!.slots.last;
+        final ball = gameManager.gameState.activeBalls.single;
+        ball.position.setValues(slot.position.x, slot.top - 30);
+        ball.velocity.setZero();
+      }
       await pumpUntil(tester, () => gameManager.gameState.activeBalls.isEmpty,
           timeout: const Duration(seconds: 60), what: 'ball $launched to land');
-      if (launched == 3) {
+      if (launched == 3 || launched == 12) {
         // The slot is still lit and its popup still rising
         await tester.pump(const Duration(milliseconds: 150));
-        await capture(tester, 'level-1-slot-lit');
+        await capture(tester,
+            launched == 3 ? 'level-1-slot-lit' : 'level-1-edge-slot-lit');
       }
     }
     await settle(tester);

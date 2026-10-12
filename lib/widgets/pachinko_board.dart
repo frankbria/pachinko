@@ -377,12 +377,20 @@ class _PachinkoBoardPainter extends CustomPainter {
       textDirection: TextDirection.ltr,
       textAlign: TextAlign.right,
     );
-    // Two short lines under the launch box, clear of the slots below
+    // Two short lines under the launch box, clear of the slots below. That
+    // is where a popup rises from the right-hand slots, so the hint steps
+    // aside for as long as one is over it
     textPainter.layout(maxWidth: 120);
-    textPainter.paint(
-      canvas,
-      Offset(right - textPainter.width, GameConstants.launchChannelStartY + 25),
-    );
+    final hintAt = Offset(
+        right - textPainter.width, GameConstants.launchChannelStartY + 25);
+    final hint = hintAt & textPainter.size;
+    final underPopup =
+        gameManager.gameState.floatingTexts.any((popup) => scorePopupBounds(
+              text: popup.text,
+              centreTop: popup.currentPosition,
+              fontSize: popup.fontSize,
+            ).overlaps(hint));
+    if (!underPopup) textPainter.paint(canvas, hintAt);
   }
 
   /// The launch channel as the power meter, while the player drags.
