@@ -19,36 +19,48 @@ A modern graphical Pachinko idle game for Android. Features authentic pachinko m
 - **State Management:** Provider pattern
 - **Storage:** Shared Preferences (ready)
 - **Graphics:** Custom Canvas painting
-- **Platform:** Android. `web/` is kept for the demo build (`flutter build web --no-tree-shake-icons`, served from `build/web`). The repository has no project files for iOS or the desktop platforms; `flutter create --platforms=<name> .` adds one
+- **Platform:** Android. `web/` is kept for the demo build (`flutter build web`, served from `build/web`). The repository has no project files for iOS or the desktop platforms; `flutter create --platforms=<name> .` adds one
 
 ## Project Structure
 ```
 lib/
 ├── main.dart                    # App entry point with Provider setup
 ├── models/
-│   ├── ball.dart               # Ball physics and properties
-│   ├── ball_launcher.dart      # ✨ NEW: Authentic launch system
+│   ├── ball.dart               # Ball physics, properties and trail
+│   ├── ball_launcher.dart      # The plunger: charging and the launch
 │   ├── peg.dart                # Peg collision and types
 │   ├── slot.dart               # Scoring slots at bottom
 │   ├── level.dart              # Level generation and management
 │   ├── round_summary.dart      # How a round went, read from the game state
+│   ├── achievement.dart        # An achievement with its progress and reward
+│   ├── high_score.dart         # One entry in a level's high score table
+│   ├── confetti_particle.dart  # A piece of the bonus confetti
 │   └── game_state.dart         # Global game state management
 ├── services/
 │   ├── physics_engine.dart     # Ball physics and collision detection
-│   └── game_manager.dart       # Main game loop and coordination
+│   ├── game_manager.dart       # Main game loop and coordination
+│   ├── achievement_service.dart # Tracks, unlocks and stores achievements
+│   ├── audio_service.dart      # Sound effects
+│   └── storage_service.dart    # High scores and settings on the device
 ├── screens/
 │   ├── game_screen.dart        # Main gameplay screen
 │   ├── menu_screen.dart        # Main menu with level selection
+│   ├── high_scores_screen.dart # High scores by level
+│   ├── achievements_screen.dart # Achievements and their progress
 │   └── settings_screen.dart    # The player's settings
 ├── widgets/
 │   ├── pachinko_board.dart     # Custom Canvas game board renderer
 │   ├── board_effects.dart      # Bonus announcement, confetti, slot lights, popups, lamps
+│   ├── board_static_layer.dart # Felt, rail, pins and slots, recorded once per level
+│   ├── floating_text.dart      # Score popups
 │   ├── round_summary_panel.dart # The summary shown when the last ball lands
-│   └── board_static_layer.dart # Felt, rail, pins and slots, recorded once per level
+│   ├── game_card.dart          # The card used for rows on the screens, and groupedThousands
+│   ├── achievement_toast.dart  # The toast for an unlocked achievement
+│   └── achievement_toast_overlay.dart # Queues toasts above every route
 └── utils/
     ├── constants.dart          # Game configuration and styling
     ├── game_theme.dart         # App theme built from the colour roles
-    └── peg_patterns.dart       # ✨ NEW: Organized peg layouts
+    └── peg_patterns.dart       # Peg layouts
 ```
 
 ## Key Commands
@@ -58,7 +70,8 @@ lib/
 - `flutter test --exclude-tags golden` - Run tests (the main CI gate)
 - `flutter test --tags golden` - Run the golden image tests (also gated in CI). The baselines in `test/widgets/goldens/` were generated on Linux and are only expected to match there. After an intended visual change or a Flutter upgrade, regenerate them with `flutter test --tags golden --update-goldens`, look at the images, and commit them. A golden that draws a prize peg captures its shimmer after however many frames the test pumps, so the picture depends on the frame count
 - `flutter test integration_test -d emulator-5554 --timeout 120s` - Run the 20 integration tests on a running Android emulator (about three minutes; they refuse to start without a device). Boot one first: `~/Android/Sdk/emulator/emulator -accel-check`, then `~/Android/Sdk/emulator/emulator -avd reader36 -no-window -no-audio -no-boot-anim -no-snapshot-save -gpu swiftshader_indirect` from a session that can open `/dev/kvm`, and wait for `adb shell getprop sys.boot_completed` to print `1`. In these tests use `settle`, `dragLauncher` and `pumpUntil` from `integration_test/helpers.dart`: `pumpAndSettle` never returns on the game screen while a prize peg shimmers, and the launcher's board coordinates are not screen coordinates
-- `flutter drive --driver=test_driver/integration_test.dart --target=integration_test/screenshots.dart -d emulator-5554` - Take screenshots of the game on a running emulator: the menu, levels 1, 2, 3 and 9, and one full round. They are written to `build/screenshots/`. `.github/workflows/screenshots.yml` runs this on a pull request that changes the drawing code, and on demand, and uploads the images as the `screenshots` artifact (`gh run download <run> -n screenshots`). The script is not one of the integration tests: its name does not end in `_test`
+- `flutter drive --driver=test_driver/integration_test.dart --target=integration_test/screenshots.dart -d emulator-5554` - Take screenshots of the game on a running emulator: the menu and the screens reached from it, levels 1, 2, 3, 6, 9, 11 and 16, the launcher at three powers, and one full round. They are written to `build/screenshots/`. `.github/workflows/screenshots.yml` runs this on a pull request that changes the drawing code, and on demand, and uploads the images as the `screenshots` artifact (`gh run download <run> -n screenshots`). The script is not one of the integration tests: its name does not end in `_test`
+- The pictures in `README.md` are in `docs/images/`; refresh them after a change to how the game looks. The stills are from the `Screenshots` workflow on `master` (`gh workflow run screenshots.yml --ref master`, then `gh run download <run> -n screenshots`), each scaled to 540 px wide (`ffmpeg -i in.png -vf scale=540:-1 out.png`). `gameplay.gif` is a recording of the web build (`flutter build web`, served from `build/web`) played in a headless browser at 412x915 with "One ball at a time" off, cut to about 17 seconds and converted with `ffmpeg` at 15 frames a second and 320 px wide through `palettegen` and `paletteuse`. Flutter web paints to a canvas, so the browser drives the game by coordinates read from a screenshot: a click on Play, and a drag down from the plunger of twice the power wanted, in pixels. Launch once before recording, or the First Launch toast is in the picture
 - `flutter test tool/scoring_simulation_test.dart --dart-define=LEVELS=60 --dart-define=ROUNDS=20` - Measure the game's balance: plays whole rounds through the real generator, launcher and physics and prints, per peg pattern and per band of levels, where balls land, how often the bonus triggers, balls per round and scores (about fifteen seconds). It asserts nothing and is not part of the test suite. Run it before and after any change to level generation, scoring or the bonus
 - `dart run build_runner build --delete-conflicting-outputs` - Regenerate test mocks after changing the public API of a mocked class, and commit the result. CI regenerates them and fails if they differ from the committed ones
 - `dart format lib test integration_test tool test_driver` - Format the code (a CI gate, as `dart format --output=none --set-exit-if-changed` on the same directories: an unformatted file fails the job. The generated mocks are included; the generator already writes them this way). `dart fix --apply` afterwards if the wrapping left an `if` without braces. The commit that first formatted everything is listed in `.git-blame-ignore-revs`
