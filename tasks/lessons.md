@@ -301,3 +301,9 @@ Patterns learned the hard way on this repo. Add an entry after any correction.
 - **Read where the rule is enforced before describing it.** The issue as first written said balls reach the edge slots by drifting under the foot of a wall. The walls are only drawn that far; in the physics they run to the bottom. The description was corrected before the plan.
 - **Simulate the options, then ask.** Six widths were measured before the owner was asked to choose. One of them, 22, moved the slots into view without moving the odds at all, which made the choice easy and left the achievement thresholds alone.
 - **A fix can delete its neighbour's workaround.** The static layer clipped its drawing to the board because the old edge slots' light spilled past the sides. With the row inside the walls nothing spills, and the clip and the test's allowance for it are gone.
+
+## 2026-10-12 — the PR for issue #98 (a toast no longer lies over an app bar)
+
+- **A rule written for the next screen was not applied to the screens already there.** `CLAUDE.md` said a screen with something at its top edge anchors its toasts. Only the game screen did; three screens with an app bar had been there all along. When a rule is written down, grep for everything it already covers.
+- **A test script that waits for something to go away is reporting a defect.** The screenshot script failed because a toast swallowed its tap on Back. Making the script wait got the pictures; the player still had to press twice, and that was filed as its own issue the same hour.
+- **An ancestor cannot be changed while its subtree is built or torn down.** The overlay sits above the Navigator, so a screen that anchors from `initState` or releases from `dispose` does it after the frame, and checks that what it is about to call is still mounted.

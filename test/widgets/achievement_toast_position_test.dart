@@ -5,6 +5,11 @@ import 'package:provider/provider.dart';
 import 'package:pachinko_game/models/achievement.dart';
 import 'package:pachinko_game/models/ball_launcher.dart';
 import 'package:pachinko_game/models/game_state.dart';
+import 'package:pachinko_game/screens/achievements_screen.dart';
+import 'package:pachinko_game/screens/high_scores_screen.dart';
+import 'package:pachinko_game/screens/settings_screen.dart';
+import 'package:pachinko_game/services/achievement_service.dart';
+import 'package:pachinko_game/services/storage_service.dart';
 import 'package:pachinko_game/screens/game_screen.dart';
 import 'package:pachinko_game/screens/menu_screen.dart';
 import 'package:pachinko_game/services/game_manager.dart';
@@ -15,6 +20,8 @@ import 'package:pachinko_game/widgets/achievement_toast_overlay.dart';
 
 // Reuse mocks from menu_screen_test
 import '../screens/menu_screen_test.mocks.dart';
+import '../screens/achievements_screen_test.mocks.dart'
+    show MockAchievementService;
 
 /// Where the achievement toast sits on each screen (issue #13).
 ///
@@ -249,6 +256,87 @@ void main() {
 
       expectUncovered(tester, toast, menuButtons);
     });
+  });
+
+  group('Screens with an app bar -', () {
+    /// High Scores, Achievements and Settings have a Back button and a title
+    /// at their top edge. A toast lay over both, and a tap on it dismisses
+    /// the toast, so Back took two presses (#98). They anchor toasts below
+    /// their app bar, as the game screen does below its header.
+    late MockAchievementService achievements;
+
+    setUp(() {
+      achievements = MockAchievementService();
+      when(achievements.getAllAchievements()).thenReturn([]);
+      when(achievements.getUnlockedAchievements()).thenReturn([]);
+      when(achievements.getLockedAchievements()).thenReturn([]);
+      when(achievements.getTotalPoints()).thenReturn(0);
+      when(mockGameState.singleBallLaunch).thenReturn(true);
+    });
+
+    /// A home page with one button that opens [screen]. The route is given
+    /// what the screens read, since it is pushed beside the home page, not
+    /// under it.
+    Widget opening(Widget screen) => Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: ElevatedButton(
+                onPressed: () =>
+                    Navigator.of(context).push(MaterialPageRoute<void>(
+                  builder: (_) => MultiProvider(
+                    providers: [
+                      Provider<StorageService?>.value(value: null),
+                      ChangeNotifierProvider<AchievementService>.value(
+                          value: achievements),
+                    ],
+                    child: screen,
+                  ),
+                )),
+                child: const Text('Open'),
+              ),
+            ),
+          ),
+        );
+
+    final screens = <String, Widget>{
+      'High Scores': const HighScoresScreen(),
+      'Achievements': const AchievementsScreen(),
+      'Settings': const SettingsScreen(),
+    };
+
+    for (final entry in screens.entries) {
+      testWidgets(
+          'given ${entry.key} is open, when a toast is showing, then it is below the app bar and Back works on the first tap',
+          (tester) async {
+        final overlayKey = await pumpUnderOverlay(tester, opening(entry.value));
+        await tester.tap(find.text('Open'));
+        await tester.pumpAndSettle();
+        final appBar = tester.getRect(find.byType(AppBar));
+
+        final toast = await showToast(tester, overlayKey);
+
+        expect(toast.top, greaterThanOrEqualTo(appBar.bottom));
+        await tester.tap(find.byTooltip('Back'));
+        await tester.pumpAndSettle(const Duration(milliseconds: 100),
+            EnginePhase.sendSemanticsUpdate, const Duration(seconds: 2));
+        expect(find.text('Open'), findsOneWidget, reason: 'Back went back');
+        expect(find.byType(AppBar), findsNothing);
+      });
+
+      testWidgets(
+          'given ${entry.key} has been closed, when a toast shows, then it is back at the top',
+          (tester) async {
+        final overlayKey = await pumpUnderOverlay(tester, opening(entry.value));
+        await tester.tap(find.text('Open'));
+        await tester.pumpAndSettle();
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+
+        final toast = await showToast(tester, overlayKey);
+
+        expect(toast.top, AchievementToastOverlayState.defaultTopOffset);
+      });
+    }
   });
 
   group('Anchor ownership -', () {

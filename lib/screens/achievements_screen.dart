@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:pachinko_game/services/achievement_service.dart';
 import 'package:pachinko_game/models/achievement.dart';
 import 'package:pachinko_game/utils/constants.dart';
+import 'package:pachinko_game/widgets/achievement_toast_overlay.dart';
 import 'package:pachinko_game/widgets/game_card.dart';
 
 /// Screen displaying all achievements with progress tracking.
@@ -34,7 +35,10 @@ class AchievementsScreen extends StatelessWidget {
         ? 0
         : (unlockedAchievements.length * 100 / allAchievements.length).round();
 
-    return Scaffold(
+    // Toasts start below the app bar: one at the top would lie over the
+    // title and the Back button
+    return ToastAnchor(
+        child: Scaffold(
       appBar: AppBar(
         title: const Text('Achievements'),
       ),
@@ -119,7 +123,7 @@ class AchievementsScreen extends StatelessWidget {
                 ),
               ],
             ),
-    );
+    ));
   }
 
   Widget _buildStatItem({
