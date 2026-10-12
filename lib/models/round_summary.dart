@@ -77,7 +77,7 @@ class RoundSummary {
       // Collecting every prize peg is what earns the bonus. The game state's
       // own bonus flag only lasts as long as the announcement on screen
       bonusBalls: prizes.isNotEmpty && prizes.every((peg) => peg.isCollected)
-          ? GameConstants.bonusBallsBase + state.currentLevelNumber ~/ 2
+          ? GameConstants.bonusBallsFor(state.currentLevelNumber)
           : 0,
       isNewBest: isNewBest,
     );

@@ -211,4 +211,45 @@ void main() {
       expect(popupHeight(32), greaterThan(popupHeight(16)));
     });
   });
+
+  group('Bonus announcement', () {
+    /// A paragraph does not give its text back, and the overlay's are
+    /// disposed once drawn, so the announcement is told apart by where its
+    /// lines are put: each is centred, so a longer line starts further left.
+    /// "+15 BALLS!" and "+105 BALLS!" differ by a character, and level 200
+    /// is where the uncapped formula (5 + 200 ~/ 2 = 105) and the cap part.
+    List<Offset> lines(TestRecordingCanvas canvas) => [
+          for (final call in recorded(canvas, #drawParagraph))
+            call.positionalArguments[1] as Offset
+        ];
+
+    testWidgets(
+        'given the bonus on level 200, then the board announces the 15 balls the game drops, not 105',
+        (tester) async {
+      final manager = GameManager();
+      addTearDown(manager.dispose);
+      final painter = await pumpBoard(tester, manager);
+      manager.selectLevel(200);
+      await tester.pump();
+      manager.gameState.triggerSpecialBonus();
+      expect(manager.gameState.activeBalls, hasLength(15));
+
+      List<Offset> announcing(int balls) {
+        final canvas = TestRecordingCanvas();
+        paintBonusOverlay(canvas,
+            opacity: manager.gameState.bonusOverlayOpacity, bonusBalls: balls);
+        return lines(canvas);
+      }
+
+      final board = TestRecordingCanvas();
+      painter.paint(board, const Size(400, 600));
+      // The announcement's timer must not outlive the test
+      manager.gameState.resetLevel();
+
+      expect(announcing(15), isNot(announcing(105)),
+          reason: 'the two announcements must differ for this test to tell');
+      expect(lines(board), containsAll(announcing(15)));
+      expect(lines(board), isNot(containsAll(announcing(105))));
+    });
+  });
 }

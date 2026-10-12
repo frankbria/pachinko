@@ -81,6 +81,18 @@ class GameConstants {
   static const int minSpecialPegs = 2;
   static const int maxSpecialPegs = 4;
   static const int bonusBallsBase = 5;
+
+  /// The most balls a bonus drops. The bonus grows with the level and
+  /// reaches this at level 20; without it a high level dropped more balls
+  /// than the player launches (owner's decision, #72)
+  static const int bonusBallsMax = 15;
+
+  /// The balls dropped when every prize peg on [levelNumber] is collected.
+  static int bonusBallsFor(int levelNumber) {
+    final grown = bonusBallsBase + levelNumber ~/ 2;
+    return grown < bonusBallsMax ? grown : bonusBallsMax;
+  }
+
   // Bonus balls drop from the top of the playfield, above the first peg row
   static const double bonusBallSpawnY = 70.0;
   static const double bonusBallSpawnMinX = 120.0;

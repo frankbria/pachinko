@@ -151,8 +151,7 @@ class GameState extends ChangeNotifier {
 
     _specialBonusTriggered = true;
     _bonusOverlayOpacity = 1.0; // Show bonus overlay
-    _bonusBallsToAdd =
-        5 + (_currentLevelNumber ~/ 2); // More bonus balls on higher levels
+    _bonusBallsToAdd = GameConstants.bonusBallsFor(_currentLevelNumber);
 
     // Spawn bonus balls immediately
     final level = _currentLevel;
