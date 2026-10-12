@@ -18,6 +18,17 @@ class StorageService {
   /// For testing, pass a mock SharedPreferences instance.
   StorageService({required SharedPreferences prefs}) : _prefs = prefs;
 
+  static const String _singleBallLaunchKey = 'setting_single_ball_launch';
+
+  /// Whether a ball may only be launched once no ball is in play. On, unless
+  /// the player has turned it off.
+  bool get singleBallLaunch => _prefs.getBool(_singleBallLaunchKey) ?? true;
+
+  /// Saves the player's choice for [singleBallLaunch].
+  Future<void> saveSingleBallLaunch(bool value) async {
+    await _prefs.setBool(_singleBallLaunchKey, value);
+  }
+
   /// Initializes StorageService with production SharedPreferences.
   ///
   /// This is the recommended way to create a StorageService in production code.

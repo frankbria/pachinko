@@ -4,6 +4,7 @@ import '../services/game_manager.dart';
 import '../utils/constants.dart';
 import 'game_screen.dart';
 import 'high_scores_screen.dart';
+import 'settings_screen.dart';
 import 'achievements_screen.dart';
 
 class MenuScreen extends StatelessWidget {
@@ -26,7 +27,9 @@ class MenuScreen extends StatelessWidget {
         ),
         child: SafeArea(
           child: Center(
-            child: Column(
+            // Six buttons are taller than a small phone held sideways
+            child: SingleChildScrollView(
+              child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Game Title, scaled down to stay on one line with its glow
@@ -107,6 +110,15 @@ class MenuScreen extends StatelessWidget {
                   onPressed: () => _showAchievements(context),
                 ),
 
+                const SizedBox(height: 20),
+
+                // Settings Button
+                _MenuButton(
+                  title: GameStrings.settings,
+                  icon: Icons.settings,
+                  onPressed: () => _showSettings(context),
+                ),
+
                 const SizedBox(height: 60),
                 
                 // Game Info
@@ -118,6 +130,7 @@ class MenuScreen extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
               ],
+              ),
             ),
           ),
         ),
@@ -268,6 +281,14 @@ class MenuScreen extends StatelessWidget {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const HighScoresScreen(),
+      ),
+    );
+  }
+
+  void _showSettings(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const SettingsScreen(),
       ),
     );
   }

@@ -176,3 +176,11 @@ Patterns learned the hard way on this repo. Add an entry after any correction.
 - **`git add -N` on a new file makes `git stash` refuse.** ("Entry … not uptodate. Cannot merge.") Nothing is lost; commit first and then rebase.
 - **Screenshot what chance will not give you by setting it off in the script, and say so.** The bonus needs every prize peg hit; `integration_test/screenshots.dart` calls `triggerSpecialBonus()` half way through its round, with a comment.
 - **To learn whether a class is mocked, grep for `class Mock<Name> `, or run the generator and look at `git status`.** A grep for `MockBall` filtered through another pattern missed `test/services/physics_engine_test.mocks.dart`, the plan and the pull request both said `Ball` was not mocked, and the CI gate from #11 failed the first push. The issue had said to regenerate; do it whenever a mocked class might have changed.
+
+## 2026-10-11 — the PR for issue #39 (settings and multi-ball launch)
+
+- **Keep one gate, and make it tell the whole truth.** The launcher refuses a second ball while it carries the first, so a launch attempted then did nothing even without `launcherBusy`. But the board reads `GameState.canLaunchBall` to decide whether to start a drag and show the power meter, and it would have shown them for a launch that could not happen. A mutation that removed the flag survived until the test asserted the gate itself.
+- **A state that looks like another needs a flag, not a guess.** Pause was "phase `ready` with a ball in play". That stopped working the moment a mode allowed launching with a ball in play. `isPaused` says it.
+- **Changing a rule means changing the test that pinned the old one, in the open.** One test asserted that with the setting off a ball could be launched while paused. The issue asks for the opposite. The test was rewritten, with a comment saying what changed and why, and named in the pull request.
+- **Adding a button to a fixed column can overflow a screen you are not looking at.** A sixth menu button overflowed the 800x600 test surface by 48 pixels, which is also a small phone on its side. The menu scrolls now.
+- **`SharedPreferences.setMockInitialValues({})` gives a real in-memory store.** Two `GameManager`s built over the same instance show "survives a restart" without a mock.

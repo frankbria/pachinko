@@ -39,7 +39,20 @@ class GameManager extends ChangeNotifier {
        _achievementService = achievementService,
        _gameState = gameState ?? GameState(),
        _physicsEngine = physicsEngine ?? PhysicsEngine(audioService: audioService),
-       _ballLauncher = ballLauncher ?? BallLauncher();
+       _ballLauncher = ballLauncher ?? BallLauncher() {
+    // The player's saved choice, when there is storage to read it from
+    if (storageService != null) {
+      _gameState.singleBallLaunch = storageService.singleBallLaunch;
+    }
+  }
+
+  /// Sets whether a ball may only be launched once no ball is in play,
+  /// applies it to the game at once and saves it for the next start.
+  Future<void> setSingleBallLaunch(bool value) async {
+    _gameState.singleBallLaunch = value;
+    notifyListeners();
+    await _storageService?.saveSingleBallLaunch(value);
+  }
 
   // Getters
   GameState get gameState => _gameState;
@@ -104,6 +117,8 @@ class GameManager extends ChangeNotifier {
     final ball = _ballLauncher.launch();
     if (ball != null) {
       _gameState.launchBall(ball);
+      // The launcher carries one ball at a time up its channel
+      _gameState.launcherBusy = true;
 
       // Track ball launch achievement
       _achievementService?.trackBallLaunched();
@@ -176,6 +191,7 @@ class GameManager extends ChangeNotifier {
       if (ballReleased && _ballLauncher.currentBall != null) {
         // Ball is now released to physics simulation
         _ballLauncher.reset();
+        _gameState.launcherBusy = false;
       }
     }
     

@@ -31,6 +31,22 @@ class MockStorageService extends _i1.Mock implements _i2.StorageService {
   }
 
   @override
+  bool get singleBallLaunch => (super.noSuchMethod(
+        Invocation.getter(#singleBallLaunch),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  _i3.Future<void> saveSingleBallLaunch(bool? value) => (super.noSuchMethod(
+        Invocation.method(
+          #saveSingleBallLaunch,
+          [value],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
+
+  @override
   _i3.Future<void> saveHighScore(
     int? level,
     int? score,
