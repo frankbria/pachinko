@@ -29,6 +29,10 @@ class GameManager extends ChangeNotifier {
   bool? _roundIsNewBest;
   bool _disposed = false;
 
+  /// Counts the rounds this manager has started. An answer from storage
+  /// about one round must not be shown for a later one.
+  int _round = 0;
+
   /// Creates a GameManager with optional dependency injection.
   ///
   /// Dependencies default to production instances if not provided,
@@ -62,6 +66,7 @@ class GameManager extends ChangeNotifier {
     _ballLauncher.reset();
     _levelResultSaved = false;
     _roundIsNewBest = null;
+    _round++;
     _gameState.startNewGame(level: level);
     _startGameLoop();
     notifyListeners();
@@ -83,6 +88,7 @@ class GameManager extends ChangeNotifier {
     _ballLauncher.reset();
     _levelResultSaved = false;
     _roundIsNewBest = null;
+    _round++;
     _gameTimer?.cancel();
     _gameState.resetLevel();
     notifyListeners();
@@ -308,10 +314,11 @@ class GameManager extends ChangeNotifier {
   /// Saves [score] for [level], and works out first whether it beats the
   /// level's best so that the round summary can say so.
   Future<void> _recordScore(StorageService storage, int level, int score) async {
+    final round = _round;
     final best = (await storage.getBestScore(level))?.score ?? 0;
     await storage.saveHighScore(level, score);
     // The player may have moved on, or left, while storage answered
-    if (_disposed || !_levelResultSaved) return;
+    if (_disposed || round != _round) return;
     _roundIsNewBest = score > best;
     notifyListeners();
   }
@@ -320,6 +327,7 @@ class GameManager extends ChangeNotifier {
     _ballLauncher.reset();
     _levelResultSaved = false;
     _roundIsNewBest = null;
+    _round++;
     _gameTimer?.cancel();
     _gameState.nextLevel();
     notifyListeners();
@@ -335,6 +343,7 @@ class GameManager extends ChangeNotifier {
     _ballLauncher.reset();
     _levelResultSaved = false;
     _roundIsNewBest = null;
+    _round++;
     _gameTimer?.cancel();
     _gameState.loadLevel(levelNumber);
     notifyListeners();

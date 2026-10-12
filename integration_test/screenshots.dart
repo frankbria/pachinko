@@ -86,6 +86,11 @@ void main() {
         // The bonus needs every prize peg hit, which a scripted round cannot
         // count on, so it is set off directly, with the confetti the game
         // throws when it is earned
+        // Every prize peg collected is what earns it, and what the round
+        // summary reports
+        for (final peg in gameManager.gameState.currentLevel!.specialPegs) {
+          peg.onHit();
+        }
         gameManager.gameState.triggerSpecialBonus();
         gameManager.gameState.spawnConfetti(
           Vector2(GameConstants.boardWidth / 2, GameConstants.boardHeight / 2),

@@ -7,7 +7,7 @@ import 'package:pachinko_game/models/round_summary.dart';
 void main() {
   /// A finished round on [levelNumber] with [counts] balls in the slots of
   /// each value, spread over the slots that carry that value.
-  GameState roundWith(Map<int, int> counts, {int levelNumber = 1, bool bonus = false, int collected = 0}) {
+  GameState roundWith(Map<int, int> counts, {int levelNumber = 1, int? collected}) {
     final state = GameState()..startNewGame(level: levelNumber);
     final level = state.currentLevel!;
     counts.forEach((value, balls) {
@@ -17,10 +17,10 @@ void main() {
         state.addScore(value);
       }
     });
-    for (final peg in level.specialPegs.take(collected)) {
+    // null collects every prize peg, which is what earns the bonus
+    for (final peg in level.specialPegs.take(collected ?? level.specialPegs.length)) {
       peg.onHit();
     }
-    if (bonus) state.triggerSpecialBonus();
     return state;
   }
 
@@ -50,25 +50,51 @@ void main() {
     expect(summary.tiers.first.points, 0);
   });
 
-  test('given a round with the bonus on level 6, then the bonus balls and the prize pegs are reported', () {
-    final state = roundWith({50: 1}, levelNumber: 6, bonus: true, collected: 1);
+  test('given every prize peg collected on level 6, then the bonus balls are reported, long after the overlay has gone', () {
+    // GameState.specialBonusTriggered is the overlay's flag: it clears 2.5
+    // seconds after the bonus. The summary must not read it
+    final state = roundWith({50: 1}, levelNumber: 6);
     addTearDown(state.dispose);
+    expect(state.specialBonusTriggered, isFalse);
 
     final summary = RoundSummary.of(state);
 
     expect(summary.levelNumber, 6);
     expect(summary.bonusBalls, 5 + 6 ~/ 2);
-    // Every level has at least two prize pegs, so one collected is not all of them
-    expect(summary.prizePegsCollected, 1);
-    expect(summary.prizePegsTotal, state.currentLevel!.specialPegs.length);
+    expect(summary.prizePegsCollected, summary.prizePegsTotal);
     expect(summary.prizePegsTotal, greaterThan(1));
   });
 
-  test('given a round without the bonus, then no bonus balls are reported', () {
-    final state = roundWith({50: 1}, collected: 1);
+  test('given one prize peg collected and the rest not, then no bonus balls are reported', () {
+    // Every level has at least two prize pegs, so one collected is not all of them
+    final state = roundWith({50: 1}, levelNumber: 6, collected: 1);
     addTearDown(state.dispose);
 
+    final summary = RoundSummary.of(state);
+
+    expect(summary.bonusBalls, 0);
+    expect(summary.prizePegsCollected, 1);
+    expect(summary.prizePegsTotal, state.currentLevel!.specialPegs.length);
+  });
+
+  test('given the overlay is showing but not every prize peg is collected, then no bonus balls are reported', () {
+    final state = roundWith({50: 1}, collected: 1)..triggerSpecialBonus();
+    addTearDown(state.dispose);
+
+    expect(state.specialBonusTriggered, isTrue);
     expect(RoundSummary.of(state).bonusBalls, 0);
+  });
+
+  test('given no level loaded, then there are no prize pegs and no bonus', () {
+    // "Every prize peg collected" is true of none at all, and must not count
+    final state = GameState();
+    addTearDown(state.dispose);
+
+    final summary = RoundSummary.of(state);
+
+    expect(summary.prizePegsTotal, 0);
+    expect(summary.bonusBalls, 0);
+    expect(summary.ballsLanded, 0);
   });
 
   test('given the second level of a run, then the score is the level\'s own, not the running total', () {

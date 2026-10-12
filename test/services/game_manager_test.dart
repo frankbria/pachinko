@@ -7,6 +7,7 @@ import 'package:vector_math/vector_math_64.dart';
 import 'package:pachinko_game/models/ball.dart';
 import 'package:pachinko_game/models/ball_launcher.dart';
 import 'package:pachinko_game/models/game_state.dart';
+import 'package:pachinko_game/models/high_score.dart';
 import 'package:pachinko_game/models/peg.dart';
 import 'package:pachinko_game/models/slot.dart';
 import 'package:pachinko_game/models/level.dart';
@@ -1036,6 +1037,40 @@ void main() {
       expect(manager.roundIsNewBest, isTrue);
     }, timeout: const Timeout(Duration(minutes: 2)));
 
+    test('Given storage that answers late When another round has finished meanwhile Then the old answer is not shown for it', () async {
+      SharedPreferences.setMockInitialValues({});
+      final storage = _GatedStorage(await SharedPreferences.getInstance());
+      final manager = GameManager(storageService: storage);
+      addTearDown(manager.dispose);
+      Future<void> playRoundInto(int value) async {
+        final slot = manager.gameState.currentLevel!.slots.firstWhere((slot) => slot.pointValue == value);
+        while (manager.gameState.ballsRemaining > 0) {
+          await landIn(manager, slot);
+        }
+        await ticks(3);
+      }
+
+      // The first round ends; storage has not answered
+      manager.startGame();
+      await playRoundInto(200);
+      expect(storage.gates, hasLength(1));
+
+      // The player replays and finishes again; storage still has not answered either
+      manager.resetGame();
+      await playRoundInto(50);
+      expect(manager.gameState.phase, GamePhase.gameOver);
+      expect(storage.gates, hasLength(2));
+
+      // Now the answer for the first round arrives
+      storage.gates[0].complete();
+      await ticks(2);
+      expect(manager.roundIsNewBest, isNull, reason: 'that answer was about a round no longer on screen');
+
+      storage.gates[1].complete();
+      await ticks(2);
+      expect(manager.roundIsNewBest, isNotNull);
+    }, timeout: const Timeout(Duration(minutes: 2)));
+
     test('Given a new game with nothing in play When a few ticks pass Then the loop has stopped', () async {
       final manager = GameManager();
       addTearDown(manager.dispose);
@@ -1131,4 +1166,20 @@ void main() {
       expect(state.phase, GamePhase.gameOver);
     });
   });
+}
+
+/// Storage whose answer to "what is this level's best?" waits for the test:
+/// one gate per question, in the order they were asked.
+class _GatedStorage extends StorageService {
+  _GatedStorage(SharedPreferences prefs) : super(prefs: prefs);
+
+  final List<Completer<void>> gates = [];
+
+  @override
+  Future<HighScore?> getBestScore(int level) async {
+    final gate = Completer<void>();
+    gates.add(gate);
+    await gate.future;
+    return super.getBestScore(level);
+  }
 }

@@ -29,7 +29,8 @@ class RoundSummary {
   final int prizePegsCollected;
   final int prizePegsTotal;
 
-  /// The bonus balls the round earned: none unless the bonus was triggered.
+  /// The bonus balls the round earned: none unless every prize peg was
+  /// collected.
   final int bonusBalls;
 
   /// Whether [score] beats the level's best before this round. Null when it
@@ -71,7 +72,9 @@ class RoundSummary {
       ],
       prizePegsCollected: prizes.where((peg) => peg.isCollected).length,
       prizePegsTotal: prizes.length,
-      bonusBalls: state.specialBonusTriggered
+      // Collecting every prize peg is what earns the bonus. The game state's
+      // own bonus flag only lasts as long as the announcement on screen
+      bonusBalls: prizes.isNotEmpty && prizes.every((peg) => peg.isCollected)
           ? GameConstants.bonusBallsBase + state.currentLevelNumber ~/ 2
           : 0,
       isNewBest: isNewBest,
