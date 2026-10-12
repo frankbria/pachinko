@@ -238,3 +238,9 @@ Patterns learned the hard way on this repo. Add an entry after any correction.
 - **A line that only logs is still a changed line to the coverage gate.** Turning five `print` calls into `debugPrint` changed three lines inside `catch` blocks that no test reached, and the gate read 50%. Each needed a test of the failure it reports. That is the gate working: the handlers had never been run.
 - **Some failures cannot be raised from where you stand; find one that can.** A real `AudioPlayer` does not throw from its constructor in a unit test: its failure arrives later, on a future. A pool size of -1 makes the same `try` throw at once, and the test says in a comment what it stands in for.
 - **When a count reaches zero, make it a gate the same day.** With no info-level lints left, CI's analyzer step dropped `--no-fatal-infos`. A `print` added on purpose fails the new command and passed the old one.
+
+## 2026-10-11 — the PR for issue #33 (level bands)
+
+- **Put the constraint on a palette in a test before choosing the colours.** Every role colour has to keep a 3 to 1 contrast on every band's felt, lit and shaded. The slate of the 50 slot is the weakest, which caps a felt's luminance at about 0.05; the four felts were chosen under that line and the test passed first time.
+- **To test a gradient's colours, rasterize and read a pixel.** A recorded `Paint` shows that a shader is set and nothing about its colours. `Picture.toImage` inside `tester.runAsync`, then `toByteData`, gives the felt's real colour at a point with nothing else on it.
+- **A slice that needs the owner's approval of its content is opened, not merged.** The bands and their colours are a proposal; the pull request says so and waits.

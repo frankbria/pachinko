@@ -51,6 +51,31 @@ void main() {
     expect(tester.getCenter(find.text('20')).dy, closeTo(rows.single, 4), reason: 'the ball count beside its label');
   });
 
+  testWidgets('given a level in another band, then the panel around the board takes that band\'s colours',
+      (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.625;
+    addTearDown(tester.view.reset);
+    final manager = GameManager();
+    addTearDown(manager.dispose);
+    manager.startGame(level: GameConstants.levelsPerBand + 1);
+    await tester.pumpWidget(ChangeNotifierProvider<GameManager>.value(
+      value: manager,
+      child: MaterialApp(theme: buildGameTheme(), home: const GameScreen()),
+    ));
+    await tester.pump(const Duration(milliseconds: 50));
+    BoxDecoration panel() => tester
+        .widget<Container>(find.ancestor(of: find.byType(PachinkoBoard), matching: find.byType(Container)).first)
+        .decoration! as BoxDecoration;
+
+    expect(panel().color, GameConstants.levelBands[1].feltShade);
+
+    // When the game moves to a level in the first band, the panel follows
+    manager.startGame(level: 1);
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(panel().color, GameConstants.levelBands[0].feltShade);
+  });
+
   testWidgets('given a score of six digits, then it still fits its tile', (tester) async {
     await pumpGameScreen(tester, score: 123456);
 
