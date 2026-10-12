@@ -1479,6 +1479,58 @@ void main() {
     });
 
     test(
+        'Given the first ball has set off the bonus When a bonus ball lands in a 2,000 slot before it Then Lucky Shot waits for the first ball itself',
+        () async {
+      // Found in review: the first ball can collect every prize peg before it
+      // lands, and then bonus balls are in play with it. One of them landing
+      // first must neither win Lucky Shot nor take it from the first ball
+      final (manager, service) = await game();
+      Ball? first;
+      for (final peg in manager.gameState.currentLevel!.specialPegs) {
+        first = await touch(manager, peg, ball: first);
+      }
+      final edge = manager.gameState.currentLevel!.slots
+          .firstWhere((slot) => slot.pointValue == 2000);
+      Future<void> drop(Ball ball) async {
+        ball.position.setValues(edge.position.x, edge.top - 4);
+        ball.velocity.setValues(0, 300);
+        await ticks(3);
+      }
+
+      final bonusBall = manager.gameState.activeBalls
+          .firstWhere((ball) => !identical(ball, first));
+      await drop(bonusBall);
+      expect(bonusBall.hasLanded, isTrue);
+      expect(unlocked(service, 'lucky_shot'), isFalse);
+
+      await drop(first!);
+      expect(first.hasLanded, isTrue);
+      expect(unlocked(service, 'lucky_shot'), isTrue);
+    });
+
+    test(
+        'Given the first ball lands in a 50 slot When another lands in a 2,000 slot in the same moment Then Lucky Shot stays locked',
+        () async {
+      final (manager, service) = await game();
+      manager.gameState.singleBallLaunch = false;
+      Ball above(int points) {
+        final slot = manager.gameState.currentLevel!.slots
+            .firstWhere((slot) => slot.pointValue == points);
+        return Ball(
+            position: Vector2(slot.position.x, slot.top - 4),
+            velocity: Vector2(0, 300));
+      }
+
+      manager.gameState.launchBall(above(50));
+      manager.gameState.launchBall(above(2000));
+      manager.resumeGame();
+      await ticks(3);
+
+      expect(manager.gameState.score, 2050);
+      expect(unlocked(service, 'lucky_shot'), isFalse);
+    });
+
+    test(
         'Given a round whose first ball landed elsewhere When a later ball lands in a 2,000 slot Then Lucky Shot stays locked, until the first ball of the next round',
         () async {
       final (manager, service) = await game();

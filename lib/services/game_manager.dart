@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:vector_math/vector_math_64.dart' as vm;
+import '../models/ball.dart';
 import '../models/ball_launcher.dart';
 import '../models/game_state.dart';
 import '../models/peg.dart';
@@ -32,9 +33,12 @@ class GameManager extends ChangeNotifier {
   /// about one round must not be shown for a later one.
   int _round = 0;
 
-  /// Whether a ball has already left play this round. Lucky Shot is for the
-  /// first one only.
-  bool _firstBallOut = false;
+  /// The first ball launched this round, while it is in play. Lucky Shot is
+  /// for that ball alone: a bonus ball it set off may land before it does.
+  Ball? _firstBall;
+
+  /// Whether this round's first ball has been seen yet.
+  bool _firstBallSeen = false;
 
   /// The player's choice of launch mode, made while there was no storage to
   /// save it to. Saved when storage is attached.
@@ -138,7 +142,8 @@ class GameManager extends ChangeNotifier {
     _levelResultSaved = false;
     _roundIsNewBest = null;
     _round++;
-    _firstBallOut = false;
+    _firstBall = null;
+    _firstBallSeen = false;
     _gameState.startNewGame(level: level);
     _startGameLoop();
     notifyListeners();
@@ -161,7 +166,8 @@ class GameManager extends ChangeNotifier {
     _levelResultSaved = false;
     _roundIsNewBest = null;
     _round++;
-    _firstBallOut = false;
+    _firstBall = null;
+    _firstBallSeen = false;
     _gameTimer?.cancel();
     _gameState.resetLevel();
     notifyListeners();
@@ -279,6 +285,13 @@ class GameManager extends ChangeNotifier {
 
     if (balls.isEmpty) return;
 
+    // Bonus balls only join once a ball has hit pegs, so the first ball in
+    // play this round is the first one launched
+    if (!_firstBallSeen) {
+      _firstBall = balls.first;
+      _firstBallSeen = true;
+    }
+
     // Update ball physics (only for balls not on guided path)
     final freeBalls = balls
         .where((ball) =>
@@ -296,10 +309,21 @@ class GameManager extends ChangeNotifier {
     final hitSlots = _physicsEngine.checkSlotCollisions(freeBalls, level.slots);
     _handleSlotHits(hitSlots);
 
+    // Lucky Shot: this round's first ball has come to its end, and the slot
+    // it lies in, if any, is the one it landed in
+    final first = _firstBall;
+    if (first != null && !first.isActive) {
+      if (first.hasLanded &&
+          hitSlots.any((slot) =>
+              slot.pointValue >= 2000 && slot.containsPoint(first.position))) {
+        _achievementService?.trackFirstBallInEdgeSlot();
+      }
+      _firstBall = null;
+    }
+
     // Remove inactive balls
     for (final ball in List.from(balls)) {
       if (!ball.isActive) {
-        _firstBallOut = true;
         _gameState.removeBall(ball);
       }
     }
@@ -335,7 +359,6 @@ class GameManager extends ChangeNotifier {
       // Track edge slot achievement (edge slots are worth 2000 points)
       if (slot.pointValue >= 2000) {
         _achievementService?.trackEdgeSlot();
-        if (!_firstBallOut) _achievementService?.trackFirstBallInEdgeSlot();
       }
     }
   }
@@ -421,7 +444,8 @@ class GameManager extends ChangeNotifier {
     _levelResultSaved = false;
     _roundIsNewBest = null;
     _round++;
-    _firstBallOut = false;
+    _firstBall = null;
+    _firstBallSeen = false;
     _gameTimer?.cancel();
     _gameState.nextLevel();
     notifyListeners();
@@ -438,7 +462,8 @@ class GameManager extends ChangeNotifier {
     _levelResultSaved = false;
     _roundIsNewBest = null;
     _round++;
-    _firstBallOut = false;
+    _firstBall = null;
+    _firstBallSeen = false;
     _gameTimer?.cancel();
     _gameState.loadLevel(levelNumber);
     notifyListeners();

@@ -112,8 +112,11 @@ void main() {
     final engine = PhysicsEngine();
     final powers = Random(seed);
 
+    Ball? firstOfRound;
     while (state.ballsRemaining > 0) {
-      state.launchBall(launchedBall(powers.nextDouble() * 100));
+      final launched = launchedBall(powers.nextDouble() * 100);
+      final firstBall = firstOfRound ??= launched;
+      state.launchBall(launched);
       int frames = 0;
       while (state.activeBalls.isNotEmpty) {
         final balls = state.activeBalls.toList();
@@ -143,7 +146,9 @@ void main() {
         }
         final hitSlots = engine.checkSlotCollisions(balls, level.slots);
         for (final slot in hitSlots) {
-          if (tally.balls == 0 && slot.pointValue >= 2000) {
+          if (firstBall.hasLanded &&
+              slot.pointValue >= 2000 &&
+              slot.containsPoint(firstBall.position)) {
             tally.luckyRounds = 1;
           }
           state.addScore(slot.pointValue);
