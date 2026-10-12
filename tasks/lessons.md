@@ -160,3 +160,10 @@ Patterns learned the hard way on this repo. Add an entry after any correction.
 - **Screenshots can come from the runner.** `integration_test/screenshots.dart` under `flutter drive` captures frames from the render tree (`RenderView.debugLayer.toImage`) and returns them through `reportData['screenshots']`; the driver in `test_driver/` writes the files. `binding.takeScreenshot` needs the Android surface converted to an image view first, which changes how the app renders.
 - **Do not create a `tools` symlink in a worktree.** `tools/` is a tracked directory there, so `ln -s … tools` makes `tools/tools`. Put the main checkout's Flutter on `PATH` and leave the worktree alone. (Second time; the first was during #11.)
 - **A test that starts a real game must let the loop stop.** `GameManager.startGame()` starts a periodic timer; a widget test that never pumps time ends with "a Timer is still pending". Pump 50 ms once after showing the board.
+
+## 2026-10-11 — the PR for issue #66 (audio disposal race)
+
+- **A log line that appears in every run is a defect, not noise.** `AudioService: could not play …` was printed twice in every runner run after #53, always for the same two sounds at the same instant. That was the guard catching a player disposed in the middle of a load, at every test boundary. The copy of the error that the guard could not see failed a run later.
+- **Catching an error from an unawaited future does not fix the ordering that causes it.** #53 caught the failure. The cause was `dispose()` not waiting for loads in flight, and the plugin also reports that through its own stream subscription, where no caller's `try` reaches.
+- **Hold an async call open with a `Completer` to test an ordering.** `when(player.setAsset(any)).thenAnswer((_) => loading.future)` lets a test call `dispose()` in the middle of a load, check that nothing was disposed yet, then complete the load and check the rest.
+- **`workflow_dispatch` works on any branch once the workflow is on the default branch.** `gh workflow run "Integration tests" --ref <branch>` ran the emulator suite ten times on a branch whose changes do not match the workflow's path filter.

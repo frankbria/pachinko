@@ -36,6 +36,27 @@ class AudioService {
   /// Current volume level (0.0 to 1.0)
   double _volume = 1.0;
 
+  /// Set by [dispose]. No sound is loaded or started afterwards.
+  bool _disposed = false;
+
+  /// Loads that have started and not finished. [dispose] waits for them: a
+  /// player disposed in the middle of a load goes on receiving platform
+  /// events on streams that are closed, and the plugin reports that as an
+  /// error no caller can catch.
+  final Set<Future<void>> _loads = {};
+
+  /// Runs [load] and keeps it in [_loads] until it ends, whether it succeeds
+  /// or fails.
+  Future<void> _tracked(Future<void> load) async {
+    final settled = load.then<void>((_) {}, onError: (Object _) {});
+    _loads.add(settled);
+    try {
+      await load;
+    } finally {
+      _loads.remove(settled);
+    }
+  }
+
   /// Asset paths for sound effects
   static const String _launchAsset = 'assets/sounds/launch.mp3';
   static const String _pegHitAsset = 'assets/sounds/peg_hit.wav';
@@ -91,24 +112,32 @@ class AudioService {
       // Preload all assets to prevent first-play lag
       // We'll load each asset on the first player for initial caching
       // Actual playback will use round-robin allocation
-      if (_audioPlayers.isNotEmpty) {
-        final player = _audioPlayers[0];
-
-        // Preload all 5 assets sequentially
-        await player.setAsset(_launchAsset);
-        await player.setAsset(_pegHitAsset);
-        await player.setAsset(_specialPegAsset);
-        await player.setAsset(_slotScoreAsset);
-        await player.setAsset(_bonusTriggerAsset);
-
-        // Reset player for first actual playback
-        await player.seek(Duration.zero);
+      if (_audioPlayers.isNotEmpty && !_disposed) {
+        await _tracked(_preload(_audioPlayers[0]));
       }
     } catch (e) {
       // Gracefully handle platforms where just_audio is not available (e.g., Linux desktop)
       // Audio will be disabled but app continues to function
       print('AudioService: Failed to initialize (platform may not support just_audio): $e');
     }
+  }
+
+  Future<void> _preload(AudioPlayer player) async {
+    // Preload all 5 assets sequentially
+    await player.setAsset(_launchAsset);
+    await player.setAsset(_pegHitAsset);
+    await player.setAsset(_specialPegAsset);
+    await player.setAsset(_slotScoreAsset);
+    await player.setAsset(_bonusTriggerAsset);
+
+    // Reset player for first actual playback
+    await player.seek(Duration.zero);
+  }
+
+  Future<void> _load(AudioPlayer player, String assetPath) async {
+    await player.setAsset(assetPath);
+    await player.setVolume(_volume);
+    await player.seek(Duration.zero); // Reset to start
   }
 
   /// Gets next available audio player using round-robin allocation
@@ -130,15 +159,14 @@ class AudioService {
   /// (it was disposed while the sound was loading, or the platform has no
   /// audio) would otherwise become an unhandled error.
   Future<void> _playSound(String assetPath) async {
-    if (_audioPlayers.isEmpty) return;
+    if (_disposed || _audioPlayers.isEmpty) return;
 
     final player = _getNextPlayer();
 
     try {
-      // Set asset and play
-      await player.setAsset(assetPath);
-      await player.setVolume(_volume);
-      await player.seek(Duration.zero); // Reset to start
+      await _tracked(_load(player, assetPath));
+      // Disposed while it loaded: the player is about to go, so do not start it
+      if (_disposed) return;
       await player.play();
     } catch (e) {
       debugPrint('AudioService: could not play $assetPath: $e');
@@ -232,7 +260,13 @@ class AudioService {
   ///
   /// Never throws, for the same reason as [_playSound]: the app does not
   /// await it. A player that fails to dispose does not keep the others alive.
+  ///
+  /// Waits for sounds that are still loading before it disposes the players
+  /// (see [_loads]). Calling it again does nothing.
   Future<void> dispose() async {
+    if (_disposed) return;
+    _disposed = true;
+    await Future.wait(_loads.toList());
     for (final player in _audioPlayers) {
       try {
         await player.dispose();
