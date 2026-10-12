@@ -51,10 +51,10 @@ void main() {
   /// and comes back.
   Future<void> openFromMenu(
       WidgetTester tester, String label, String name) async {
-    await toastsGone(tester);
     await tester.ensureVisible(find.text(label));
     await tester.tap(find.text(label));
     await settle(tester);
+    // For the picture: a toast would lie over what the screen shows
     await toastsGone(tester);
     await capture(tester, name);
     await tester.pageBack();
@@ -181,9 +181,7 @@ void main() {
     await settle(tester);
     await capture(tester, 'level-1-round-over');
 
-    // Back on the menu, the same screens with a round behind them. The
-    // round's achievements are announced first: a toast would take the taps
-    await toastsGone(tester);
+    // Back on the menu, the same screens with a round behind them
     await tester.tap(find.byIcon(Icons.arrow_back));
     await settle(tester);
     await openFromMenu(tester, 'High Scores', '07-high-scores-filled');

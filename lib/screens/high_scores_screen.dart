@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/high_score.dart';
 import '../services/storage_service.dart';
 import '../utils/constants.dart';
+import '../widgets/achievement_toast_overlay.dart';
 import '../widgets/game_card.dart';
 
 /// Screen that displays all high scores across all levels.
@@ -68,7 +69,10 @@ class _HighScoresScreenState extends State<HighScoresScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    // Toasts start below the app bar: one at the top would lie over the
+    // title and the Back button
+    return ToastAnchor(
+        child: Scaffold(
       appBar: AppBar(
         title: const Text('High Scores'),
         actions: [
@@ -96,7 +100,7 @@ class _HighScoresScreenState extends State<HighScoresScreen> {
                   itemBuilder: (context, index) =>
                       _scoreRow(context, index + 1, _allScores[index]),
                 ),
-    );
+    ));
   }
 
   /// Shows confirmation dialog before clearing all high score data.

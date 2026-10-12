@@ -315,3 +315,9 @@ Patterns learned the hard way on this repo. Add an entry after any correction.
 
 - **Two things drawn in one place need to know about each other.** The hint and the popups were each placed sensibly and landed on the same spot. The popup's bounds are now a function its drawing uses too, so the hint can ask where a popup is instead of guessing.
 - **Look at the corners of a screenshot, not only at what the change was about.** The overlap was on the pictures for the slot row, beside the slots that were being checked. It had been there since the hint was written; nobody had been looking at that corner with a ball just landed.
+
+## 2026-10-12 — the PR for issue #98 (a toast no longer lies over an app bar)
+
+- **A rule written for the next screen was not applied to the screens already there.** `CLAUDE.md` said a screen with something at its top edge anchors its toasts. Only the game screen did; three screens with an app bar had been there all along. When a rule is written down, grep for everything it already covers.
+- **A test script that waits for something to go away is reporting a defect.** The screenshot script failed because a toast swallowed its tap on Back. Making the script wait got the pictures; the player still had to press twice, and that was filed as its own issue the same hour.
+- **An ancestor cannot be changed while its subtree is built or torn down.** The overlay sits above the Navigator, so a screen that anchors from `initState` or releases from `dispose` does it after the frame, and checks that what it is about to call is still mounted.

@@ -66,9 +66,9 @@ Future<void> pumpUntil(
 }
 
 /// Waits until no achievement toast is showing and none follows within a
-/// second. A toast lies over the top of the screen and takes a tap to
-/// dismiss itself, so a tap on a Back button under it does not go back; and
-/// toasts queue, with a moment between one and the next.
+/// second. A toast lies over part of the screen, so a picture taken while
+/// one shows has it in the way; and toasts queue, with a moment between one
+/// and the next.
 Future<void> toastsGone(WidgetTester tester) async {
   bool none() => find.byType(AchievementToast).evaluate().isEmpty;
   final end = DateTime.now().add(const Duration(seconds: 90));

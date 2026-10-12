@@ -118,3 +118,50 @@ class AchievementToastOverlayState extends State<AchievementToastOverlay> {
     );
   }
 }
+
+/// Keeps achievement toasts [topOffset] below the top safe area for as long
+/// as it is in the tree, and gives the top back when it leaves.
+///
+/// For a screen with an app bar: a toast at the top lies over the title and
+/// the Back button, and a tap on a toast dismisses it, so Back would take two
+/// presses. Such a screen wraps itself in this with the app bar's height.
+class ToastAnchor extends StatefulWidget {
+  final double topOffset;
+  final Widget child;
+
+  const ToastAnchor({
+    super.key,
+    this.topOffset = kToolbarHeight,
+    required this.child,
+  });
+
+  @override
+  State<ToastAnchor> createState() => _ToastAnchorState();
+}
+
+class _ToastAnchorState extends State<ToastAnchor> {
+  AchievementToastOverlayState? _toasts;
+
+  @override
+  void initState() {
+    super.initState();
+    _toasts = AchievementToastOverlay.of(context);
+    // The overlay is an ancestor, and an ancestor cannot be rebuilt while
+    // this subtree is being built or torn down, so both wait for the frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _toasts?.anchorToasts(this, widget.topOffset);
+    });
+  }
+
+  @override
+  void dispose() {
+    final toasts = _toasts;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (toasts != null && toasts.mounted) toasts.releaseToasts(this);
+    });
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
