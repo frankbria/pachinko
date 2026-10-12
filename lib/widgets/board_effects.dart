@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 import 'package:flutter/painting.dart';
+import '../models/ball_launcher.dart';
 import '../models/confetti_particle.dart';
 import '../models/slot.dart';
 import '../utils/constants.dart';
@@ -242,4 +243,98 @@ void paintScorePopup(
   final left = (centreTop.dx - popup.width / 2)
       .clamp(margin, GameConstants.boardWidth - margin - popup.width);
   popup.paint(canvas, Offset(left, centreTop.dy));
+}
+
+/// The colour of launch power at [ratio] (0.0 to 1.0): cyan, rising through
+/// violet to magenta at full power. Each half is a blend of two saturated
+/// colours, so there is no muddy middle.
+Color launchPowerColour(double ratio) {
+  final power = ratio.clamp(0.0, 1.0);
+  return power <= 0.5
+      ? Color.lerp(GameConstants.cyanColor, GameConstants.violetColor, power * 2)!
+      : Color.lerp(GameConstants.violetColor, GameConstants.magentaColor, power * 2 - 1)!;
+}
+
+/// What the launcher asks of the player in [phase].
+String launchHintFor(LaunchPhase phase) =>
+    phase == LaunchPhase.charging ? GameStrings.launchHintCharging : GameStrings.launchHintReady;
+
+/// Draws launch power as light in the launch channel, rising from the
+/// plunger, with the percentage beside the channel's foot.
+///
+/// The channel is the meter, so nothing is drawn over the pegs. At full
+/// power the light stops at the top of the channel's inner wall. The ramp is
+/// two two-colour gradients, one above the other: a single three-colour
+/// gradient aborts the CI emulator (see the board materials slice, #26).
+void paintLaunchPower(Canvas canvas, double ratio) {
+  final power = ratio.clamp(0.0, 1.0);
+  const left = GameConstants.launchChannelStartX + 2;
+  const right = GameConstants.launchChannelStartX + GameConstants.launchChannelWidth - 2;
+  const bottom = GameConstants.launchChannelStartY - GameConstants.ballRadius;
+  const top = GameConstants.launchChannelInnerWallTopY;
+  const middle = (bottom + top) / 2;
+  final lit = bottom - (bottom - top) * power;
+
+  Paint ramp(double from, double to, Color lower, Color upper) => Paint()
+    ..shader = ui.Gradient.linear(
+      Offset(0, from),
+      Offset(0, to),
+      [lower.withValues(alpha: 0.6), upper.withValues(alpha: 0.6)],
+    );
+
+  if (power > 0) {
+    canvas.drawRect(
+      Rect.fromLTRB(left, lit > middle ? lit : middle, right, bottom),
+      ramp(bottom, middle, GameConstants.cyanColor, GameConstants.violetColor),
+    );
+  }
+  if (lit < middle) {
+    canvas.drawRect(
+      Rect.fromLTRB(left, lit, right, middle),
+      ramp(middle, top, GameConstants.violetColor, GameConstants.magentaColor),
+    );
+  }
+
+  // Below the lowest peg and left of the launch box: beside the channel's foot
+  final label = TextPainter(
+    text: TextSpan(
+      text: '${(power * 100).round()}%',
+      style: TextStyle(
+        color: launchPowerColour(power),
+        fontFamily: displayFontFamily,
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+    textDirection: TextDirection.ltr,
+  )..layout();
+  label.paint(
+    canvas,
+    Offset(
+      GameConstants.launchChannelStartX - 20 - label.width,
+      GameConstants.launchChannelStartY - label.height / 2,
+    ),
+  );
+}
+
+/// Draws the plunger the resting ball sits on: a cap under the ball and a
+/// shaft below it, in chrome.
+void paintPlunger(Canvas canvas) {
+  const centreX = GameConstants.ballLaunchX;
+  const capTop = GameConstants.launchChannelStartY + GameConstants.ballRadius;
+  final chrome = Paint()..color = GameConstants.chromeColor;
+  canvas.drawRRect(
+    RRect.fromRectAndRadius(
+      const Rect.fromLTWH(centreX - 10, capTop, 20, 4),
+      const Radius.circular(2),
+    ),
+    chrome,
+  );
+  canvas.drawRRect(
+    RRect.fromRectAndRadius(
+      const Rect.fromLTWH(centreX - 3, capTop + 4, 6, 7),
+      const Radius.circular(1),
+    ),
+    Paint()..color = GameConstants.slateColor,
+  );
 }

@@ -23,18 +23,27 @@ Future<void> settle(WidgetTester tester) async {
 /// and sits somewhere inside the screen, so the point is converted through
 /// the board's rectangle; dragging at the raw coordinate misses the launcher.
 Future<void> dragLauncher(WidgetTester tester, double distance) async {
+  await tester.dragFrom(launcherOnScreen(tester), Offset(0, -distance * boardScale(tester)));
+  await tester.pump();
+}
+
+/// How many screen pixels one board pixel is.
+double boardScale(WidgetTester tester) {
   final board = tester.getRect(find.byType(PachinkoBoard));
-  final scale = math.min(
+  return math.min(
     board.width / GameConstants.boardWidth,
     board.height / GameConstants.boardHeight,
   );
-  final launcher = board.topLeft +
+}
+
+/// Where the launcher is on the screen.
+Offset launcherOnScreen(WidgetTester tester) {
+  final scale = boardScale(tester);
+  return tester.getRect(find.byType(PachinkoBoard)).topLeft +
       Offset(
         GameConstants.launchChannelStartX * scale,
         GameConstants.launchChannelStartY * scale,
       );
-  await tester.dragFrom(launcher, Offset(0, -distance * scale));
-  await tester.pump();
 }
 
 /// Pumps frames until [condition] holds. Fails the test if it does not within
