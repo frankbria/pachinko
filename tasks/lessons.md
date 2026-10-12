@@ -311,6 +311,11 @@ Patterns learned the hard way on this repo. Add an entry after any correction.
 - **A change in play changes what a scripted run meets.** With balls reaching the whole field, the screenshot round unlocked more achievements, and a toast lay over the Back button the script tapped next: the tap dismissed the toast and the script was on the wrong screen. The script now waits for toasts to finish before it navigates. The integration workflow did not run for this change by its path filter and was started by hand; a change to how balls move should always run it.
 - **Check a new way to aim for a sure thing.** Power now decides where the ball comes down, so every power was flown 600 times: no power puts more than about one ball in eight into a 2,000 slot.
 
+## 2026-10-12 — the PR for issue #95 (a score popup is not drawn over the launcher's hint)
+
+- **Two things drawn in one place need to know about each other.** The hint and the popups were each placed sensibly and landed on the same spot. The popup's bounds are now a function its drawing uses too, so the hint can ask where a popup is instead of guessing.
+- **Look at the corners of a screenshot, not only at what the change was about.** The overlap was on the pictures for the slot row, beside the slots that were being checked. It had been there since the hint was written; nobody had been looking at that corner with a ball just landed.
+
 ## 2026-10-12 — the PR for issue #98 (a toast no longer lies over an app bar)
 
 - **A rule written for the next screen was not applied to the screens already there.** `CLAUDE.md` said a screen with something at its top edge anchors its toasts. Only the game screen did; three screens with an app bar had been there all along. When a rule is written down, grep for everything it already covers.
