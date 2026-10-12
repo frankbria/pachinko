@@ -23,6 +23,11 @@ class GameManager extends ChangeNotifier {
   DateTime _lastFrameTime = DateTime.now();
   bool _levelResultSaved = false;
 
+  /// The player's choice of launch mode, made while there was no storage to
+  /// save it to. Saved when storage is attached.
+  bool? _unsavedSingleBallLaunch;
+  bool _disposed = false;
+
   /// Creates a GameManager with optional dependency injection.
   ///
   /// Dependencies default to production instances if not provided,
@@ -52,11 +57,24 @@ class GameManager extends ChangeNotifier {
   /// storage loads after the first frame, so the manager can be the older of
   /// the two. When storage arrives the saved settings are applied. A service
   /// the manager already has is left alone, and so is one passed as null.
+  ///
+  /// A choice the player made while there was no storage stands: it is saved
+  /// now, and the stored value does not replace it. This is called while
+  /// widgets are being built, so listeners hear of a change just afterwards.
   void attachServices({StorageService? storageService, AchievementService? achievementService}) {
     if (achievementService != null) _achievementService = achievementService;
-    if (storageService != null && !identical(storageService, _storageService)) {
-      _storageService = storageService;
+    if (storageService == null || identical(storageService, _storageService)) return;
+    _storageService = storageService;
+
+    final unsaved = _unsavedSingleBallLaunch;
+    if (unsaved != null) {
+      _unsavedSingleBallLaunch = null;
+      unawaited(storageService.saveSingleBallLaunch(unsaved));
+    } else if (_gameState.singleBallLaunch != storageService.singleBallLaunch) {
       _gameState.singleBallLaunch = storageService.singleBallLaunch;
+      scheduleMicrotask(() {
+        if (!_disposed) notifyListeners();
+      });
     }
   }
 
@@ -65,7 +83,13 @@ class GameManager extends ChangeNotifier {
   Future<void> setSingleBallLaunch(bool value) async {
     _gameState.singleBallLaunch = value;
     notifyListeners();
-    await _storageService?.saveSingleBallLaunch(value);
+    final storage = _storageService;
+    if (storage == null) {
+      // Kept until storage arrives: see attachServices
+      _unsavedSingleBallLaunch = value;
+      return;
+    }
+    await storage.saveSingleBallLaunch(value);
   }
 
   // Getters
@@ -348,6 +372,7 @@ class GameManager extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     _gameTimer?.cancel();
     super.dispose();
   }

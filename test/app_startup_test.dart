@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -47,10 +48,17 @@ void main() {
       final manager = Provider.of<GameManager>(tester.element(find.byType(MenuScreen)), listen: false);
       expect(manager.gameState.singleBallLaunch, isTrue, reason: 'storage has not answered: the default');
 
+      // The settings screen is already open when storage answers
+      await tester.tap(find.text('Settings'));
+      await tester.pumpAndSettle();
+      expect(tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value, isTrue);
+
       store.gate.complete();
       await tester.pumpAndSettle();
 
       expect(manager.gameState.singleBallLaunch, isFalse, reason: 'the saved choice, once storage has answered');
+      expect(tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value, isFalse,
+          reason: 'the open screen follows');
       await manager.setSingleBallLaunch(true);
       expect((await SharedPreferences.getInstance()).getBool('setting_single_ball_launch'), isTrue);
     });
@@ -83,6 +91,56 @@ void main() {
       manager.attachServices(storageService: storage);
 
       expect(manager.gameState.singleBallLaunch, isTrue, reason: 'attached already: nothing to re-read');
+    });
+
+    test('given a choice made before storage arrived, when storage is attached, then the choice stands and is saved',
+        () async {
+      // The stored value says off; the player has since switched it on
+      final manager = GameManager();
+      addTearDown(manager.dispose);
+      await manager.setSingleBallLaunch(true);
+
+      manager.attachServices(storageService: StorageService(prefs: prefs));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(manager.gameState.singleBallLaunch, isTrue);
+      expect(prefs.getBool('setting_single_ball_launch'), isTrue);
+    });
+
+    test('given listeners, when late storage changes the setting, then they are told, just after the call', () async {
+      // The call arrives while widgets are being built, when nothing may be marked for rebuild
+      final manager = GameManager();
+      addTearDown(manager.dispose);
+      int told = 0;
+      manager.addListener(() => told++);
+
+      manager.attachServices(storageService: StorageService(prefs: prefs));
+      expect(told, 0, reason: 'not during the call');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(told, 1);
+    });
+
+    test('given late storage that agrees with the setting, then nobody is told', () async {
+      SharedPreferences.setMockInitialValues({});
+      final manager = GameManager();
+      addTearDown(manager.dispose);
+      int told = 0;
+      manager.addListener(() => told++);
+
+      manager.attachServices(storageService: StorageService(prefs: await SharedPreferences.getInstance()));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(told, 0);
+    });
+
+    test('given a manager disposed before the news goes out, then nothing is thrown', () async {
+      final manager = GameManager();
+      manager.attachServices(storageService: StorageService(prefs: prefs));
+
+      manager.dispose();
+
+      await Future<void>.delayed(Duration.zero);
     });
 
     test('given no storage yet, when attached with nothing, then the manager keeps what it has', () {
