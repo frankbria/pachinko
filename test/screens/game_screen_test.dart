@@ -4,6 +4,7 @@ import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
 import 'package:vector_math/vector_math_64.dart';
 import 'package:pachinko_game/screens/game_screen.dart';
+import 'package:pachinko_game/widgets/round_summary_panel.dart';
 import 'package:pachinko_game/services/game_manager.dart';
 import 'package:pachinko_game/models/game_state.dart';
 import 'package:pachinko_game/models/ball.dart';
@@ -32,6 +33,10 @@ void main() {
     when(mockGameState.score).thenReturn(1000);
     when(mockGameState.ballsRemaining).thenReturn(15);
     when(mockGameState.currentLevel).thenReturn(null);
+    // Read by the round summary at game over
+    when(mockGameManager.roundIsNewBest).thenReturn(null);
+    when(mockGameState.levelScore).thenReturn(0);
+    when(mockGameState.specialBonusTriggered).thenReturn(false);
     when(mockGameState.currentLevelNumber).thenReturn(3);
     when(mockGameState.activeBalls).thenReturn([]);
     when(mockGameState.canLaunchBall).thenReturn(true);
@@ -269,15 +274,18 @@ void main() {
     /// THEN "Next Level" button is present
     ///
     /// Tests conditional rendering: next level button shown only when phase == GamePhase.gameOver AND ballsRemaining <= 0
-    testWidgets('givenGameScreenWithGameOverAndNoBalls_whenCheckingControls_thenNextLevelButtonPresent',
+    testWidgets('givenGameScreenWithGameOverAndNoBalls_whenCheckingControls_thenTheSummaryOffersNextLevel',
       (WidgetTester tester) async {
+      // The round summary carries Next Level now; the controls row no longer
+      // grows a button of its own (#30)
       when(mockGameState.phase).thenReturn(GamePhase.gameOver);
       when(mockGameState.ballsRemaining).thenReturn(0);
       
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
       
+      expect(find.byType(RoundSummaryPanel), findsOneWidget);
       expect(find.text('Next Level'), findsOneWidget);
-      expect(find.byIcon(Icons.skip_next), findsOneWidget);
+      expect(find.byIcon(Icons.skip_next), findsNothing);
     });
 
     /// GIVEN GameScreen with phase=ready (not gameOver)

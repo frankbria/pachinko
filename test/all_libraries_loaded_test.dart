@@ -19,6 +19,7 @@ import 'package:pachinko_game/models/game_state.dart';
 import 'package:pachinko_game/models/high_score.dart';
 import 'package:pachinko_game/models/level.dart';
 import 'package:pachinko_game/models/peg.dart';
+import 'package:pachinko_game/models/round_summary.dart';
 import 'package:pachinko_game/models/slot.dart';
 import 'package:pachinko_game/screens/achievements_screen.dart';
 import 'package:pachinko_game/screens/game_screen.dart';
@@ -38,6 +39,7 @@ import 'package:pachinko_game/widgets/board_effects.dart';
 import 'package:pachinko_game/widgets/board_static_layer.dart';
 import 'package:pachinko_game/widgets/floating_text.dart';
 import 'package:pachinko_game/widgets/pachinko_board.dart';
+import 'package:pachinko_game/widgets/round_summary_panel.dart';
 
 void main() {
   test('given the files under lib/, when compared with this file\'s imports, then every one is imported', () {

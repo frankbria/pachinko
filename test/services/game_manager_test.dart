@@ -11,6 +11,8 @@ import 'package:pachinko_game/models/peg.dart';
 import 'package:pachinko_game/models/slot.dart';
 import 'package:pachinko_game/models/level.dart';
 import 'package:pachinko_game/services/game_manager.dart';
+import 'package:pachinko_game/services/storage_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pachinko_game/services/physics_engine.dart';
 import 'package:pachinko_game/models/confetti_particle.dart';
 import 'package:pachinko_game/widgets/floating_text.dart';
@@ -43,6 +45,7 @@ void main() {
     when(mockGameState.floatingTexts).thenReturn([]);
     when(mockGameState.confettiParticles).thenReturn([]);
     when(mockGameState.ballCountHighlighted).thenReturn(false);
+    when(mockGameState.slotsLit).thenReturn(false);
     when(mockBallLauncher.phase).thenReturn(LaunchPhase.ready);
     when(mockBallLauncher.currentBall).thenReturn(null);
 
@@ -641,6 +644,7 @@ void main() {
       final mockStorage = MockStorageService();
       final mockAchievements = MockAchievementService();
       when(mockStorage.saveHighScore(any, any)).thenAnswer((_) async {});
+      when(mockStorage.getBestScore(any)).thenAnswer((_) async => null);
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
@@ -960,6 +964,77 @@ void main() {
       expect(ball.trail, isNotEmpty);
       expect(ball.trail.first.y, greaterThan(ball.position.y), reason: 'the ball has risen past its trail');
     });
+
+    /// Drops a ball into [slot] and lets it land.
+    Future<void> landIn(GameManager manager, Slot slot) async {
+      manager.gameState.launchBall(Ball(position: Vector2(slot.position.x, slot.top - 4), velocity: Vector2(0, 300)));
+      manager.resumeGame();
+      await ticks(3);
+    }
+
+    test('Given a ball over a slot When it lands Then the slot lights and its popup starts above it in its colour', () async {
+      final manager = GameManager();
+      addTearDown(manager.dispose);
+      manager.startGame();
+      final slot = manager.gameState.currentLevel!.slots.firstWhere((slot) => slot.pointValue == 1000);
+
+      await landIn(manager, slot);
+
+      expect(manager.gameState.score, 1000);
+      expect(slot.glow, greaterThan(0.0));
+      final popup = manager.gameState.floatingTexts.single;
+      expect(popup.text, '+1000');
+      expect(popup.color, slot.color);
+      expect(popup.fontSize, FloatingText.sizeFor(1000));
+      // Its line box ends above the slot's mouth, and it only rises from there
+      expect(popup.startPosition.dy + popup.fontSize * 1.3, lessThanOrEqualTo(slot.top));
+    });
+
+    test('Given a lit slot and nothing else When ticks pass Then the loop runs until the light is out', () async {
+      final manager = GameManager();
+      addTearDown(manager.dispose);
+      manager.startGame();
+      await ticks(3);
+      expect(manager.isRunning, isFalse);
+
+      manager.gameState.lightSlot(manager.gameState.currentLevel!.slots.firstWhere((slot) => slot.pointValue == 2000));
+      manager.resumeGame();
+      await ticks(5);
+      expect(manager.isRunning, isTrue);
+
+      await Future<void>.delayed(const Duration(milliseconds: 1400));
+      expect(manager.gameState.slotsLit, isFalse);
+      expect(manager.isRunning, isFalse);
+    });
+
+    test('Given stored scores When rounds finish Then the manager says whether each was a new best', () async {
+      SharedPreferences.setMockInitialValues({});
+      final storage = StorageService(prefs: await SharedPreferences.getInstance());
+      final manager = GameManager(storageService: storage);
+      addTearDown(manager.dispose);
+      Future<void> playRoundInto(int value) async {
+        final slot = manager.gameState.currentLevel!.slots.firstWhere((slot) => slot.pointValue == value);
+        while (manager.gameState.ballsRemaining > 0) {
+          await landIn(manager, slot);
+        }
+        await ticks(3);
+      }
+
+      manager.startGame();
+      expect(manager.roundIsNewBest, isNull);
+      await playRoundInto(200);
+      expect(manager.gameState.phase, GamePhase.gameOver);
+      expect(manager.roundIsNewBest, isTrue, reason: 'the first score on a level is its best');
+
+      manager.resetGame();
+      expect(manager.roundIsNewBest, isNull, reason: 'not known again until the next round ends');
+      await playRoundInto(50);
+      expect(manager.roundIsNewBest, isFalse);
+
+      manager.resetGame();
+      await playRoundInto(1000);
+      expect(manager.roundIsNewBest, isTrue);
+    }, timeout: const Timeout(Duration(minutes: 2)));
 
     test('Given a new game with nothing in play When a few ticks pass Then the loop has stopped', () async {
       final manager = GameManager();

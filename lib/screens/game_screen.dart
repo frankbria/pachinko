@@ -4,7 +4,9 @@ import '../services/game_manager.dart';
 import '../models/game_state.dart';
 import '../utils/constants.dart';
 import '../widgets/achievement_toast_overlay.dart';
+import '../models/round_summary.dart';
 import '../widgets/pachinko_board.dart';
+import '../widgets/round_summary_panel.dart';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
@@ -83,7 +85,10 @@ class _GameScreenState extends State<GameScreen> {
             
             // Game Board
             Expanded(
-              child: Container(
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
                 margin: const EdgeInsets.all(8.0),
                 decoration: BoxDecoration(
                   // The felt darkens to this at the board's foot, so the
@@ -96,6 +101,9 @@ class _GameScreenState extends State<GameScreen> {
                   ),
                 ),
                 child: const PachinkoBoard(),
+              ),
+                  const _RoundSummaryOverlay(),
+                ],
               ),
             ),
             
@@ -125,6 +133,7 @@ class _GameHUD extends StatelessWidget {
                   icon: Icons.star,
                   label: GameStrings.score,
                   value: gameState.score.toString(),
+                  countTo: gameState.score,
                   // Gold is the score's colour and nothing else's in the header
                   color: GameConstants.secondaryColor,
                   valueColor: GameConstants.secondaryColor,
@@ -166,6 +175,9 @@ class _HUDItem extends StatelessWidget {
   final Color valueColor;
   final bool highlighted;
 
+  /// When set, the value counts up to this number instead of jumping to it.
+  final int? countTo;
+
   const _HUDItem({
     required this.icon,
     required this.label,
@@ -173,6 +185,7 @@ class _HUDItem extends StatelessWidget {
     required this.color,
     this.valueColor = GameConstants.inkColor,
     this.highlighted = false,
+    this.countTo,
   });
 
   @override
@@ -216,18 +229,57 @@ class _HUDItem extends StatelessWidget {
             child: FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerRight,
-              child: Text(
-                value,
-                maxLines: 1,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: highlighted ? GameConstants.bonusBallColor : valueColor,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              child: countTo == null
+                  ? _valueText(context, value)
+                  : TweenAnimationBuilder<double>(
+                      // No begin: the first build shows the number as it is,
+                      // and each later change runs from the number on screen
+                      tween: Tween<double>(end: countTo!.toDouble()),
+                      duration: const Duration(milliseconds: 400),
+                      builder: (context, shown, child) => _valueText(context, shown.round().toString()),
+                    ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _valueText(BuildContext context, String shown) => Text(
+        shown,
+        maxLines: 1,
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          color: highlighted ? GameConstants.bonusBallColor : valueColor,
+          fontWeight: FontWeight.bold,
+        ),
+      );
+}
+
+/// The round summary, over the board once the last ball has landed. It
+/// replaces the bare Next Level button the controls row used to grow.
+class _RoundSummaryOverlay extends StatelessWidget {
+  const _RoundSummaryOverlay();
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<GameManager>(
+      builder: (context, gameManager, child) {
+        final gameState = gameManager.gameState;
+        if (gameState.phase != GamePhase.gameOver || gameState.ballsRemaining > 0) {
+          return const SizedBox.shrink();
+        }
+
+        return Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: RoundSummaryPanel(
+            summary: RoundSummary.of(gameState, isNewBest: gameManager.roundIsNewBest),
+            // Leaving does what Back does: the screen's dispose stops the loop
+            onMenu: () => Navigator.of(context).pop(),
+            onReplay: gameManager.resetGame,
+            onNextLevel: gameManager.nextLevel,
+          ),
+        );
+      },
     );
   }
 }
@@ -283,18 +335,6 @@ class _GameControls extends StatelessWidget {
                   foregroundColor: Colors.white,
                 ),
               ),
-              
-              // Next level button (shown when appropriate)
-              if (gameState.phase == GamePhase.gameOver && gameState.ballsRemaining <= 0)
-                ElevatedButton.icon(
-                  onPressed: gameManager.nextLevel,
-                  icon: const Icon(Icons.skip_next),
-                  label: const Text('Next Level'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: GameConstants.primaryColor,
-                    foregroundColor: GameConstants.onPrimaryColor,
-                  ),
-                ),
             ],
           ),
         );

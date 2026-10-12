@@ -241,6 +241,27 @@ class MockSlot extends _i1.Mock implements _i7.Slot {
       );
 
   @override
+  double get glow => (super.noSuchMethod(
+        Invocation.getter(#glow),
+        returnValue: 0.0,
+      ) as double);
+
+  @override
+  set glow(double? _glow) => super.noSuchMethod(
+        Invocation.setter(
+          #glow,
+          _glow,
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  double get lightSeconds => (super.noSuchMethod(
+        Invocation.getter(#lightSeconds),
+        returnValue: 0.0,
+      ) as double);
+
+  @override
   _i3.Rect get bounds => (super.noSuchMethod(
         Invocation.getter(#bounds),
         returnValue: _FakeRect_2(

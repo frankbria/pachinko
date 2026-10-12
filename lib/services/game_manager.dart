@@ -6,6 +6,7 @@ import '../models/ball_launcher.dart';
 import '../models/game_state.dart';
 import '../models/peg.dart';
 import '../models/slot.dart';
+import '../widgets/floating_text.dart';
 import '../utils/constants.dart';
 import 'physics_engine.dart';
 import 'audio_service.dart';
@@ -22,6 +23,11 @@ class GameManager extends ChangeNotifier {
   Timer? _gameTimer;
   DateTime _lastFrameTime = DateTime.now();
   bool _levelResultSaved = false;
+
+  /// Whether the round just finished beat the level's best. Null until the
+  /// stored scores have been read, and when there is no storage.
+  bool? _roundIsNewBest;
+  bool _disposed = false;
 
   /// Creates a GameManager with optional dependency injection.
   ///
@@ -46,10 +52,16 @@ class GameManager extends ChangeNotifier {
   PhysicsEngine get physicsEngine => _physicsEngine;
   BallLauncher get ballLauncher => _ballLauncher;
   bool get isRunning => _gameTimer?.isActive ?? false;
+
+  /// Whether the round just finished beat the level's best score. Null while
+  /// that is not known: before the stored scores have been read, when there
+  /// is no storage, and once another round has begun.
+  bool? get roundIsNewBest => _roundIsNewBest;
   
   void startGame({int level = 1}) {
     _ballLauncher.reset();
     _levelResultSaved = false;
+    _roundIsNewBest = null;
     _gameState.startNewGame(level: level);
     _startGameLoop();
     notifyListeners();
@@ -70,6 +82,7 @@ class GameManager extends ChangeNotifier {
   void resetGame() {
     _ballLauncher.reset();
     _levelResultSaved = false;
+    _roundIsNewBest = null;
     _gameTimer?.cancel();
     _gameState.resetLevel();
     notifyListeners();
@@ -140,6 +153,7 @@ class GameManager extends ChangeNotifier {
     _gameState.updateFloatingTexts(clampedDeltaTime);
     _gameState.updateBallCountHighlight(clampedDeltaTime);
     _gameState.updateConfetti(clampedDeltaTime);
+    _gameState.updateSlotLights(clampedDeltaTime);
 
     _checkGameState();
 
@@ -152,12 +166,13 @@ class GameManager extends ChangeNotifier {
 
   /// Whether nothing the loop drives is changing: no ball in play (a ball in
   /// the launch channel counts as in play) and no score popup, confetti or
-  /// ball count highlight.
+  /// ball count highlight, and no slot still lit.
   bool get _isIdle =>
       _gameState.activeBalls.isEmpty &&
       _gameState.floatingTexts.isEmpty &&
       _gameState.confettiParticles.isEmpty &&
-      !_gameState.ballCountHighlighted;
+      !_gameState.ballCountHighlighted &&
+      !_gameState.slotsLit;
 
   void _updatePhysics(double deltaTime) {
     final balls = _gameState.activeBalls;
@@ -219,11 +234,15 @@ class GameManager extends ChangeNotifier {
       // Play slot score sound
       _audioService?.playSlotScore(slot.pointValue);
 
-      // Add floating text for visual feedback
+      // The slot lights, and the popup starts above its mouth, clear of its
+      // value, in the slot's own colour and at a size that goes by the score
+      _gameState.lightSlot(slot);
+      final size = FloatingText.sizeFor(slot.pointValue);
       _gameState.addFloatingText(
         '+${slot.pointValue}',
-        Offset(slot.position.x, slot.position.y - 20), // Above slot
-        _getScoreColor(slot.pointValue),
+        Offset(slot.position.x, slot.top - size * 1.4),
+        slot.color,
+        fontSize: size,
       );
 
       // Track edge slot achievement (edge slots are worth 2000 points)
@@ -231,13 +250,6 @@ class GameManager extends ChangeNotifier {
         _achievementService?.trackEdgeSlot();
       }
     }
-  }
-
-  Color _getScoreColor(int points) {
-    if (points >= 2000) return const Color(0xFFFFD700); // Gold
-    if (points >= 1000) return const Color(0xFFFFA500); // Orange
-    if (points >= 500) return const Color(0xFFFFFF00); // Yellow
-    return Colors.white;
   }
 
   void _checkSpecialBonus() {
@@ -285,7 +297,7 @@ class GameManager extends ChangeNotifier {
     final score = _gameState.levelScore;
 
     if (storageService != null) {
-      storageService.saveHighScore(level, score);
+      _recordScore(storageService, level, score);
     }
 
     // Track achievements for level completion and score
@@ -293,9 +305,21 @@ class GameManager extends ChangeNotifier {
     _achievementService?.trackLevelScore(level, score);
   }
 
+  /// Saves [score] for [level], and works out first whether it beats the
+  /// level's best so that the round summary can say so.
+  Future<void> _recordScore(StorageService storage, int level, int score) async {
+    final best = (await storage.getBestScore(level))?.score ?? 0;
+    await storage.saveHighScore(level, score);
+    // The player may have moved on, or left, while storage answered
+    if (_disposed || !_levelResultSaved) return;
+    _roundIsNewBest = score > best;
+    notifyListeners();
+  }
+
   void nextLevel() {
     _ballLauncher.reset();
     _levelResultSaved = false;
+    _roundIsNewBest = null;
     _gameTimer?.cancel();
     _gameState.nextLevel();
     notifyListeners();
@@ -310,6 +334,7 @@ class GameManager extends ChangeNotifier {
   void selectLevel(int levelNumber) {
     _ballLauncher.reset();
     _levelResultSaved = false;
+    _roundIsNewBest = null;
     _gameTimer?.cancel();
     _gameState.loadLevel(levelNumber);
     notifyListeners();
@@ -318,6 +343,7 @@ class GameManager extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     _gameTimer?.cancel();
     super.dispose();
   }

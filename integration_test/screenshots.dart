@@ -98,6 +98,11 @@ void main() {
       }
       await pumpUntil(tester, () => gameManager.gameState.activeBalls.isEmpty,
           timeout: const Duration(seconds: 60), what: 'ball $launched to land');
+      if (launched == 3) {
+        // The slot is still lit and its popup still rising
+        await tester.pump(const Duration(milliseconds: 150));
+        await capture(tester, 'level-1-slot-lit');
+      }
     }
     await settle(tester);
     await capture(tester, 'level-1-round-over');
