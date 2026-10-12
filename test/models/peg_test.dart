@@ -443,6 +443,72 @@ void main() {
     /// Once a peg is hit, subsequent hits should not change its state.
     /// This prevents double-counting scoring and ensures each peg
     /// contributes to game mechanics only once per level.
+    /// Every bounce off a pin answers with a flash and a sound, not only the
+    /// first of the level (#90). A short pause keeps a ball that rests or
+    /// rolls on a pin from firing it on every frame.
+    test(
+        'given a pin that has just been hit, when less than the pause has passed, then it does not answer again; after the pause it does',
+        () {
+      final pin = Peg(position: Vector2(100, 100));
+      expect(pin.canFireAgain, isFalse,
+          reason: 'never hit: the first hit is not "again"');
+
+      pin.onHit();
+      expect(pin.canFireAgain, isFalse);
+
+      pin.updateAnimation(Peg.refireDelay - 0.01);
+      expect(pin.canFireAgain, isFalse);
+
+      pin.updateAnimation(0.02);
+      expect(pin.canFireAgain, isTrue);
+    });
+
+    test(
+        'given a pin whose flash is half over, when it is hit again, then the flash starts afresh',
+        () {
+      final pin = Peg(position: Vector2(100, 100))..onHit();
+      pin.updateAnimation(0.4);
+      expect(pin.pulseProgress, closeTo(0.5, 0.01));
+
+      pin.onHit();
+
+      expect(pin.pulseProgress, 0.0);
+      expect(pin.isAnimating, isTrue);
+      expect(pin.canFireAgain, isFalse);
+    });
+
+    test(
+        'given a pin whose flash has finished, when it is hit again, then it flashes again',
+        () {
+      final pin = Peg(position: Vector2(100, 100))..onHit();
+      pin.updateAnimation(1.0);
+      expect(pin.isAnimating, isFalse);
+      expect(pin.canFireAgain, isTrue);
+
+      pin.onHit();
+
+      expect(pin.isAnimating, isTrue);
+      expect(pin.pulseGlowRadius, 0.0, reason: 'the ring starts at the pin');
+      pin.updateAnimation(0.1);
+      expect(pin.pulseGlowRadius, greaterThan(pin.radius));
+    });
+
+    test(
+        'given a collected prize peg, when it is hit again, then it flashes but stays collected and unlit',
+        () {
+      final prize = Peg(position: Vector2(100, 100), type: PegType.special)
+        ..onHit();
+      prize.updateAnimation(1.0);
+
+      prize.onHit();
+
+      expect(prize.isCollected, isTrue);
+      expect(prize.isHighlighted, isFalse);
+      prize.updateAnimation(1.0);
+      expect(prize.shimmerIntensity, 0.0);
+      expect(prize.renderColor, Peg.collectedPrizeColor);
+    });
+
     test('given hit peg, when onHit called again, then hasBeenHit remains true',
         () {
       // Given

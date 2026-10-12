@@ -61,18 +61,28 @@ class Peg {
     return direction.normalized();
   }
 
-  void onHit() {
-    // Only trigger animation on first hit
-    if (!hasBeenHit) {
-      hasBeenHit = true;
-      isAnimating = true;
-      pulseProgress = 0.0;
-      _hitAnimationTimer =
-          _hitAnimationDuration; // Start timer at full duration
+  /// How soon after a hit a peg answers another one. Every bounce flashes
+  /// and sounds; the pause keeps a ball that rests or rolls on a peg from
+  /// firing it on every frame.
+  static const double refireDelay = 0.15;
 
-      if (type == PegType.special && isHighlighted) {
-        isHighlighted = false;
-      }
+  /// Whether a peg that has been hit is ready to flash and sound again.
+  bool get canFireAgain =>
+      hasBeenHit && _hitAnimationTimer <= _hitAnimationDuration - refireDelay;
+
+  /// A ball has bounced off the peg: its flash starts, afresh if one was
+  /// running. The first hit is what collects a prize peg. A hit that comes
+  /// inside the pause after the last one changes nothing.
+  void onHit() {
+    if (hasBeenHit && !canFireAgain) return;
+
+    hasBeenHit = true;
+    isAnimating = true;
+    pulseProgress = 0.0;
+    _hitAnimationTimer = _hitAnimationDuration; // Start timer at full duration
+
+    if (type == PegType.special && isHighlighted) {
+      isHighlighted = false;
     }
   }
 
