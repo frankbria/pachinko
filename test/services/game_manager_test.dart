@@ -932,6 +932,35 @@ void main() {
     /// count highlight. Peg animation is the board's own business.
     Future<void> ticks(int count) => Future<void>.delayed(Duration(milliseconds: 16 * count + 8));
 
+    test('Given a ball in flight When the loop ticks Then its trail records where it was before each step', () async {
+      final manager = GameManager();
+      addTearDown(manager.dispose);
+      manager.startGame();
+      final ball = Ball(position: Vector2(200, 150));
+      manager.gameState.launchBall(ball);
+
+      await ticks(4);
+
+      expect(ball.trail, isNotEmpty);
+      expect(ball.trail.first, Vector2(200, 150), reason: 'the first entry is where the ball started');
+      expect(ball.trail.last.y, lessThan(ball.position.y), reason: 'the ball has fallen past its trail');
+    });
+
+    test('Given a ball travelling up the launch channel When the loop ticks Then it leaves a trail too', () async {
+      final manager = GameManager();
+      addTearDown(manager.dispose);
+      manager.startGame();
+      manager.startLaunchCharging();
+      manager.updateLaunchPower(50);
+      manager.launchBall();
+
+      await ticks(4);
+
+      final ball = manager.gameState.activeBalls.single;
+      expect(ball.trail, isNotEmpty);
+      expect(ball.trail.first.y, greaterThan(ball.position.y), reason: 'the ball has risen past its trail');
+    });
+
     test('Given a new game with nothing in play When a few ticks pass Then the loop has stopped', () async {
       final manager = GameManager();
       addTearDown(manager.dispose);

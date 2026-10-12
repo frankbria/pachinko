@@ -714,6 +714,17 @@ void main() {
     });
   });
 
+  group('Launched Ball -', () {
+    test('given a launch, then the ball takes the ball role colour', () {
+      final launcher = BallLauncher();
+      launcher.startCharging();
+
+      final ball = launcher.launch();
+
+      expect(ball!.color, GameConstants.ballColor);
+    });
+  });
+
   group('Reset Functionality -', () {
     test('given launcher with power, when reset called, then power returns to zero', () {
       // Given

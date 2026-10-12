@@ -167,3 +167,11 @@ Patterns learned the hard way on this repo. Add an entry after any correction.
 - **Catching an error from an unawaited future does not fix the ordering that causes it.** #53 caught the failure. The cause was `dispose()` not waiting for loads in flight, and the plugin also reports that through its own stream subscription, where no caller's `try` reaches.
 - **Hold an async call open with a `Completer` to test an ordering.** `when(player.setAsset(any)).thenAnswer((_) => loading.future)` lets a test call `dispose()` in the middle of a load, check that nothing was disposed yet, then complete the load and check the rest.
 - **`workflow_dispatch` works on any branch once the workflow is on the default branch.** `gh workflow run "Integration tests" --ref <branch>` ran the emulator suite ten times on a branch whose changes do not match the workflow's path filter.
+
+## 2026-10-11 — the PR for issue #27 (the ball)
+
+- **`Ball.update()` is not what moves a ball in the game.** `PhysicsEngine.updateBalls` integrates the ball's fields itself, and the launcher sets the position while the ball is in the channel. Anything that must happen once per step for every ball (the trail) belongs in `GameManager._updatePhysics`, not in the model's `update`.
+- **`GameState.launchBall` only adds a ball in the `ready` phase.** A test or a script that wants several balls on the board at once gets one; the rest are dropped silently. Use `triggerSpecialBonus()` for many balls, or add one ball per test.
+- **`gh pr merge --delete-branch` can leave `.git/index.lock` in the main checkout.** It happened after two merges in a row. Confirm no git process is running (`pgrep -x git`), remove the lock by its full path, then pull.
+- **`git add -N` on a new file makes `git stash` refuse.** ("Entry … not uptodate. Cannot merge.") Nothing is lost; commit first and then rebase.
+- **Screenshot what chance will not give you by setting it off in the script, and say so.** The bonus needs every prize peg hit; `integration_test/screenshots.dart` calls `triggerSpecialBonus()` half way through its round, with a comment.

@@ -12,14 +12,23 @@ import '../utils/game_theme.dart';
 /// Every sphere on the board is drawn with this, so they share one light.
 /// The shadow is a gradient and not a blur, so it costs little to rasterize.
 /// A sphere that glows passes [castsShadow] as false: a shadow drawn over its
-/// own glow reads as a dark ring.
+/// own glow reads as a dark ring. With [glowColour] the sphere draws its own
+/// soft glow, twice its width, between the shadow and the body, so the two
+/// do not fight.
 ///
 /// The body is two passes, each a two-colour gradient: from the highlight to
 /// [colour], then a shade that darkens towards the far edge. One gradient
 /// with three colours draws the same thing, but it makes the software
 /// rendered emulator that the integration tests run on abort, and so does a
 /// gradient whose last stop is below 1.0 (found on PR #65).
-void paintSphere(Canvas canvas, Offset centre, double radius, Color colour, {bool castsShadow = true}) {
+void paintSphere(
+  Canvas canvas,
+  Offset centre,
+  double radius,
+  Color colour, {
+  bool castsShadow = true,
+  Color? glowColour,
+}) {
   if (castsShadow) {
     final shadowCentre = centre + Offset(radius * 0.3, radius * 0.4);
     final shadowRadius = radius * 1.3;
@@ -35,6 +44,20 @@ void paintSphere(Canvas canvas, Offset centre, double radius, Color colour, {boo
             GameConstants.cabinetColor.withValues(alpha: 0.0),
           ],
           [0.55, 1.0],
+        ),
+    );
+  }
+
+  if (glowColour != null) {
+    final glowRadius = radius * 2;
+    canvas.drawCircle(
+      centre,
+      glowRadius,
+      Paint()
+        ..shader = ui.Gradient.radial(
+          centre,
+          glowRadius,
+          [glowColour.withValues(alpha: 0.45), glowColour.withValues(alpha: 0.0)],
         ),
     );
   }

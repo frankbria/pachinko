@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'package:flutter/material.dart';
 import 'package:vector_math/vector_math_64.dart';
 import '../utils/constants.dart';
 import 'ball.dart';
@@ -84,7 +83,7 @@ class BallLauncher {
     // Create ball at launch position
     _currentBall = Ball(
       position: Vector2(GameConstants.ballLaunchX, GameConstants.ballLaunchY),
-      color: const Color(0xFFFFFFFF),
+      color: GameConstants.ballColor,
     );
     
     _pathProgress = 0.0;

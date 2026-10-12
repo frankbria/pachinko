@@ -290,29 +290,29 @@ class _PachinkoBoardPainter extends CustomPainter {
     }
   }
 
+  /// Each ball as a shaded sphere over a soft glow, with a fading trail
+  /// behind it: the ball is what the player has to follow.
   void _drawBalls(Canvas canvas, GameState gameState) {
     for (final ball in gameState.activeBalls) {
       if (!ball.isActive) continue;
-      
-      final paint = Paint()
-        ..color = ball.color
-        ..style = PaintingStyle.fill;
-      
-      final borderPaint = Paint()
-        ..color = Colors.white.withOpacity(0.3)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.0;
-      
-      canvas.drawCircle(
+
+      // Oldest first: each step nearer the ball is larger and more opaque
+      final trail = ball.trail;
+      for (int i = 0; i < trail.length; i++) {
+        final nearness = (i + 1) / (trail.length + 1);
+        canvas.drawCircle(
+          Offset(trail[i].x, trail[i].y),
+          ball.radius * (0.3 + 0.6 * nearness),
+          Paint()..color = ball.color.withValues(alpha: 0.35 * nearness),
+        );
+      }
+
+      paintSphere(
+        canvas,
         Offset(ball.position.x, ball.position.y),
         ball.radius,
-        paint,
-      );
-      
-      canvas.drawCircle(
-        Offset(ball.position.x, ball.position.y),
-        ball.radius,
-        borderPaint,
+        ball.color,
+        glowColour: ball.color,
       );
     }
   }

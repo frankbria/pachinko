@@ -398,4 +398,60 @@ void main() {
       expect(result, isFalse);
     });
   });
+
+  group('Ball Trail -', () {
+    /// The trail is the ball's recent positions, oldest first, drawn fading
+    /// behind it so that the eye can follow it through the pegs.
+    test('given a new ball, then its trail is empty', () {
+      // A ball at rest in the launcher has gone nowhere yet
+      final ball = Ball(position: Vector2(375, 470));
+
+      expect(ball.trail, isEmpty);
+    });
+
+    test('given more recorded positions than the trail holds, then it keeps the newest, oldest first', () {
+      final ball = Ball(position: Vector2.zero());
+      const steps = Ball.maxTrailLength + 4;
+
+      for (int i = 0; i < steps; i++) {
+        ball.position = Vector2(i.toDouble(), 0);
+        ball.recordTrail();
+      }
+
+      expect(ball.trail, hasLength(Ball.maxTrailLength));
+      expect(ball.trail.first.x, (steps - Ball.maxTrailLength).toDouble());
+      expect(ball.trail.last.x, (steps - 1).toDouble());
+    });
+
+    test('given a recorded position, when the ball moves on, then the trail still holds where it was', () {
+      // The physics moves a ball by changing its position vector in place
+      final ball = Ball(position: Vector2(10, 20));
+      ball.recordTrail();
+
+      ball.position.add(Vector2(5, 5));
+
+      expect(ball.trail.single, Vector2(10, 20));
+    });
+
+    test('given a ball with a trail, when reset, then the trail is cleared', () {
+      final ball = Ball(position: Vector2(10, 20));
+      ball.recordTrail();
+      ball.recordTrail();
+
+      ball.reset(Vector2(375, 470));
+
+      expect(ball.trail, isEmpty);
+    });
+
+    test('given a ball that has landed or left play, then nothing more is recorded', () {
+      final landed = Ball(position: Vector2(10, 20), hasLanded: true);
+      final gone = Ball(position: Vector2(10, 20), isActive: false);
+
+      landed.recordTrail();
+      gone.recordTrail();
+
+      expect(landed.trail, isEmpty);
+      expect(gone.trail, isEmpty);
+    });
+  });
 }
