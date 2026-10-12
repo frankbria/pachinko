@@ -227,7 +227,7 @@ class _PachinkoBoardPainter extends CustomPainter {
       paintBonusOverlay(
         canvas,
         opacity: gameState.bonusOverlayOpacity,
-        bonusBalls: 5 + (gameState.currentLevelNumber ~/ 2),
+        bonusBalls: GameConstants.bonusBallsFor(gameState.currentLevelNumber),
       );
     }
 

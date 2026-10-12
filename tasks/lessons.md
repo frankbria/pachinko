@@ -254,6 +254,7 @@ Patterns learned the hard way on this repo. Add an entry after any correction.
 
 ## 2026-10-12 — the PR for issue #81 (the bonus is capped)
 
+- **Do not narrow the search that looks for copies.** The first search for the bonus formula left out `lib/widgets`, to skip noise, and so missed a third copy: the board's announcement would have said "+35 BALLS!" while 15 dropped. The reviewer found it. Search all of `lib/` for the expression (`~/ 2`), then discard by reading.
 - **A formula written twice will be changed once.** The bonus size was `5 + level ~/ 2` in the game state, with a literal 5, and again in the round summary, with the constant. The cap went into one function that both call, and a test compares what the summary reports with what the game state drops, so they cannot part again.
 - **Choose a cap by what it leaves alone.** Fifteen is the bonus at level 20, the last level the picker shows, so the levels a player reaches from the menu play exactly as before and only the open-ended ones above them change. The simulation shows it: levels 1 to 20 unchanged, 34 balls a round above level 40 where there were 48.
 - **Run a noisy measurement twice before reading a difference into it.** Two runs of the same code differed by up to three points in the share of rounds with a bonus. The cap's effect is far outside that; a one-point change would not have been.
