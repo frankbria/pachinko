@@ -9,6 +9,8 @@ import 'package:pachinko_game/services/game_manager.dart';
 import 'package:pachinko_game/models/peg.dart';
 import 'package:pachinko_game/utils/constants.dart';
 
+import 'helpers.dart';
+
 /// Integration tests for complete game flow scenarios.
 ///
 /// These tests verify end-to-end gameplay functionality including:
@@ -25,7 +27,8 @@ import 'package:pachinko_game/utils/constants.dart';
 /// - Verifies async state updates over time
 /// - No mocks - tests actual game behavior
 ///
-/// Timing target: All tests complete in < 2 minutes total.
+/// Timing target: All tests complete in < 5 minutes total. Several wait for a
+/// ball to land, which takes up to ten seconds each.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -39,8 +42,8 @@ void main() {
   tearDownAll(() {
     totalStopwatch.stop();
     print('Total integration test execution time: ${totalStopwatch.elapsed.inSeconds} seconds');
-    expect(totalStopwatch.elapsed.inSeconds, lessThan(120),
-      reason: 'Integration tests should complete in < 2 minutes');
+    expect(totalStopwatch.elapsed.inSeconds, lessThan(300),
+      reason: 'Integration tests should complete in < 5 minutes');
   });
 
   group('Complete Game Flow Tests', () {
@@ -52,14 +55,14 @@ void main() {
     testWidgets('givenMenuScreen_whenCompleteGameFlowExecuted_thenAllFeaturesWork',
       (WidgetTester tester) async {
       app.main();
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       // Verify starting on menu
       expect(find.byType(MenuScreen), findsOneWidget);
 
       // Navigate to game
       await tester.tap(find.text(GameStrings.play));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       // Verify game screen displayed
       expect(find.byType(GameScreen), findsOneWidget);
@@ -82,10 +85,10 @@ void main() {
     testWidgets('givenGameActive_whenPlayedOverTime_thenStateUpdatesCorrectly',
       (WidgetTester tester) async {
       app.main();
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       await tester.tap(find.text(GameStrings.play));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       final context = tester.element(find.byType(GameScreen));
       final gameManager = Provider.of<GameManager>(context, listen: false);
@@ -111,10 +114,10 @@ void main() {
     testWidgets('givenGameActive_whenUserLaunchesBall_thenBallAppearsAndMovesWithPhysics',
       (WidgetTester tester) async {
       app.main();
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       await tester.tap(find.text(GameStrings.play));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       final context = tester.element(find.byType(GameScreen));
       final gameManager = Provider.of<GameManager>(context, listen: false);
@@ -126,14 +129,7 @@ void main() {
       expect(gameManager.gameState.canLaunchBall, isTrue);
 
       // Simulate ball launch (drag in launch area)
-      const launchX = GameConstants.launchChannelStartX;
-      const launchY = GameConstants.launchChannelStartY;
-
-      await tester.dragFrom(
-        const Offset(launchX, launchY),
-        const Offset(0, -100), // 100 pixel drag
-      );
-      await tester.pump();
+      await dragLauncher(tester, 100);
 
       // Verify ball was launched (ball count should increase or ball should be in flight)
       // Note: Ball may land quickly, so we check that launch was processed
@@ -149,25 +145,30 @@ void main() {
     testWidgets('givenBallInFlight_whenPhysicsSimulates_thenBallPositionChanges',
       (WidgetTester tester) async {
       app.main();
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       await tester.tap(find.text(GameStrings.play));
-      await tester.pumpAndSettle();
+      await settle(tester);
+
+      final gameManager = Provider.of<GameManager>(
+        tester.element(find.byType(GameScreen)),
+        listen: false,
+      );
 
       // Launch a ball
-      const launchX = GameConstants.launchChannelStartX;
-      const launchY = GameConstants.launchChannelStartY;
-
-      await tester.dragFrom(const Offset(launchX, launchY), const Offset(0, -50));
-      await tester.pump();
+      await dragLauncher(tester, 50);
+      expect(gameManager.gameState.activeBalls, hasLength(1));
+      final ball = gameManager.gameState.activeBalls.first;
+      final launchedAt = ball.position.clone();
 
       // Simulate physics for 500ms
       for (int i = 0; i < 30; i++) {
         await tester.pump(const Duration(milliseconds: 16)); // ~60 FPS
       }
 
-      // Verify game is still running and physics updated
+      // Verify the ball moved
       expect(find.byType(GameScreen), findsOneWidget);
+      expect((ball.position - launchedAt).length, greaterThan(10));
     });
   });
 
@@ -180,33 +181,27 @@ void main() {
     testWidgets('givenBallLaunched_whenBallLandsInSlot_thenScoreIncreases',
       (WidgetTester tester) async {
       app.main();
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       await tester.tap(find.text(GameStrings.play));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       final context = tester.element(find.byType(GameScreen));
       final gameManager = Provider.of<GameManager>(context, listen: false);
 
       final initialScore = gameManager.gameState.score;
 
-      // Launch multiple balls to ensure one scores
-      for (int i = 0; i < 3; i++) {
-        if (gameManager.gameState.canLaunchBall) {
-          const launchX = GameConstants.launchChannelStartX;
-          const launchY = GameConstants.launchChannelStartY;
-
-          await tester.dragFrom(const Offset(launchX, launchY), const Offset(0, -80));
-          await tester.pump();
-
-          // Let physics run for 2 seconds
-          await tester.pump(const Duration(seconds: 2));
-        }
+      // Launch a ball and wait for it to land. A ball that drops through a
+      // gap between two slots scores nothing, so try up to three.
+      for (int i = 0; i < 3 && gameManager.gameState.score == initialScore; i++) {
+        await dragLauncher(tester, 80);
+        expect(gameManager.gameState.activeBalls, hasLength(1));
+        await pumpUntil(tester, () => gameManager.gameState.activeBalls.isEmpty,
+            what: 'the ball to land');
       }
 
-      // Verify score changed (at least one ball scored)
-      final finalScore = gameManager.gameState.score;
-      expect(finalScore, greaterThanOrEqualTo(initialScore));
+      // Verify a ball scored
+      expect(gameManager.gameState.score, greaterThan(initialScore));
     });
 
     /// GIVEN multiple balls have been launched
@@ -215,27 +210,24 @@ void main() {
     testWidgets('givenMultipleBallsLaunched_whenBallsScore_thenScoreAccumulates',
       (WidgetTester tester) async {
       app.main();
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       await tester.tap(find.text(GameStrings.play));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       final context = tester.element(find.byType(GameScreen));
       final gameManager = Provider.of<GameManager>(context, listen: false);
 
-      // Launch several balls and let them score
-      int ballsLaunched = 0;
-      while (ballsLaunched < 5 && gameManager.gameState.canLaunchBall) {
-        const launchX = GameConstants.launchChannelStartX;
-        const launchY = GameConstants.launchChannelStartY;
-
-        await tester.dragFrom(const Offset(launchX, launchY), const Offset(0, -60));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 1500));
-        ballsLaunched++;
+      // Launch three balls, one after the other, and let each land
+      for (int ballsLaunched = 0; ballsLaunched < 3; ballsLaunched++) {
+        expect(gameManager.gameState.canLaunchBall, isTrue);
+        await dragLauncher(tester, 60);
+        await pumpUntil(tester, () => gameManager.gameState.activeBalls.isEmpty,
+            what: 'ball ${ballsLaunched + 1} to land');
       }
 
-      // Score should have accumulated from multiple balls
+      // Three balls were spent and the score has accumulated
+      expect(gameManager.gameState.ballsRemaining, equals(17));
       expect(gameManager.gameState.score, greaterThan(0));
     });
   });
@@ -249,10 +241,10 @@ void main() {
     testWidgets('givenLevelWithSpecialPegs_whenLevelLoaded_thenSpecialPegsHighlighted',
       (WidgetTester tester) async {
       app.main();
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       await tester.tap(find.text(GameStrings.play));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       final context = tester.element(find.byType(GameScreen));
       final gameManager = Provider.of<GameManager>(context, listen: false);
@@ -274,10 +266,10 @@ void main() {
     testWidgets('givenGamePlaying_whenBonusTracked_thenBonusSystemActive',
       (WidgetTester tester) async {
       app.main();
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       await tester.tap(find.text(GameStrings.play));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       final context = tester.element(find.byType(GameScreen));
       final gameManager = Provider.of<GameManager>(context, listen: false);
@@ -299,11 +291,11 @@ void main() {
     testWidgets('givenLevel1_whenNextLevelSelected_thenLevel2LoadsWithDifferentPattern',
       (WidgetTester tester) async {
       app.main();
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       // Start on level 1
       await tester.tap(find.text(GameStrings.play));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       final context = tester.element(find.byType(GameScreen));
       final gameManager = Provider.of<GameManager>(context, listen: false);
@@ -315,13 +307,13 @@ void main() {
       // Note: In real integration, this would happen through gameplay
       // For testing level transition, we'll navigate back and select level 2
       await tester.tap(find.byIcon(Icons.arrow_back));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       // Select level 2
       await tester.tap(find.text('Select Level'));
-      await tester.pumpAndSettle();
+      await settle(tester);
       await tester.tap(find.text('2'));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       // Verify level 2 loaded
       expect(gameManager.gameState.currentLevelNumber, equals(2));
@@ -341,21 +333,21 @@ void main() {
     testWidgets('givenLevels1Through5_whenLoaded_thenEachHasValidConfiguration',
       (WidgetTester tester) async {
       app.main();
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       // Test levels 1-5
       for (int levelNum = 1; levelNum <= 5; levelNum++) {
         // Navigate to menu if not already there
         if (find.byType(MenuScreen).evaluate().isEmpty) {
           await tester.tap(find.byIcon(Icons.arrow_back));
-          await tester.pumpAndSettle();
+          await settle(tester);
         }
 
         // Select level
         await tester.tap(find.text('Select Level'));
-        await tester.pumpAndSettle();
+        await settle(tester);
         await tester.tap(find.text('$levelNum'));
-        await tester.pumpAndSettle();
+        await settle(tester);
 
         final context = tester.element(find.byType(GameScreen));
         final gameManager = Provider.of<GameManager>(context, listen: false);
@@ -374,22 +366,22 @@ void main() {
     testWidgets('givenLevelNumber_whenLevelChanges_thenHUDUpdates',
       (WidgetTester tester) async {
       app.main();
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       // Start level 1
       await tester.tap(find.text(GameStrings.play));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       // Verify level 1 in HUD
       expect(find.text('1'), findsWidgets);
 
       // Navigate to level 3
       await tester.tap(find.byIcon(Icons.arrow_back));
-      await tester.pumpAndSettle();
+      await settle(tester);
       await tester.tap(find.text('Select Level'));
-      await tester.pumpAndSettle();
+      await settle(tester);
       await tester.tap(find.text('3'));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       // Verify level 3 in HUD
       expect(find.text('3'), findsWidgets);
@@ -403,10 +395,10 @@ void main() {
     testWidgets('givenGameRunning_whenCheckingGameState_thenNotGameOver',
       (WidgetTester tester) async {
       app.main();
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       await tester.tap(find.text(GameStrings.play));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       final context = tester.element(find.byType(GameScreen));
       final gameManager = Provider.of<GameManager>(context, listen: false);
@@ -424,10 +416,10 @@ void main() {
     testWidgets('givenGamePlaying_whenBallsLaunched_thenBallsRemainingDecreases',
       (WidgetTester tester) async {
       app.main();
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       await tester.tap(find.text(GameStrings.play));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       final context = tester.element(find.byType(GameScreen));
       final gameManager = Provider.of<GameManager>(context, listen: false);
@@ -435,11 +427,7 @@ void main() {
       final initialBalls = gameManager.gameState.ballsRemaining;
 
       // Launch a ball
-      const launchX = GameConstants.launchChannelStartX;
-      const launchY = GameConstants.launchChannelStartY;
-
-      await tester.dragFrom(const Offset(launchX, launchY), const Offset(0, -70));
-      await tester.pump();
+      await dragLauncher(tester, 70);
 
       // Wait for ball to complete
       await tester.pump(const Duration(seconds: 2));
@@ -459,11 +447,11 @@ void main() {
     testWidgets('givenActiveGame_whenNavigateBackAndReturn_thenStatePreserved',
       (WidgetTester tester) async {
       app.main();
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       // Start game
       await tester.tap(find.text(GameStrings.play));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       final context = tester.element(find.byType(GameScreen));
       final gameManager = Provider.of<GameManager>(context, listen: false);
@@ -471,24 +459,20 @@ void main() {
       // Launch some balls to create state
       for (int i = 0; i < 2; i++) {
         if (gameManager.gameState.canLaunchBall) {
-          const launchX = GameConstants.launchChannelStartX;
-          const launchY = GameConstants.launchChannelStartY;
-
-          await tester.dragFrom(const Offset(launchX, launchY), const Offset(0, -60));
-          await tester.pump();
+          await dragLauncher(tester, 60);
           await tester.pump(const Duration(milliseconds: 1000));
         }
       }
 
       // Navigate back to menu
       await tester.tap(find.byIcon(Icons.arrow_back));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       expect(find.byType(MenuScreen), findsOneWidget);
 
       // Return to game (should preserve state)
       await tester.tap(find.text(GameStrings.play));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       final contextAfter = tester.element(find.byType(GameScreen));
       final gameManagerAfter = Provider.of<GameManager>(contextAfter, listen: false);
@@ -506,10 +490,10 @@ void main() {
     testWidgets('givenGameScreen_whenUserResetsGame_thenStateResetsCorrectly',
       (WidgetTester tester) async {
       app.main();
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       await tester.tap(find.text(GameStrings.play));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       final context = tester.element(find.byType(GameScreen));
       final gameManager = Provider.of<GameManager>(context, listen: false);
@@ -517,11 +501,7 @@ void main() {
       // Launch some balls
       for (int i = 0; i < 2; i++) {
         if (gameManager.gameState.canLaunchBall) {
-          const launchX = GameConstants.launchChannelStartX;
-          const launchY = GameConstants.launchChannelStartY;
-
-          await tester.dragFrom(const Offset(launchX, launchY), const Offset(0, -50));
-          await tester.pump();
+          await dragLauncher(tester, 50);
           await tester.pump(const Duration(milliseconds: 500));
         }
       }
