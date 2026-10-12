@@ -293,6 +293,8 @@ void main() {
       'lib/screens/high_scores_screen.dart',
       'lib/screens/achievements_screen.dart',
       'lib/screens/settings_screen.dart',
+      'lib/screens/game_screen.dart',
+      'lib/widgets/round_summary_panel.dart',
       'lib/widgets/achievement_toast.dart',
       'lib/widgets/game_card.dart',
     ]) {
