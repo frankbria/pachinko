@@ -18,8 +18,8 @@ class GameManager extends ChangeNotifier {
   final PhysicsEngine _physicsEngine;
   final BallLauncher _ballLauncher;
   final AudioService? _audioService;
-  final StorageService? _storageService;
-  final AchievementService? _achievementService;
+  StorageService? _storageService;
+  AchievementService? _achievementService;
   Timer? _gameTimer;
   DateTime _lastFrameTime = DateTime.now();
   bool _levelResultSaved = false;
@@ -32,6 +32,10 @@ class GameManager extends ChangeNotifier {
   /// Counts the rounds this manager has started. An answer from storage
   /// about one round must not be shown for a later one.
   int _round = 0;
+
+  /// The player's choice of launch mode, made while there was no storage to
+  /// save it to. Saved when storage is attached.
+  bool? _unsavedSingleBallLaunch;
 
   /// Creates a GameManager with optional dependency injection.
   ///
@@ -49,7 +53,53 @@ class GameManager extends ChangeNotifier {
        _achievementService = achievementService,
        _gameState = gameState ?? GameState(),
        _physicsEngine = physicsEngine ?? PhysicsEngine(audioService: audioService),
-       _ballLauncher = ballLauncher ?? BallLauncher();
+       _ballLauncher = ballLauncher ?? BallLauncher() {
+    // The player's saved choice, when there is storage to read it from
+    if (storageService != null) {
+      _gameState.singleBallLaunch = storageService.singleBallLaunch;
+    }
+  }
+
+  /// Gives the manager the services that load after the app has started.
+  ///
+  /// The app creates the manager the first time something asks for it, and
+  /// storage loads after the first frame, so the manager can be the older of
+  /// the two. When storage arrives the saved settings are applied. A service
+  /// the manager already has is left alone, and so is one passed as null.
+  ///
+  /// A choice the player made while there was no storage stands: it is saved
+  /// now, and the stored value does not replace it. This is called while
+  /// widgets are being built, so listeners hear of a change just afterwards.
+  void attachServices({StorageService? storageService, AchievementService? achievementService}) {
+    if (achievementService != null) _achievementService = achievementService;
+    if (storageService == null || identical(storageService, _storageService)) return;
+    _storageService = storageService;
+
+    final unsaved = _unsavedSingleBallLaunch;
+    if (unsaved != null) {
+      _unsavedSingleBallLaunch = null;
+      unawaited(storageService.saveSingleBallLaunch(unsaved));
+    } else if (_gameState.singleBallLaunch != storageService.singleBallLaunch) {
+      _gameState.singleBallLaunch = storageService.singleBallLaunch;
+      scheduleMicrotask(() {
+        if (!_disposed) notifyListeners();
+      });
+    }
+  }
+
+  /// Sets whether a ball may only be launched once no ball is in play,
+  /// applies it to the game at once and saves it for the next start.
+  Future<void> setSingleBallLaunch(bool value) async {
+    _gameState.singleBallLaunch = value;
+    notifyListeners();
+    final storage = _storageService;
+    if (storage == null) {
+      // Kept until storage arrives: see attachServices
+      _unsavedSingleBallLaunch = value;
+      return;
+    }
+    await storage.saveSingleBallLaunch(value);
+  }
 
   // Getters
   GameState get gameState => _gameState;
@@ -123,6 +173,8 @@ class GameManager extends ChangeNotifier {
     final ball = _ballLauncher.launch();
     if (ball != null) {
       _gameState.launchBall(ball);
+      // The launcher carries one ball at a time up its channel
+      _gameState.launcherBusy = true;
 
       // Track ball launch achievement
       _achievementService?.trackBallLaunched();
@@ -197,6 +249,7 @@ class GameManager extends ChangeNotifier {
       if (ballReleased && _ballLauncher.currentBall != null) {
         // Ball is now released to physics simulation
         _ballLauncher.reset();
+        _gameState.launcherBusy = false;
       }
     }
     

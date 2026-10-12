@@ -50,6 +50,13 @@ void main() {
     await settle(tester);
     await capture(tester, '01-menu');
 
+    await tester.ensureVisible(find.text(GameStrings.settings));
+    await tester.tap(find.text(GameStrings.settings));
+    await settle(tester);
+    await capture(tester, '02-settings');
+    await tester.pageBack();
+    await settle(tester);
+
     await tester.tap(find.text(GameStrings.play));
     await settle(tester);
     final gameManager =

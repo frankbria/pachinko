@@ -646,6 +646,8 @@ void main() {
       final mockStorage = MockStorageService();
       final mockAchievements = MockAchievementService();
       when(mockStorage.saveHighScore(any, any)).thenAnswer((_) async {});
+      when(mockStorage.singleBallLaunch).thenReturn(true);
+
       when(mockStorage.getBestScore(any)).thenAnswer((_) async => null);
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
@@ -965,6 +967,54 @@ void main() {
       final ball = manager.gameState.activeBalls.single;
       expect(ball.trail, isNotEmpty);
       expect(ball.trail.first.y, greaterThan(ball.position.y), reason: 'the ball has risen past its trail');
+    });
+
+    test('Given many balls allowed When a ball has left the channel Then a second is launched without pausing', () async {
+      final manager = GameManager();
+      addTearDown(manager.dispose);
+      manager.startGame();
+      await manager.setSingleBallLaunch(false);
+      void launch() {
+        manager.startLaunchCharging();
+        manager.updateLaunchPower(50);
+        manager.launchBall();
+      }
+
+      launch();
+      expect(manager.gameState.activeBalls, hasLength(1));
+
+      // The launcher carries one ball at a time: a second launch waits, and
+      // the gate the board reads says so
+      expect(manager.gameState.canLaunchBall, isFalse);
+      launch();
+      expect(manager.gameState.activeBalls, hasLength(1));
+
+      // Until the first has left the channel
+      for (int i = 0; i < 200 && manager.ballLauncher.currentBall != null; i++) {
+        await ticks(1);
+      }
+      expect(manager.ballLauncher.currentBall, isNull);
+      expect(manager.gameState.activeBalls, hasLength(1), reason: 'the first ball is still in play');
+      expect(manager.gameState.canLaunchBall, isTrue);
+      launch();
+
+      expect(manager.gameState.activeBalls, hasLength(2));
+      expect(manager.gameState.ballsRemaining, 18);
+    });
+
+    test('Given many balls allowed When the game is paused Then a launch is refused', () async {
+      final manager = GameManager();
+      addTearDown(manager.dispose);
+      manager.startGame();
+      await manager.setSingleBallLaunch(false);
+      manager.gameState.launchBall(Ball(position: Vector2(200, 100)));
+
+      manager.pauseGame();
+      manager.startLaunchCharging();
+      manager.updateLaunchPower(50);
+      manager.launchBall();
+
+      expect(manager.gameState.activeBalls, hasLength(1));
     });
 
     /// Drops a ball into [slot] and lets it land.

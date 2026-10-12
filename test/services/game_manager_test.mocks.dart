@@ -195,6 +195,27 @@ class MockGameState extends _i1.Mock implements _i7.GameState {
       );
 
   @override
+  bool get launcherBusy => (super.noSuchMethod(
+        Invocation.getter(#launcherBusy),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  set launcherBusy(bool? _launcherBusy) => super.noSuchMethod(
+        Invocation.setter(
+          #launcherBusy,
+          _launcherBusy,
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  bool get isPaused => (super.noSuchMethod(
+        Invocation.getter(#isPaused),
+        returnValue: false,
+      ) as bool);
+
+  @override
   int get currentLevelNumber => (super.noSuchMethod(
         Invocation.getter(#currentLevelNumber),
         returnValue: 0,
