@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pachinko_game/widgets/achievement_toast.dart';
 import 'package:pachinko_game/utils/constants.dart';
 import 'package:pachinko_game/widgets/pachinko_board.dart';
 
@@ -61,5 +62,24 @@ Future<void> pumpUntil(
       fail('Timed out after ${timeout.inSeconds} s waiting for $what');
     }
     await tester.pump(const Duration(milliseconds: 100));
+  }
+}
+
+/// Waits until no achievement toast is showing and none follows within a
+/// second. A toast lies over the top of the screen and takes a tap to
+/// dismiss itself, so a tap on a Back button under it does not go back; and
+/// toasts queue, with a moment between one and the next.
+Future<void> toastsGone(WidgetTester tester) async {
+  bool none() => find.byType(AchievementToast).evaluate().isEmpty;
+  final end = DateTime.now().add(const Duration(seconds: 90));
+  while (true) {
+    await pumpUntil(tester, none,
+        timeout: const Duration(seconds: 60),
+        what: 'the achievement toasts to finish');
+    await tester.pump(const Duration(seconds: 1));
+    if (none()) return;
+    if (DateTime.now().isAfter(end)) {
+      fail('Achievement toasts were still appearing after 90 s');
+    }
   }
 }
