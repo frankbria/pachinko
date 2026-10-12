@@ -28,7 +28,6 @@ A modern, graphical Pachinko idle game built with Flutter for Android. Features 
 - **Flutter SDK**: 3.38.1 or higher
 - **Dart**: 3.10.0 or higher
 - **Platform Tools**:
-  - Linux: Development tools installed
   - Android: Android Studio with SDK 21+ (Android 5.0+)
 
 ### Installation
@@ -57,20 +56,11 @@ flutter doctor
 ### Running the Game
 
 ```bash
-# Linux desktop (primary development platform)
-flutter run -d linux
-
 # Android (requires Android Studio and device/emulator)
 flutter run -d android
 
 # Web browser
 flutter run -d web-server
-
-# Windows desktop
-flutter run -d windows
-
-# macOS desktop
-flutter run -d macos
 ```
 
 ### Building for Release
@@ -81,9 +71,6 @@ flutter build apk --release
 
 # Android App Bundle (for Play Store)
 flutter build appbundle --release
-
-# Linux executable
-flutter build linux --release
 ```
 
 **Note**: A release build is signed with `android/key.properties`, which is not in the repository. `flutter build apk --profile` builds without it.
@@ -212,12 +199,10 @@ See [CLAUDE.md](./CLAUDE.md) for complete development standards.
 
 | Platform | Status | Notes |
 |----------|--------|-------|
-| ✅ Linux | Fully Tested | Primary development platform |
 | ✅ Android | Configured | Release signing pending |
-| ✅ Web | Supported | Canvas rendering works |
-| ✅ Windows | Supported | Not tested |
-| ✅ macOS | Supported | Not tested |
-| ✅ iOS | Supported | Not tested |
+| ✅ Web | Supported | Used for demos in a browser |
+
+The repository has no project files for other platforms. `flutter create --platforms=<name> .` adds one.
 
 **Android Requirements**:
 - Minimum SDK: 21 (Android 5.0 Lollipop)
@@ -274,7 +259,6 @@ This project is open source. Feel free to use and modify as needed.
 
 - ✅ **Playable Prototype**: Fully functional core gameplay
 - ✅ **60 FPS Physics**: Advanced collision detection and ball dynamics
-- ✅ **Cross-Platform**: Runs on 6 platforms (Linux, Android, Web, Windows, macOS, iOS)
 - ✅ **Authentic Mechanics**: Real pachinko launch channel with curve
 - ✅ **Pattern Variety**: 3 distinct peg layouts with smart spacing
 
