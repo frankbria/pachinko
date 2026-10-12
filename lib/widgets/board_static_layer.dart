@@ -99,6 +99,16 @@ void paintSphere(
 void paintBoardStaticLayer(Canvas canvas, Level level) {
   _paintFelt(canvas);
   _paintRail(canvas);
+  _paintLevelSign(canvas, level.levelNumber);
+  // Every glow before any slot, so that no slot is washed by its neighbour's.
+  // Clipped to the board: the edge slots' glows are wider than the space
+  // beside them, and nothing the board draws may cross its sides
+  canvas.save();
+  canvas.clipRect(const Rect.fromLTWH(0, 0, GameConstants.boardWidth, GameConstants.boardHeight));
+  for (final slot in level.slots) {
+    _paintLightSpill(canvas, slot.bounds, slot.color);
+  }
+  canvas.restore();
   for (final slot in level.slots) {
     _paintSlot(canvas, slot.bounds, slot.color, slot.pointValue);
   }
@@ -164,6 +174,42 @@ void _paintRail(Canvas canvas) {
     canvas.drawPath(outline, paint);
     canvas.drawLine(innerWallBottom, innerWallTop, paint);
   }
+}
+
+/// The level's sign, under the top of the dome. Balls pass over it.
+void _paintLevelSign(Canvas canvas, int levelNumber) {
+  final sign = TextPainter(
+    text: TextSpan(
+      text: 'LEVEL $levelNumber',
+      style: TextStyle(
+        color: GameConstants.inkColor.withValues(alpha: 0.9),
+        fontFamily: displayFontFamily,
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 4,
+      ),
+    ),
+    textDirection: TextDirection.ltr,
+  )..layout();
+  const domeCentreX = (GameConstants.topCurveStartX + GameConstants.topCurveEndX) / 2;
+  sign.paint(canvas, Offset(domeCentreX - sign.width / 2, 46));
+}
+
+/// Light in the slot's tier [colour] rising from its mouth. Round and soft
+/// edged on purpose: nothing collides in the band above the slots, so
+/// nothing drawn there may look like a wall or a divider.
+void _paintLightSpill(Canvas canvas, Rect bounds, Color colour) {
+  final radius = bounds.width * 0.75;
+  canvas.drawCircle(
+    bounds.topCenter,
+    radius,
+    Paint()
+      ..shader = ui.Gradient.radial(
+        bounds.topCenter,
+        radius,
+        [colour.withValues(alpha: 0.28), colour.withValues(alpha: 0.0)],
+      ),
+  );
 }
 
 /// A dark glass pocket with a neon rim and its value in the tier [colour].

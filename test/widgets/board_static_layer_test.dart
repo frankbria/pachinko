@@ -254,7 +254,11 @@ void main() {
         final canvas = TestRecordingCanvas();
         painter.paint(canvas, const Size(400, 600));
         return calls(canvas, #drawParagraph)
-            .where((text) => slots.any((slot) => (text.positionalArguments[1] as Offset).dy == slot.position.y + 15))
+            .where((text) {
+              // A count sits in the lower half of its slot, under the value
+              final at = text.positionalArguments[1] as Offset;
+              return slots.any((slot) => at.dy > slot.position.y && at.dy < slot.bottom);
+            })
             .length;
       }
 

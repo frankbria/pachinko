@@ -150,7 +150,7 @@ class GameStrings {
   static const String gameOver = 'Game Over';
   static const String score = 'Score';
   static const String level = 'Level';
-  static const String ballsRemaining = 'Balls Remaining';
+  static const String ballsRemaining = 'Balls';
   static const String specialBonus = 'Special Bonus!';
   static const String ballsAdded = 'Bonus Balls Added!';
 }
