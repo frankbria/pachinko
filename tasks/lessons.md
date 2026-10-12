@@ -176,3 +176,9 @@ Patterns learned the hard way on this repo. Add an entry after any correction.
 - **`git add -N` on a new file makes `git stash` refuse.** ("Entry … not uptodate. Cannot merge.") Nothing is lost; commit first and then rebase.
 - **Screenshot what chance will not give you by setting it off in the script, and say so.** The bonus needs every prize peg hit; `integration_test/screenshots.dart` calls `triggerSpecialBonus()` half way through its round, with a comment.
 - **To learn whether a class is mocked, grep for `class Mock<Name> `, or run the generator and look at `git status`.** A grep for `MockBall` filtered through another pattern missed `test/services/physics_engine_test.mocks.dart`, the plan and the pull request both said `Ball` was not mocked, and the CI gate from #11 failed the first push. The issue had said to regenerate; do it whenever a mocked class might have changed.
+
+## 2026-10-11 — the PR for issue #46 (scoring measured)
+
+- **A measurement can be run on an old commit by copying one file into a checkout of it.** The simulation uses only API that both commits share, so the same file ran in a detached worktree at the commit before #44 and at `master`. Check the signatures on both sides first (`git show <commit>:path | grep`).
+- **Measure the thing next to the thing you were asked about.** The question was what #16 did to scores. The same run showed that no round on either commit reaches 50,000, so two achievements cannot be won; that was the more useful finding.
+- **A tool that asserts nothing does not belong under `test/`.** CI would run it on every push and learn nothing. It is in `tool/`, with its command in `CLAUDE.md`.
