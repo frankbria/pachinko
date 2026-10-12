@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../utils/constants.dart';
 import 'package:flutter/services.dart';
 import '../models/achievement.dart';
 
@@ -107,24 +108,17 @@ class _AchievementToastState extends State<AchievementToast>
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  Color(0xFF2C3E50),
-                  Color(0xFF34495E),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              color: GameConstants.surfaceColor,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
+                  color: GameConstants.cabinetColor.withValues(alpha: 0.5),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
               ],
               border: Border.all(
-                color: const Color(0xFFFFD700), // Gold border
+                color: GameConstants.secondaryColor,
                 width: 2,
               ),
             ),
@@ -136,12 +130,12 @@ class _AchievementToastState extends State<AchievementToast>
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFD700).withOpacity(0.2),
+                    color: GameConstants.secondaryColor.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     widget.achievement.icon,
-                    color: const Color(0xFFFFD700),
+                    color: GameConstants.secondaryColor,
                     size: 28,
                   ),
                 ),
@@ -155,7 +149,7 @@ class _AchievementToastState extends State<AchievementToast>
                       const Text(
                         'Achievement Unlocked!',
                         style: TextStyle(
-                          color: Color(0xFFFFD700),
+                          color: GameConstants.secondaryColor,
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
                           letterSpacing: 0.5,
@@ -165,7 +159,7 @@ class _AchievementToastState extends State<AchievementToast>
                       Text(
                         widget.achievement.name,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: GameConstants.inkColor,
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
                         ),
@@ -175,8 +169,8 @@ class _AchievementToastState extends State<AchievementToast>
                       const SizedBox(height: 2),
                       Text(
                         '${widget.achievement.pointValue} points',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
+                        style: const TextStyle(
+                          color: GameConstants.mutedColor,
                           fontSize: 12,
                         ),
                       ),
@@ -187,7 +181,7 @@ class _AchievementToastState extends State<AchievementToast>
                 // Trophy Icon
                 const Icon(
                   Icons.emoji_events,
-                  color: Color(0xFFFFD700),
+                  color: GameConstants.secondaryColor,
                   size: 24,
                 ),
               ],

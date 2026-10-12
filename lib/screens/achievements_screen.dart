@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:pachinko_game/services/achievement_service.dart';
 import 'package:pachinko_game/models/achievement.dart';
+import 'package:pachinko_game/utils/constants.dart';
+import 'package:pachinko_game/widgets/game_card.dart';
 
 /// Screen displaying all achievements with progress tracking.
 ///
@@ -35,8 +37,6 @@ class AchievementsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Achievements'),
-        backgroundColor: Colors.deepPurple,
-        foregroundColor: Colors.white,
       ),
       body: allAchievements.isEmpty
           ? const Center(
@@ -44,7 +44,7 @@ class AchievementsScreen extends StatelessWidget {
                 padding: EdgeInsets.all(24.0),
                 child: Text(
                   'No achievements available',
-                  style: TextStyle(fontSize: 18, color: Colors.grey),
+                  style: TextStyle(fontSize: 18, color: GameConstants.mutedColor),
                 ),
               ),
             )
@@ -54,13 +54,7 @@ class AchievementsScreen extends StatelessWidget {
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.deepPurple, Colors.purple],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
+                  color: GameConstants.surfaceColor,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
@@ -95,7 +89,7 @@ class AchievementsScreen extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Colors.deepPurple,
+                            color: GameConstants.secondaryColor,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -111,7 +105,7 @@ class AchievementsScreen extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Colors.grey,
+                            color: GameConstants.mutedColor,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -133,12 +127,12 @@ class AchievementsScreen extends StatelessWidget {
   }) {
     return Column(
       children: [
-        Icon(icon, color: Colors.white, size: 32),
+        Icon(icon, color: GameConstants.inkColor, size: 32),
         const SizedBox(height: 4),
         Text(
           value,
           style: const TextStyle(
-            color: Colors.white,
+            color: GameConstants.inkColor,
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
@@ -146,7 +140,7 @@ class AchievementsScreen extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            color: Colors.white70,
+            color: GameConstants.mutedColor,
             fontSize: 12,
           ),
         ),
@@ -160,63 +154,63 @@ class AchievementsScreen extends StatelessWidget {
         ? dateFormat.format(achievement.unlockedDate!)
         : '';
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
+    // Rimmed and badged in gold: an achievement is a score
+    return GameCard(
+      rim: GameConstants.secondaryColor.withValues(alpha: 0.7),
       child: ListTile(
+        contentPadding: EdgeInsets.zero,
         leading: CircleAvatar(
-          backgroundColor: Colors.amber,
-          child: Icon(achievement.icon, color: Colors.white),
+          backgroundColor: GameConstants.secondaryColor,
+          child: Icon(achievement.icon, color: GameConstants.onPrimaryColor),
         ),
         title: Text(
           achievement.name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: const TextStyle(color: GameConstants.inkColor, fontWeight: FontWeight.bold),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(achievement.description),
+            Text(achievement.description, style: const TextStyle(color: GameConstants.mutedColor)),
             const SizedBox(height: 4),
             Row(
               children: [
-                const Icon(Icons.calendar_today, size: 12, color: Colors.grey),
+                const Icon(Icons.calendar_today, size: 12, color: GameConstants.mutedColor),
                 const SizedBox(width: 4),
                 Text(
                   unlockedDateStr,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: const TextStyle(fontSize: 12, color: GameConstants.mutedColor),
                 ),
               ],
             ),
           ],
         ),
-        trailing: Chip(
-          label: Text('${achievement.pointValue} points'),
-          backgroundColor: Colors.amber.shade100,
+        trailing: Text(
+          '${achievement.pointValue} points',
+          style: const TextStyle(color: GameConstants.secondaryColor, fontWeight: FontWeight.bold),
         ),
       ),
     );
   }
 
   Widget _buildLockedAchievementTile(Achievement achievement) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 1,
-      color: Colors.grey.shade100,
+    // No gold anywhere, a lock, and its progress: not yet won
+    return GameCard(
       child: ListTile(
+        contentPadding: EdgeInsets.zero,
         leading: CircleAvatar(
-          backgroundColor: Colors.grey,
-          child: Icon(achievement.icon, color: Colors.white),
+          backgroundColor: GameConstants.cabinetColor,
+          child: Icon(achievement.icon, color: GameConstants.mutedColor),
         ),
         title: Text(
           achievement.name,
-          style: const TextStyle(color: Colors.black87),
+          style: const TextStyle(color: GameConstants.inkColor),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               achievement.description,
-              style: const TextStyle(color: Colors.black54),
+              style: const TextStyle(color: GameConstants.mutedColor),
             ),
             const SizedBox(height: 8),
             Row(
@@ -224,22 +218,30 @@ class AchievementsScreen extends StatelessWidget {
                 Expanded(
                   child: LinearProgressIndicator(
                     value: achievement.progress / 100,
-                    backgroundColor: Colors.grey.shade300,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.deepPurple),
+                    backgroundColor: GameConstants.mutedColor.withValues(alpha: 0.25),
+                    valueColor: const AlwaysStoppedAnimation<Color>(GameConstants.primaryColor),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   '${achievement.progress}%',
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: const TextStyle(fontSize: 12, color: GameConstants.mutedColor),
                 ),
               ],
             ),
           ],
         ),
-        trailing: Chip(
-          label: Text('${achievement.pointValue} points'),
-          backgroundColor: Colors.grey.shade300,
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            const Icon(Icons.lock, size: 16, color: GameConstants.mutedColor),
+            const SizedBox(height: 4),
+            Text(
+              '${achievement.pointValue} points',
+              style: const TextStyle(color: GameConstants.mutedColor),
+            ),
+          ],
         ),
       ),
     );

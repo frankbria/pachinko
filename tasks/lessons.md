@@ -205,6 +205,14 @@ Patterns learned the hard way on this repo. Add an entry after any correction.
 - **Changing a rule means changing the test that pinned the old one, in the open.** One test asserted that with the setting off a ball could be launched while paused. The issue asks for the opposite. The test was rewritten, with a comment saying what changed and why, and named in the pull request.
 - **Adding a button to a fixed column can overflow a screen you are not looking at.** A sixth menu button overflowed the 800x600 test surface by 48 pixels, which is also a small phone on its side. The menu scrolls now.
 - **`SharedPreferences.setMockInitialValues({})` gives a real in-memory store.** Two `GameManager`s built over the same instance show "survives a restart" without a mock.
+
+## 2026-10-11 — the PR for issue #32 (the other screens)
+
+- **Contrast can be tested for a whole screen at once.** Every `Text` and `Icon` ends up as a `RichText` whose span carries its resolved colour. Walking its ancestors for fills (`ColoredBox`, `DecoratedBox`, `Material`), blending them down to the first opaque one, gives what is behind it; the WCAG ratio follows. Five mutations that dimmed one text each, on five different screens, were all caught.
+- **A dialog asks its content for its natural size, and a grid has none.** A `GridView` with `shrinkWrap` inside an `AlertDialog` throws on layout. Give the grid a fixed box and choose the column count and aspect ratio so that every tile fits it at a phone's width.
+- **`Provider.of<T>` finds a provider registered as `T?`.** The app registers `AchievementService?` and a screen asks for `AchievementService`; it works once the value is there. It looked like a defect and was not.
+- **Leave a file that another open branch rewrites.** `game_screen.dart` still names `Colors.white` twice; the board stack rewrites the lines around them. It is cleaned up when the two meet, not here.
+
 - **A limitation you can name is often a defect you can fix.** The first version said, as a known limitation, that a manager built before storage had loaded would not read or save the setting, "as high scores already work". The reviewer called it a defect, and it was the same one for both. `attachServices` and a proxy provider fixed it for the setting and for the scores. A test store that answers only when the test lets it made the race reproducible.
 
 ## 2026-10-11 — the PR for issue #30 (feedback and round summary)

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pachinko_game/utils/constants.dart';
 import 'package:pachinko_game/widgets/achievement_toast.dart';
 import 'package:pachinko_game/models/achievement.dart';
 
@@ -177,7 +178,8 @@ void main() {
 
       final decoration = container.decoration as BoxDecoration;
       expect(decoration.border, isNotNull);
-      expect((decoration.border as Border).top.color, const Color(0xFFFFD700));
+      // The gold role, not a literal of its own (issue #32)
+      expect((decoration.border as Border).top.color, GameConstants.secondaryColor);
 
       // Cleanup
       await tester.pump(const Duration(milliseconds: 3500));

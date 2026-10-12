@@ -308,7 +308,7 @@ class _GameControls extends StatelessWidget {
                 icon: const Icon(Icons.arrow_back),
                 style: IconButton.styleFrom(
                   backgroundColor: GameConstants.surfaceColor,
-                  foregroundColor: Colors.white,
+                  foregroundColor: GameConstants.inkColor,
                 ),
               ),
               
@@ -338,7 +338,7 @@ class _GameControls extends StatelessWidget {
                 icon: const Icon(Icons.restart_alt),
                 style: IconButton.styleFrom(
                   backgroundColor: GameConstants.surfaceColor,
-                  foregroundColor: Colors.white,
+                  foregroundColor: GameConstants.inkColor,
                 ),
               ),
             ],
