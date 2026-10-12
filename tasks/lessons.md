@@ -191,3 +191,9 @@ Patterns learned the hard way on this repo. Add an entry after any correction.
 - **A disposed `TextPainter` takes its `Paragraph` with it.** A test that reads `paragraph.longestLine` from a recorded `drawParagraph` fails with "native peer has been collected" if the code disposed the painter after painting. Either the test does not measure the text, or that painter is left to the garbage collector.
 - **A mock with no default answers breaks on every new getter the code reads.** Reading `level.levelNumber` in the static layer failed 41 mocked board tests with `MissingStubError`. Stub it in `setUp`, and prefer what is already stubbed (`level.pegs`) when it carries the same information.
 - **Do not push a branch that is stacked on an unmerged one.** After the base is squash-merged the stacked branch must be rebased, and a pushed branch would then need a force push. Keep it local until the base lands.
+
+## 2026-10-11 — the PR for issue #46 (scoring measured)
+
+- **A measurement can be run on an old commit by copying one file into a checkout of it.** The simulation uses only API that both commits share, so the same file ran in a detached worktree at the commit before #44 and at `master`. Check the signatures on both sides first (`git show <commit>:path | grep`).
+- **Measure the thing next to the thing you were asked about.** The question was what #16 did to scores. The same run showed that no round on either commit reaches 50,000, so two achievements cannot be won; that was the more useful finding.
+- **A tool that asserts nothing does not belong under `test/`.** CI would run it on every push and learn nothing. It is in `tool/`, with its command in `CLAUDE.md`.
