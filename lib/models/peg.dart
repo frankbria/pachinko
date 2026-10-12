@@ -117,27 +117,25 @@ class Peg {
     }
   }
 
+  /// What a prize peg looks like once it has been collected: its gold dimmed
+  /// towards the cabinet, so that the pegs still to win stand out.
+  static final Color collectedPrizeColor =
+      Color.lerp(GameConstants.specialPegColor, GameConstants.cabinetColor, 0.55)!;
+
+  /// Whether this is a prize peg that has been hit on this level.
+  bool get isCollected => type == PegType.special && hasBeenHit;
+
+  /// The colour to draw the peg in: its own, or the dimmed gold of a
+  /// collected prize, brightened towards the ink colour while its hit flash
+  /// runs. A prize peg's shimmer is not in its colour; the board shows it in
+  /// the halo and rings around the peg.
   Color get renderColor {
-    // Determine base color for this peg
-    Color baseColor = color;
+    final baseColor = isCollected ? collectedPrizeColor : color;
 
-    // Special pegs show shimmer effect when highlighted and unhit
-    if (type == PegType.special && isHighlighted) {
-      // Apply shimmer intensity to yellow glow
-      baseColor = Color.lerp(color, const Color(0xFFFFFF00), 0.5 + shimmerIntensity)!;
+    // pulseProgress: 0.0 at the hit, 1.0 when the flash is over
+    if (hasBeenHit && isAnimating && pulseProgress < 1.0) {
+      return Color.lerp(baseColor, GameConstants.inkColor, (1.0 - pulseProgress) * 0.7)!;
     }
-
-    // Apply hit animation effect if animating
-    // pulseProgress: 0.0 (start) -> 1.0 (complete)
-    // Inverted for fade: 1.0 (bright white) -> 0.0 (normal color)
-    if (isAnimating && pulseProgress < 1.0) {
-      final fadeIntensity = 1.0 - pulseProgress; // 1.0 -> 0.0 over animation
-      const white = Color(0xFFFFFFFF);
-      final hitColor = Color.lerp(baseColor, white, fadeIntensity * 0.7);
-      return hitColor ?? baseColor;
-    }
-
-    // After animation completes, return to normal base color
     return baseColor;
   }
 

@@ -176,3 +176,10 @@ Patterns learned the hard way on this repo. Add an entry after any correction.
 - **`git add -N` on a new file makes `git stash` refuse.** ("Entry … not uptodate. Cannot merge.") Nothing is lost; commit first and then rebase.
 - **Screenshot what chance will not give you by setting it off in the script, and say so.** The bonus needs every prize peg hit; `integration_test/screenshots.dart` calls `triggerSpecialBonus()` half way through its round, with a comment.
 - **To learn whether a class is mocked, grep for `class Mock<Name> `, or run the generator and look at `git status`.** A grep for `MockBall` filtered through another pattern missed `test/services/physics_engine_test.mocks.dart`, the plan and the pull request both said `Ball` was not mocked, and the CI gate from #11 failed the first push. The issue had said to regenerate; do it whenever a mocked class might have changed.
+
+## 2026-10-11 — the PR for issue #28 (prize pegs and bonus)
+
+- **A flag that means two things hides a bug.** `Peg.isAnimating` is true both for a prize peg's shimmer and for a hit pulse, and `renderColor` flashed towards white whenever it was set with `pulseProgress` below 1. An unhit prize peg has `pulseProgress` at 0, so it was drawn 70% white all the time: the "pale disc" in the graphics review. The flash now also needs `hasBeenHit`.
+- **Draw a scrim under what should stay bright.** The bonus announcement was the last thing painted, so its wash sat over the confetti and the bonus balls and turned blue confetti green. It is drawn after the pegs and before the balls.
+- **Put the drawing you must police in its own file.** "Only role colours" cannot be tested on one method of a large painter. `board_static_layer.dart` and `board_effects.dart` are small enough that a test can read the source and reject `Colors.` and `Color(`.
+- **Slicing a file by `index()` of a short string finds substrings.** `s.index("  });")` matched inside `"    });"` and left a stray brace in a test file. Anchor on a whole line, with its newline.

@@ -240,7 +240,6 @@ void main() {
       expect(drawnAt(pins.last), isFalse, reason: 'a pin at rest is only in the static layer');
       for (final prize in pegs.where((peg) => peg.type == PegType.special)) {
         expect(drawnAt(prize), isTrue);
-        expect(shadowUnder(prize), isFalse, reason: 'a glowing peg has no shadow over its glow');
       }
     });
 

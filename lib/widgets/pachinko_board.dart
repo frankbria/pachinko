@@ -7,6 +7,7 @@ import '../models/game_state.dart';
 import '../models/level.dart';
 import '../models/peg.dart';
 import '../utils/constants.dart';
+import 'board_effects.dart';
 import 'board_static_layer.dart';
 
 class PachinkoBoard extends StatefulWidget {
@@ -204,6 +205,16 @@ class _PachinkoBoardPainter extends CustomPainter {
     _drawSlotCounts(canvas, level);
     _drawAnimatedPegs(canvas, level);
 
+    // The bonus announcement dims the board. It goes under the balls, the
+    // confetti and the score popups, which would be muddied beneath it
+    if (gameState.specialBonusTriggered) {
+      paintBonusOverlay(
+        canvas,
+        opacity: gameState.bonusOverlayOpacity,
+        bonusBalls: 5 + (gameState.currentLevelNumber ~/ 2),
+      );
+    }
+
     // Draw balls
     _drawBalls(canvas, gameState);
 
@@ -216,17 +227,12 @@ class _PachinkoBoardPainter extends CustomPainter {
 
     // Draw confetti particles
     for (final particle in gameState.confettiParticles) {
-      _drawConfettiParticle(canvas, particle);
+      paintConfettiPiece(canvas, particle);
     }
 
     // Draw floating texts
     for (final floatingText in gameState.floatingTexts) {
       _drawFloatingText(canvas, floatingText);
-    }
-
-    // Draw special bonus indicator
-    if (gameState.specialBonusTriggered) {
-      _drawSpecialBonusEffect(canvas, size, scale);
     }
 
     canvas.restore();
@@ -262,6 +268,10 @@ class _PachinkoBoardPainter extends CustomPainter {
 
   /// Prize pegs, and any pin in the middle of its hit pulse. A pin at rest is
   /// in the static layer and is not drawn again here.
+  ///
+  /// A prize peg still to win is a gold sphere in a soft halo with two rings,
+  /// which breathe with its shimmer. Once collected it is dim, with one thin
+  /// ring and no halo, so that it is plain which prizes remain.
   void _drawAnimatedPegs(Canvas canvas, Level level) {
     for (final peg in level.pegs) {
       if (peg.type != PegType.special && !peg.isAnimating) continue;
@@ -276,17 +286,23 @@ class _PachinkoBoardPainter extends CustomPainter {
         canvas.drawCircle(centre, peg.pulseGlowRadius, pulsePaint);
       }
 
-      // Draw shimmer glow for special pegs
-      final glows = peg.type == PegType.special && peg.isHighlighted && peg.shimmerIntensity > 0.0;
-      if (glows) {
-        final shimmerPaint = Paint()
-          ..color = GameConstants.specialPegColor.withValues(alpha: 0.3 * peg.shimmerIntensity)
-          ..style = PaintingStyle.fill;
+      Paint ring(double width, double strength) => Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = width
+        ..color = GameConstants.specialPegColor.withValues(alpha: strength);
 
-        canvas.drawCircle(centre, peg.radius + (5 + 3 * peg.shimmerIntensity), shimmerPaint);
+      if (peg.type != PegType.special) {
+        paintSphere(canvas, centre, peg.radius, peg.renderColor);
+      } else if (peg.isCollected) {
+        paintSphere(canvas, centre, peg.radius, peg.renderColor);
+        canvas.drawCircle(centre, peg.radius + 2, ring(1, 0.55));
+      } else {
+        paintSphere(canvas, centre, peg.radius, peg.renderColor, glowColour: GameConstants.specialPegColor);
+        // shimmerIntensity runs from 0.0 to 0.6
+        final strength = 0.5 + 0.7 * peg.shimmerIntensity;
+        canvas.drawCircle(centre, peg.radius + 3, ring(1.5, strength));
+        canvas.drawCircle(centre, peg.radius + 6.5, ring(1, strength * 0.45));
       }
-
-      paintSphere(canvas, centre, peg.radius, peg.renderColor, castsShadow: !glows);
     }
   }
 
@@ -429,71 +445,6 @@ class _PachinkoBoardPainter extends CustomPainter {
         meterRect.top - 30,
       ),
     );
-  }
-
-  void _drawSpecialBonusEffect(Canvas canvas, Size size, double scale) {
-    final gameState = gameManager.gameState;
-    final opacity = gameState.bonusOverlayOpacity;
-
-    // Background overlay with opacity
-    final paint = Paint()
-      ..color = GameConstants.bonusBallColor.withOpacity(opacity * 0.3)
-      ..style = PaintingStyle.fill;
-
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, GameConstants.boardWidth, GameConstants.boardHeight),
-      paint,
-    );
-
-    // Calculate bonus balls amount
-    final bonusBalls = 5 + (gameState.currentLevelNumber ~/ 2);
-
-    // Draw bonus text with opacity (shadows removed for Linux compatibility)
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: '+$bonusBalls BALLS!',
-        style: TextStyle(
-          color: GameConstants.bonusBallColor.withOpacity(opacity),
-          fontSize: 36,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
-    textPainter.paint(
-      canvas,
-      Offset(
-        (GameConstants.boardWidth - textPainter.width) / 2,
-        GameConstants.boardHeight / 2 - textPainter.height / 2,
-      ),
-    );
-  }
-
-  void _drawConfettiParticle(Canvas canvas, particle) {
-    canvas.save();
-
-    // Translate to particle position
-    canvas.translate(particle.position.x, particle.position.y);
-
-    // Rotate
-    canvas.rotate(particle.rotation);
-
-    // Draw rectangle (confetti piece)
-    final paint = Paint()
-      ..color = particle.color.withOpacity(particle.opacity)
-      ..style = PaintingStyle.fill;
-
-    canvas.drawRect(
-      Rect.fromCenter(
-        center: Offset.zero,
-        width: particle.size,
-        height: particle.size * 0.6,
-      ),
-      paint,
-    );
-
-    canvas.restore();
   }
 
   void _drawFloatingText(Canvas canvas, floatingText) {
