@@ -3,21 +3,25 @@
 ## Project Overview
 A modern graphical Pachinko idle game for Android. Features authentic pachinko machine mechanics with realistic ball launching, physics simulation, and strategic scoring.
 
-## Current Status: ✅ PLAYABLE PROTOTYPE
-- ✅ Authentic ball launching system (bottom-right launch channel)
-- ✅ Advanced physics engine with collision detection
-- ✅ Organized peg patterns with proper spacing
-- ✅ Complete UI with power meter and visual feedback
-- ✅ Level progression system with varying patterns
-- ✅ Special peg bonus mechanics
-- ✅ Runs on Android, and in a browser for demos
+## Current Status: a complete game, not yet released
+What a player has today:
+- A full round: launch by power, 20 balls, seven slots, and a summary at the end with Replay and Next Level
+- Prize pegs and the bonus they win (5 to 15 extra balls)
+- Levels with no upper limit: three peg layouts in turn, and a colour band every five levels
+- 18 achievements, with a toast over whatever screen is showing
+- High scores (the ten best per level) and one setting, both kept on the device
+- Sound effects, and pause (also when the app is hidden)
+- Runs on Android, and in a browser for demos
+
+It has not been released from this repository: the version is 1.0.0+1, there is no GitHub release, and a release build needs a signing key that is not in the repository. Work that is planned or under way is in GitHub issues (`gh issue list`), not in this file.
 
 ## Technology Stack
 - **Framework:** Flutter 3.38.1
 - **Language:** Dart 3.10.0
 - **Physics:** Custom physics engine (60 FPS)
 - **State Management:** Provider pattern
-- **Storage:** Shared Preferences (ready)
+- **Storage:** Shared Preferences (high scores, achievements and the setting)
+- **Audio:** just_audio, five sound effects
 - **Graphics:** Custom Canvas painting
 - **Platform:** Android. `web/` is kept for the demo build (`flutter build web`, served from `build/web`). The repository has no project files for iOS or the desktop platforms; `flutter create --platforms=<name> .` adds one
 
@@ -78,22 +82,7 @@ lib/
 - `flutter analyze` - Check code quality (a CI gate: anything it reports fails the job, info-level lints included, so the count stays at zero; `dart fix --apply` clears most style lints, and its changes to `pubspec.yaml` are not wanted). `analysis_options.yaml` excludes `tools/flutter/**`, so the SDK checkout there is not analyzed
 - `flutter doctor` - Check Flutter installation
 
-## Current Implementation Status
-
-### ✅ COMPLETED (Phases 1-3)
-1. **✅ Setup & Core Structure** - Complete Flutter project with clean architecture
-2. **✅ Physics Engine** - Advanced ball physics with realistic collision detection
-3. **✅ Authentic Launch System** - Real pachinko-style launch channel with power meter
-4. **✅ Game Board Rendering** - Custom Canvas painting with organized peg patterns
-5. **✅ Basic Game Logic** - Level system, scoring, special peg mechanics implemented
-
-### 🚧 READY FOR DEVELOPMENT (Phases 4-6)
-6. **UI/UX Enhancements** - Animations, sound effects, particle effects
-7. **Advanced Features** - High scores, achievements, more level types
-8. **Polish & Testing** - Performance optimization, Android deployment
-9. **Release Preparation** - App store assets, final testing
-
-## Key Game Mechanics (IMPLEMENTED)
+## Key Game Mechanics
 - **Authentic Launch**: the launcher carries the ball straight up the channel and lets it go at the top, moving straight up at `GameConstants.launchSpeedMin` to `launchSpeedMax` by the launch power; from there only the physics moves it. It meets the dome, which guides and does not bounce: `PhysicsEngine` takes away the part of a ball's velocity that points into the dome and keeps the rest. The dome is close to a parabola, so a ball rides it while its sideways speed is more than a projectile on that curve would have (about 390 px/s) and otherwise flies free under it. A soft launch therefore comes down beside the channel and a full one rides over the top to the far side: power is how the player aims. Nothing scripts the ball's path after the channel; `test/services/launch_into_the_dome_test.dart` flies launches at every power and checks that no part of the ball is ever outside the dome. If the dome's three points or gravity change, the two speeds have to be set again (a test says what they must exceed)
 - **Peg Spacing**: no gap between two pegs, or between a peg and a field wall or the curved top boundary, is narrower than `GameConstants.minPegGap` (the ball's diameter plus 2 px). The curve's three points are `GameConstants.topCurve*`, used by the physics, the painter and the generators. A narrower gap is a pocket: the ball comes to rest in it, never leaves play, and the session soft-locks. Every generator places pegs through `PegPatterns.leavesRoomForBall`, and a new generator must too. `test/models/level_test.dart` checks the rule on levels 1 to 100 and `test/services/stuck_ball_simulation_test.dart` plays seeded balls through levels 1 to 30
 - **Pattern Variety**: Hexagonal, Triangle, and Random patterns cycle through levels
