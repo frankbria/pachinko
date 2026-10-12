@@ -59,6 +59,14 @@ class GameConstants {
       launchChannelStartX + launchChannelWidth / 2;
   static const double ballLaunchY = launchChannelStartY;
 
+  /// How fast a ball leaves the top of the launch channel, moving straight
+  /// up, at no power and at full power. From there the physics has it: it
+  /// meets the dome and rides it for as long as its speed presses it there.
+  /// The least must carry a ball out of the channel's mouth into the field;
+  /// the most must carry it over the top of the dome to the far side (#96)
+  static const double launchSpeedMin = 350.0;
+  static const double launchSpeedMax = 850.0;
+
   // Field boundary constants (playfield area where balls interact with pegs/slots)
   // Left boundary slightly inside the board to align near leftmost slot
   static const double fieldLeftBoundaryX = 25.0;
