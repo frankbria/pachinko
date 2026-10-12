@@ -380,6 +380,15 @@ void main() {
       // Then
       expect(slot.ballCount, equals(0));
     });
+
+    test('given a lit slot, when reset called, then its light is out', () {
+      final slot = Slot(position: Vector2(100.0, 200.0), width: 50.0, height: 30.0, pointValue: 100);
+      slot.glow = 1.0;
+
+      slot.reset();
+
+      expect(slot.glow, 0.0);
+    });
   });
 
   group('Position Getters -', () {

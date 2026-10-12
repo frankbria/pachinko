@@ -300,6 +300,12 @@ class MockGameState extends _i1.Mock implements _i7.GameState {
       ) as bool);
 
   @override
+  bool get slotsLit => (super.noSuchMethod(
+        Invocation.getter(#slotsLit),
+        returnValue: false,
+      ) as bool);
+
+  @override
   bool get hasListeners => (super.noSuchMethod(
         Invocation.getter(#hasListeners),
         returnValue: false,
@@ -364,8 +370,9 @@ class MockGameState extends _i1.Mock implements _i7.GameState {
   void addFloatingText(
     String? text,
     _i10.Offset? position,
-    _i10.Color? color,
-  ) =>
+    _i10.Color? color, {
+    double? fontSize = 20.0,
+  }) =>
       super.noSuchMethod(
         Invocation.method(
           #addFloatingText,
@@ -374,6 +381,25 @@ class MockGameState extends _i1.Mock implements _i7.GameState {
             position,
             color,
           ],
+          {#fontSize: fontSize},
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void lightSlot(_i6.Slot? slot) => super.noSuchMethod(
+        Invocation.method(
+          #lightSlot,
+          [slot],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void updateSlotLights(double? deltaTime) => super.noSuchMethod(
+        Invocation.method(
+          #updateSlotLights,
+          [deltaTime],
         ),
         returnValueForMissingStub: null,
       );

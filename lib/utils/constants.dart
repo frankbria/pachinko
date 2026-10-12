@@ -150,6 +150,11 @@ class GameStrings {
   static const String resume = 'Resume';
   static const String restart = 'Restart';
   static const String nextLevel = 'Next Level';
+  static const String replay = 'Replay';
+  static const String menu = 'Menu';
+  static const String newBest = 'New best for this level';
+  static const String prizePegs = 'Prize pegs';
+  static const String bonusBalls = 'Bonus balls';
   static const String levelComplete = 'Level Complete!';
   static const String gameOver = 'Game Over';
   static const String score = 'Score';

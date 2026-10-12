@@ -8,6 +8,7 @@ import '../models/level.dart';
 import '../models/peg.dart';
 import '../utils/constants.dart';
 import 'board_effects.dart';
+import 'floating_text.dart';
 import 'board_static_layer.dart';
 
 class PachinkoBoard extends StatefulWidget {
@@ -202,6 +203,8 @@ class _PachinkoBoardPainter extends CustomPainter {
     // Felt, rail, pins and slots: recorded once per level and replayed
     canvas.drawPicture(staticLayer.pictureFor(level));
 
+    paintSlotLights(canvas, level.slots);
+
     // A phone's screen is taller than the board; the counts go in the strip below it
     final roomBelow = size.height / scale - GameConstants.boardHeight;
     paintSlotCounts(canvas, level.slots, inTray: roomBelow >= slotTrayHeight + 8);
@@ -258,22 +261,26 @@ class _PachinkoBoardPainter extends CustomPainter {
       if (peg.type != PegType.special && !peg.isAnimating) continue;
       final centre = Offset(peg.position.x, peg.position.y);
 
-      // Draw pulse glow effect (on hit)
-      if (peg.pulseGlowRadius > 0.0) {
-        final pulsePaint = Paint()
-          ..color = peg.color.withValues(alpha: peg.pulseGlowOpacity)
-          ..style = PaintingStyle.fill;
-
-        canvas.drawCircle(centre, peg.pulseGlowRadius, pulsePaint);
-      }
-
       Paint ring(double width, double strength) => Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = width
         ..color = GameConstants.specialPegColor.withValues(alpha: strength);
 
+      // A hit: a gold ring that spreads from the peg and fades
+      final flashing = peg.pulseGlowRadius > 0.0;
+      if (flashing) {
+        canvas.drawCircle(centre, peg.pulseGlowRadius, ring(2, peg.pulseGlowOpacity));
+      }
+
       if (peg.type != PegType.special) {
-        paintSphere(canvas, centre, peg.radius, peg.renderColor);
+        // A pin glows gold only for the moment of the hit
+        paintSphere(
+          canvas,
+          centre,
+          peg.radius,
+          peg.renderColor,
+          glowColour: flashing ? GameConstants.specialPegColor : null,
+        );
       } else if (peg.isCollected) {
         paintSphere(canvas, centre, peg.radius, peg.renderColor);
         canvas.drawCircle(centre, peg.radius + 2, ring(1, 0.55));
@@ -431,32 +438,14 @@ class _PachinkoBoardPainter extends CustomPainter {
     );
   }
 
-  void _drawFloatingText(Canvas canvas, floatingText) {
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: floatingText.text,
-        style: TextStyle(
-          color: floatingText.color.withOpacity(floatingText.opacity),
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          shadows: [
-            Shadow(
-              color: Colors.black.withOpacity(floatingText.opacity * 0.5),
-              blurRadius: 4,
-              offset: const Offset(1, 1),
-            ),
-          ],
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
-    textPainter.paint(
+  void _drawFloatingText(Canvas canvas, FloatingText floatingText) {
+    paintScorePopup(
       canvas,
-      Offset(
-        floatingText.currentPosition.dx - textPainter.width / 2,
-        floatingText.currentPosition.dy,
-      ),
+      text: floatingText.text,
+      centreTop: floatingText.currentPosition,
+      colour: floatingText.color,
+      fontSize: floatingText.fontSize,
+      opacity: floatingText.opacity,
     );
   }
 
