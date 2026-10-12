@@ -67,7 +67,8 @@ class Peg {
       hasBeenHit = true;
       isAnimating = true;
       pulseProgress = 0.0;
-      _hitAnimationTimer = _hitAnimationDuration; // Start timer at full duration
+      _hitAnimationTimer =
+          _hitAnimationDuration; // Start timer at full duration
 
       if (type == PegType.special && isHighlighted) {
         isHighlighted = false;
@@ -119,8 +120,8 @@ class Peg {
 
   /// What a prize peg looks like once it has been collected: its gold dimmed
   /// towards the cabinet, so that the pegs still to win stand out.
-  static final Color collectedPrizeColor =
-      Color.lerp(GameConstants.specialPegColor, GameConstants.cabinetColor, 0.55)!;
+  static final Color collectedPrizeColor = Color.lerp(
+      GameConstants.specialPegColor, GameConstants.cabinetColor, 0.55)!;
 
   /// Whether this is a prize peg that has been hit on this level.
   bool get isCollected => type == PegType.special && hasBeenHit;
@@ -134,7 +135,8 @@ class Peg {
 
     // pulseProgress: 0.0 at the hit, 1.0 when the flash is over
     if (hasBeenHit && isAnimating && pulseProgress < 1.0) {
-      return Color.lerp(baseColor, GameConstants.inkColor, (1.0 - pulseProgress) * 0.7)!;
+      return Color.lerp(
+          baseColor, GameConstants.inkColor, (1.0 - pulseProgress) * 0.7)!;
     }
     return baseColor;
   }

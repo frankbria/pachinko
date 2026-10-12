@@ -244,3 +244,10 @@ Patterns learned the hard way on this repo. Add an entry after any correction.
 - **Put the constraint on a palette in a test before choosing the colours.** Every role colour has to keep a 3 to 1 contrast on every band's felt, lit and shaded. The slate of the 50 slot is the weakest, which caps a felt's luminance at about 0.05; the four felts were chosen under that line and the test passed first time.
 - **To test a gradient's colours, rasterize and read a pixel.** A recorded `Paint` shows that a shader is set and nothing about its colours. `Picture.toImage` inside `tester.runAsync`, then `toByteData`, gives the felt's real colour at a point with nothing else on it.
 - **A slice that needs the owner's approval of its content is opened, not merged.** The bands and their colours are a proposal; the pull request says so and waits.
+
+## 2026-10-12 — the PR for issue #80 (dart format, gated)
+
+- **The formatter can create lints.** Formatting wrapped eight one-line `if (x) return;` statements onto two lines, and the analyzer then asked for braces on each. Run the analyzer after the formatter, not only before; `dart fix --apply` adds the braces.
+- **Which formatter style you get depends on the package's language version.** The issue feared the tall style of Dart 3.7 and later. `pubspec.yaml` says `sdk: ^3.5.4`, so the formatter used the classic style. Check before estimating the diff: raising the SDK constraint later will reformat everything again.
+- **A formatting commit must keep its hash to be ignorable.** `.git-blame-ignore-revs` names a commit. A squash merge gives the work a new hash, so this pull request was merged with a merge commit, the one time that is the right choice here.
+- **Check whether generated files already agree with a gate before excluding them.** The plan was to keep the mocks out of the format check. The generator already writes them in the formatter's style, so they are inside it, and the mock freshness step and the format step cannot disagree.

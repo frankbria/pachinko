@@ -44,11 +44,15 @@ import 'package:pachinko_game/widgets/pachinko_board.dart';
 import 'package:pachinko_game/widgets/round_summary_panel.dart';
 
 void main() {
-  test('given the files under lib/, when compared with this file\'s imports, then every one is imported', () {
-    final imported = RegExp(r"^import 'package:pachinko_game/(.+)';$", multiLine: true)
-        .allMatches(File('test/all_libraries_loaded_test.dart').readAsStringSync())
-        .map((match) => match.group(1))
-        .toSet();
+  test(
+      'given the files under lib/, when compared with this file\'s imports, then every one is imported',
+      () {
+    final imported =
+        RegExp(r"^import 'package:pachinko_game/(.+)';$", multiLine: true)
+            .allMatches(
+                File('test/all_libraries_loaded_test.dart').readAsStringSync())
+            .map((match) => match.group(1))
+            .toSet();
     final present = Directory('lib')
         .listSync(recursive: true)
         .whereType<File>()
@@ -57,7 +61,8 @@ void main() {
         .toSet();
 
     expect(present.difference(imported), isEmpty,
-        reason: 'Add an import for each of these to test/all_libraries_loaded_test.dart');
+        reason:
+            'Add an import for each of these to test/all_libraries_loaded_test.dart');
     expect(imported.difference(present), isEmpty,
         reason: 'These imports name files that are no longer under lib/');
   });

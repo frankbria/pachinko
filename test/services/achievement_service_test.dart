@@ -19,7 +19,8 @@ void main() {
   });
 
   group('AchievementService Initialization', () {
-    test('givenNoSavedData_whenInitialized_thenAllAchievementsLocked', () async {
+    test('givenNoSavedData_whenInitialized_thenAllAchievementsLocked',
+        () async {
       // Given
       when(mockPrefs.getStringList('achievements')).thenReturn(null);
 
@@ -46,17 +47,21 @@ void main() {
 
       // Then
       expect(service.getUnlockedAchievements().length, equals(1));
-      expect(service.getUnlockedAchievements().first.id, equals('first_launch'));
+      expect(
+          service.getUnlockedAchievements().first.id, equals('first_launch'));
       expect(service.getTotalPoints(), equals(100));
 
-      final novice = service.getAllAchievements().firstWhere((a) => a.id == 'novice_player');
+      final novice = service
+          .getAllAchievements()
+          .firstWhere((a) => a.id == 'novice_player');
       expect(novice.progress, equals(50));
       expect(novice.isUnlocked, isFalse);
     });
 
     test('givenCorruptedData_whenInitialized_thenResetToDefaults', () async {
       // Given - Invalid JSON data
-      when(mockPrefs.getStringList('achievements')).thenReturn(['invalid json']);
+      when(mockPrefs.getStringList('achievements'))
+          .thenReturn(['invalid json']);
 
       // When
       service = await AchievementService.create(mockPrefs);
@@ -89,7 +94,8 @@ void main() {
       verify(mockPrefs.setStringList('achievements', any)).called(1);
     });
 
-    test('givenMultipleLaunches_whenTracked_thenFirstLaunchOnlyUnlockedOnce', () async {
+    test('givenMultipleLaunches_whenTracked_thenFirstLaunchOnlyUnlockedOnce',
+        () async {
       // Given
       when(mockPrefs.getStringList('achievements')).thenReturn(null);
       when(mockPrefs.setStringList(any, any)).thenAnswer((_) async => true);
@@ -131,7 +137,8 @@ void main() {
       expect(service.getTotalPoints(), equals(250));
     });
 
-    test('givenLevel10Completed_whenTracked_thenAdvancedPlayerUnlocked', () async {
+    test('givenLevel10Completed_whenTracked_thenAdvancedPlayerUnlocked',
+        () async {
       // Given
       when(mockPrefs.getStringList('achievements')).thenReturn(null);
       when(mockPrefs.setStringList(any, any)).thenAnswer((_) async => true);
@@ -149,10 +156,12 @@ void main() {
 
       // Then
       expect(lastUnlocked!.id, equals('advanced_player'));
-      expect(service.getUnlockedAchievements().length, greaterThanOrEqualTo(2)); // novice + advanced
+      expect(service.getUnlockedAchievements().length,
+          greaterThanOrEqualTo(2)); // novice + advanced
     });
 
-    test('given50LevelsCompleted_whenTracked_thenMarathonRunnerUnlocked', () async {
+    test('given50LevelsCompleted_whenTracked_thenMarathonRunnerUnlocked',
+        () async {
       // Given
       when(mockPrefs.getStringList('achievements')).thenReturn(null);
       when(mockPrefs.setStringList(any, any)).thenAnswer((_) async => true);
@@ -208,7 +217,8 @@ void main() {
       expect(unlockedAchievement!.id, equals('score_master'));
     });
 
-    test('givenTotalScore1Million_whenTracked_thenMillionaireUnlocked', () async {
+    test('givenTotalScore1Million_whenTracked_thenMillionaireUnlocked',
+        () async {
       // Given
       when(mockPrefs.getStringList('achievements')).thenReturn(null);
       when(mockPrefs.setStringList(any, any)).thenAnswer((_) async => true);
@@ -226,7 +236,8 @@ void main() {
       expect(unlocked.any((a) => a.id == 'millionaire'), isTrue);
     });
 
-    test('given10Levels10000Plus_whenTracked_thenPointCollectorUnlocked', () async {
+    test('given10Levels10000Plus_whenTracked_thenPointCollectorUnlocked',
+        () async {
       // Given
       when(mockPrefs.getStringList('achievements')).thenReturn(null);
       when(mockPrefs.setStringList(any, any)).thenAnswer((_) async => true);
@@ -246,7 +257,8 @@ void main() {
       expect(unlockedAchievement!.id, equals('point_collector'));
     });
 
-    test('givenSingleBallScore5000_whenTracked_thenLuckyShotUnlocked', () async {
+    test('givenSingleBallScore5000_whenTracked_thenLuckyShotUnlocked',
+        () async {
       // Given
       when(mockPrefs.getStringList('achievements')).thenReturn(null);
       when(mockPrefs.setStringList(any, any)).thenAnswer((_) async => true);
@@ -266,7 +278,8 @@ void main() {
   });
 
   group('AchievementService Event Tracking - Special Mechanics', () {
-    test('givenAllSpecialPegsHit_whenTracked_thenPerfectShotUnlocked', () async {
+    test('givenAllSpecialPegsHit_whenTracked_thenPerfectShotUnlocked',
+        () async {
       // Given
       when(mockPrefs.getStringList('achievements')).thenReturn(null);
       when(mockPrefs.setStringList(any, any)).thenAnswer((_) async => true);
@@ -304,7 +317,8 @@ void main() {
       expect(unlockedAchievement!.id, equals('bonus_hunter'));
     });
 
-    test('given5SpecialPegsOneBall_whenTracked_thenComboKingUnlocked', () async {
+    test('given5SpecialPegsOneBall_whenTracked_thenComboKingUnlocked',
+        () async {
       // Given
       when(mockPrefs.getStringList('achievements')).thenReturn(null);
       when(mockPrefs.setStringList(any, any)).thenAnswer((_) async => true);
@@ -344,7 +358,8 @@ void main() {
   });
 
   group('AchievementService Event Tracking - Collection', () {
-    test('given10Achievements_whenUnlocked_thenAchievementHunterUnlocked', () async {
+    test('given10Achievements_whenUnlocked_thenAchievementHunterUnlocked',
+        () async {
       // Given
       when(mockPrefs.getStringList('achievements')).thenReturn(null);
       when(mockPrefs.setStringList(any, any)).thenAnswer((_) async => true);
@@ -370,7 +385,8 @@ void main() {
       expect(unlocked.any((a) => a.id == 'achievement_hunter'), isTrue);
     });
 
-    test('givenAllAchievements_whenUnlocked_thenCompletionistUnlocked', () async {
+    test('givenAllAchievements_whenUnlocked_thenCompletionistUnlocked',
+        () async {
       // Given
       when(mockPrefs.getStringList('achievements')).thenReturn(null);
       when(mockPrefs.setStringList(any, any)).thenAnswer((_) async => true);
@@ -385,7 +401,9 @@ void main() {
       service.checkCollectionAchievements();
 
       // Then
-      final completionist = service.getAllAchievements().firstWhere((a) => a.id == 'completionist');
+      final completionist = service
+          .getAllAchievements()
+          .firstWhere((a) => a.id == 'completionist');
       expect(completionist.isUnlocked, isTrue);
     });
   });
@@ -401,7 +419,8 @@ void main() {
       service.trackBallLaunched();
 
       // Then
-      final captured = verify(mockPrefs.setStringList('achievements', captureAny)).captured;
+      final captured =
+          verify(mockPrefs.setStringList('achievements', captureAny)).captured;
       expect(captured.isNotEmpty, isTrue);
       final savedList = captured.last as List<String>;
       expect(savedList.any((json) => json.contains('first_launch')), isTrue);
@@ -417,12 +436,14 @@ void main() {
       service.trackLevelComplete(1);
 
       // Then - Should still save progress
-      verify(mockPrefs.setStringList('achievements', any)).called(greaterThan(0));
+      verify(mockPrefs.setStringList('achievements', any))
+          .called(greaterThan(0));
     });
   });
 
   group('AchievementService Get Methods', () {
-    test('givenMixedAchievements_whenGetUnlocked_thenOnlyUnlockedReturned', () async {
+    test('givenMixedAchievements_whenGetUnlocked_thenOnlyUnlockedReturned',
+        () async {
       // Given
       final savedData = [
         '{"id":"first_launch","name":"First Launch","description":"Launch your first ball","iconCodePoint":${Icons.rocket_launch.codePoint},"pointValue":100,"progress":100,"unlockedDate":"2025-11-17T15:30:00.000"}',
@@ -439,7 +460,8 @@ void main() {
       expect(unlocked.first.id, equals('first_launch'));
     });
 
-    test('givenMixedAchievements_whenGetLocked_thenOnlyLockedReturned', () async {
+    test('givenMixedAchievements_whenGetLocked_thenOnlyLockedReturned',
+        () async {
       // Given
       final savedData = [
         '{"id":"first_launch","name":"First Launch","description":"Launch your first ball","iconCodePoint":${Icons.rocket_launch.codePoint},"pointValue":100,"progress":100,"unlockedDate":"2025-11-17T15:30:00.000"}',
@@ -455,7 +477,8 @@ void main() {
       expect(locked.every((a) => !a.isUnlocked), isTrue);
     });
 
-    test('givenUnlockedAchievements_whenGetTotalPoints_thenCorrectSum', () async {
+    test('givenUnlockedAchievements_whenGetTotalPoints_thenCorrectSum',
+        () async {
       // Given
       final savedData = [
         '{"id":"first_launch","name":"First Launch","description":"Launch your first ball","iconCodePoint":${Icons.rocket_launch.codePoint},"pointValue":100,"progress":100,"unlockedDate":"2025-11-17T15:30:00.000"}',

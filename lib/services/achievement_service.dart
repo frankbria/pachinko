@@ -228,7 +228,8 @@ class AchievementService extends ChangeNotifier {
   /// Saves current achievement state to SharedPreferences
   Future<void> _saveProgress() async {
     try {
-      final jsonList = _achievements.map((a) => jsonEncode(a.toJson())).toList();
+      final jsonList =
+          _achievements.map((a) => jsonEncode(a.toJson())).toList();
       await _prefs.setStringList(_storageKey, jsonList);
     } catch (e) {
       debugPrint('Error saving achievement progress: $e');
@@ -264,28 +265,32 @@ class AchievementService extends ChangeNotifier {
 
     // Check milestone achievements (use separate if statements to allow multiple unlocks)
     if (level >= 5) {
-      final achievement = _achievements.firstWhere((a) => a.id == 'novice_player');
+      final achievement =
+          _achievements.firstWhere((a) => a.id == 'novice_player');
       if (!achievement.isUnlocked) {
         achievement.unlock();
         _checkUnlock(achievement);
       }
     }
     if (level >= 10) {
-      final achievement = _achievements.firstWhere((a) => a.id == 'advanced_player');
+      final achievement =
+          _achievements.firstWhere((a) => a.id == 'advanced_player');
       if (!achievement.isUnlocked) {
         achievement.unlock();
         _checkUnlock(achievement);
       }
     }
     if (level >= 15) {
-      final achievement = _achievements.firstWhere((a) => a.id == 'expert_player');
+      final achievement =
+          _achievements.firstWhere((a) => a.id == 'expert_player');
       if (!achievement.isUnlocked) {
         achievement.unlock();
         _checkUnlock(achievement);
       }
     }
     if (level >= 20) {
-      final achievement = _achievements.firstWhere((a) => a.id == 'master_player');
+      final achievement =
+          _achievements.firstWhere((a) => a.id == 'master_player');
       if (!achievement.isUnlocked) {
         achievement.unlock();
         _checkUnlock(achievement);
@@ -312,14 +317,16 @@ class AchievementService extends ChangeNotifier {
 
     // Check single-level score achievements (check higher threshold first for proper callback order)
     if (score >= 50000) {
-      final achievement = _achievements.firstWhere((a) => a.id == 'high_roller');
+      final achievement =
+          _achievements.firstWhere((a) => a.id == 'high_roller');
       if (!achievement.isUnlocked) {
         achievement.unlock();
         _checkUnlock(achievement);
       }
     }
     if (score >= 100000) {
-      final achievement = _achievements.firstWhere((a) => a.id == 'score_master');
+      final achievement =
+          _achievements.firstWhere((a) => a.id == 'score_master');
       if (!achievement.isUnlocked) {
         achievement.unlock();
         _checkUnlock(achievement);
@@ -329,7 +336,8 @@ class AchievementService extends ChangeNotifier {
     // Check millionaire (total score)
     final millionaire = _achievements.firstWhere((a) => a.id == 'millionaire');
     if (!millionaire.isUnlocked) {
-      millionaire.updateProgress((_totalScore * 100 / 1000000).round().clamp(0, 100));
+      millionaire
+          .updateProgress((_totalScore * 100 / 1000000).round().clamp(0, 100));
       if (millionaire.isUnlocked) {
         _checkUnlock(millionaire);
       } else {
@@ -341,7 +349,8 @@ class AchievementService extends ChangeNotifier {
     // Check point collector (10+ levels with 10,000+ points)
     final levelsOver10k = _levelScores.values.where((s) => s >= 10000).length;
     if (levelsOver10k >= 10) {
-      final achievement = _achievements.firstWhere((a) => a.id == 'point_collector');
+      final achievement =
+          _achievements.firstWhere((a) => a.id == 'point_collector');
       if (!achievement.isUnlocked) {
         achievement.unlock();
         _checkUnlock(achievement);
@@ -418,7 +427,8 @@ class AchievementService extends ChangeNotifier {
 
     // Achievement Hunter (10 achievements)
     if (unlockedCount >= 10) {
-      final achievement = _achievements.firstWhere((a) => a.id == 'achievement_hunter');
+      final achievement =
+          _achievements.firstWhere((a) => a.id == 'achievement_hunter');
       if (!achievement.isUnlocked) {
         achievement.unlock();
         _checkUnlock(achievement);
@@ -426,9 +436,11 @@ class AchievementService extends ChangeNotifier {
     }
 
     // Completionist (all achievements excluding itself)
-    final completionist = _achievements.firstWhere((a) => a.id == 'completionist');
+    final completionist =
+        _achievements.firstWhere((a) => a.id == 'completionist');
     if (!completionist.isUnlocked) {
-      final otherAchievements = _achievements.where((a) => a.id != 'completionist');
+      final otherAchievements =
+          _achievements.where((a) => a.id != 'completionist');
       if (otherAchievements.every((a) => a.isUnlocked)) {
         completionist.unlock();
         _checkUnlock(completionist);

@@ -253,10 +253,13 @@ open coverage/html/index.html
 flutter analyze
 
 # Format code
-dart format lib/ test/
+dart format lib test integration_test tool test_driver
 
-# Check for formatting issues
-dart format --set-exit-if-changed lib/ test/
+# Check for formatting issues (this is what CI runs; an unformatted file fails it)
+dart format --output=none --set-exit-if-changed lib test integration_test tool test_driver
+
+# Once per clone: make `git blame` skip the commit that formatted everything
+git config blame.ignoreRevsFile .git-blame-ignore-revs
 ```
 
 **Quality Gates** (enforced by CLAUDE.md):

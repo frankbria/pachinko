@@ -76,17 +76,22 @@ class GameState extends ChangeNotifier {
   GamePhase get phase => _phase;
   bool get specialBonusTriggered => _specialBonusTriggered;
   double get bonusOverlayOpacity => _bonusOverlayOpacity;
+
   /// The one gate for launching a ball.
   bool get canLaunchBall {
     if (_paused || launcherBusy || _ballsRemaining <= 0) return false;
-    if (singleBallLaunch) return _phase == GamePhase.ready && _activeBalls.isEmpty;
+    if (singleBallLaunch) {
+      return _phase == GamePhase.ready && _activeBalls.isEmpty;
+    }
     return _phase == GamePhase.ready || _phase == GamePhase.playing;
   }
+
   bool get isGameOver => _ballsRemaining <= 0 && _activeBalls.isEmpty;
   List<FloatingText> get floatingTexts => List.unmodifiable(_floatingTexts);
-  List<ConfettiParticle> get confettiParticles => List.unmodifiable(_confettiParticles);
+  List<ConfettiParticle> get confettiParticles =>
+      List.unmodifiable(_confettiParticles);
   bool get ballCountHighlighted => _ballCountHighlighted;
-  
+
   void loadLevel(int levelNumber) {
     _levelStartScore = _score;
     _currentLevelNumber = levelNumber;
@@ -110,7 +115,7 @@ class GameState extends ChangeNotifier {
 
   void launchBall(Ball ball) {
     if (!canLaunchBall) return;
-    
+
     _ballsRemaining--;
     _activeBalls.add(ball);
     _phase = GamePhase.playing;
@@ -124,7 +129,7 @@ class GameState extends ChangeNotifier {
 
   void removeBall(Ball ball) {
     _activeBalls.remove(ball);
-    
+
     // Check if all balls have finished falling
     if (_activeBalls.isEmpty) {
       if (_bonusBallsToAdd > 0) {
@@ -146,7 +151,8 @@ class GameState extends ChangeNotifier {
 
     _specialBonusTriggered = true;
     _bonusOverlayOpacity = 1.0; // Show bonus overlay
-    _bonusBallsToAdd = 5 + (_currentLevelNumber ~/ 2); // More bonus balls on higher levels
+    _bonusBallsToAdd =
+        5 + (_currentLevelNumber ~/ 2); // More bonus balls on higher levels
 
     // Spawn bonus balls immediately
     final level = _currentLevel;
@@ -184,7 +190,8 @@ class GameState extends ChangeNotifier {
   }
 
   /// Add floating text for visual feedback
-  void addFloatingText(String text, Offset position, Color color, {double fontSize = 20.0}) {
+  void addFloatingText(String text, Offset position, Color color,
+      {double fontSize = 20.0}) {
     _floatingTexts.add(FloatingText(
       text: text,
       startPosition: position,
@@ -210,7 +217,8 @@ class GameState extends ChangeNotifier {
   }
 
   /// Whether any slot is still lit.
-  bool get slotsLit => _currentLevel?.slots.any((slot) => slot.glow > 0.0) ?? false;
+  bool get slotsLit =>
+      _currentLevel?.slots.any((slot) => slot.glow > 0.0) ?? false;
 
   /// Update floating text animations
   void updateFloatingTexts(double deltaTime) {

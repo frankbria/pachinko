@@ -108,7 +108,7 @@ git push origin 003-feature-name
 flutter test --exclude-tags golden
 flutter test --tags golden
 flutter analyze
-dart format --set-exit-if-changed lib/ test/
+dart format --output=none --set-exit-if-changed lib test integration_test tool test_driver
 
 # Merge to master
 git checkout master

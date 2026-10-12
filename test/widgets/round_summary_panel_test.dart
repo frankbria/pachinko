@@ -33,7 +33,8 @@ void main() {
     isNewBest: true,
   );
 
-  Future<void> pumpPanel(WidgetTester tester, RoundSummary summary, {List<String>? tapped}) =>
+  Future<void> pumpPanel(WidgetTester tester, RoundSummary summary,
+          {List<String>? tapped}) =>
       tester.pumpWidget(MaterialApp(
         theme: buildGameTheme(),
         home: Scaffold(
@@ -48,7 +49,8 @@ void main() {
         ),
       ));
 
-  testWidgets('given the round in the issue, then the panel shows its score, every tier, the prizes and the bonus',
+  testWidgets(
+      'given the round in the issue, then the panel shows its score, every tier, the prizes and the bonus',
       (tester) async {
     await pumpPanel(tester, example);
 
@@ -61,15 +63,23 @@ void main() {
       ['200', '× 10', '2,000'],
       ['50', '× 11', '550'],
     ]) {
-      final line = find.ancestor(of: find.text(row[0]), matching: find.byType(Row)).first;
-      expect(find.descendant(of: line, matching: find.text(row[1])), findsOneWidget, reason: '$row');
-      expect(find.descendant(of: line, matching: find.text(row[2])), findsOneWidget, reason: '$row');
+      final line = find
+          .ancestor(of: find.text(row[0]), matching: find.byType(Row))
+          .first;
+      expect(find.descendant(of: line, matching: find.text(row[1])),
+          findsOneWidget,
+          reason: '$row');
+      expect(find.descendant(of: line, matching: find.text(row[2])),
+          findsOneWidget,
+          reason: '$row');
     }
     expect(find.text('3 of 3'), findsOneWidget);
     expect(find.text('+6'), findsOneWidget);
   });
 
-  testWidgets('given a round that is not a best and earned no bonus, then neither is claimed', (tester) async {
+  testWidgets(
+      'given a round that is not a best and earned no bonus, then neither is claimed',
+      (tester) async {
     await pumpPanel(
       tester,
       const RoundSummary(
@@ -88,7 +98,8 @@ void main() {
     expect(find.text('1 of 3'), findsOneWidget);
   });
 
-  testWidgets('given the three actions, then each button calls its own', (tester) async {
+  testWidgets('given the three actions, then each button calls its own',
+      (tester) async {
     final tapped = <String>[];
     await pumpPanel(tester, example, tapped: tapped);
 
@@ -112,11 +123,13 @@ void main() {
     /// Plays a whole round of [manager]'s level by dropping every ball into
     /// the first 200 slot, with real time passing between balls.
     Future<void> playRound(WidgetTester tester) async {
-      final slot = manager.gameState.currentLevel!.slots.firstWhere((slot) => slot.pointValue == 200);
+      final slot = manager.gameState.currentLevel!.slots
+          .firstWhere((slot) => slot.pointValue == 200);
       await tester.runAsync(() async {
         while (manager.gameState.ballsRemaining > 0) {
-          manager.gameState
-              .launchBall(Ball(position: Vector2(slot.position.x, slot.top - 4), velocity: Vector2(0, 300)));
+          manager.gameState.launchBall(Ball(
+              position: Vector2(slot.position.x, slot.top - 4),
+              velocity: Vector2(0, 300)));
           manager.resumeGame();
           await Future<void>.delayed(const Duration(milliseconds: 60));
         }
@@ -127,7 +140,9 @@ void main() {
 
     Future<void> pumpScreen(WidgetTester tester) async {
       SharedPreferences.setMockInitialValues({});
-      manager = GameManager(storageService: StorageService(prefs: await SharedPreferences.getInstance()));
+      manager = GameManager(
+          storageService:
+              StorageService(prefs: await SharedPreferences.getInstance()));
       addTearDown(manager.dispose);
       manager.startGame();
       await tester.pumpWidget(ChangeNotifierProvider<GameManager>.value(
@@ -138,8 +153,9 @@ void main() {
             builder: (context) => Scaffold(
               body: Center(
                 child: TextButton(
-                  onPressed: () => Navigator.of(context)
-                      .push(MaterialPageRoute<void>(builder: (_) => const GameScreen())),
+                  onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                          builder: (_) => const GameScreen())),
                   child: const Text('open'),
                 ),
               ),
@@ -152,7 +168,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
     }
 
-    testWidgets('given a round in play, then there is no summary; when the last ball lands, then it appears with the round\'s numbers',
+    testWidgets(
+        'given a round in play, then there is no summary; when the last ball lands, then it appears with the round\'s numbers',
         (tester) async {
       await pumpScreen(tester);
       expect(find.byType(RoundSummaryPanel), findsNothing);
@@ -161,12 +178,14 @@ void main() {
 
       expect(manager.gameState.phase, GamePhase.gameOver);
       expect(find.byType(RoundSummaryPanel), findsOneWidget);
-      expect(find.text('4,000'), findsNWidgets(2), reason: 'the score, and the 200 tier: 20 balls');
+      expect(find.text('4,000'), findsNWidgets(2),
+          reason: 'the score, and the 200 tier: 20 balls');
       expect(find.text('× 20'), findsOneWidget);
       expect(find.text('New best for this level'), findsOneWidget);
     });
 
-    testWidgets('given the summary, when Replay is tapped, then the level starts again with the launcher reset',
+    testWidgets(
+        'given the summary, when Replay is tapped, then the level starts again with the launcher reset',
         (tester) async {
       await pumpScreen(tester);
       await playRound(tester);
@@ -175,14 +194,17 @@ void main() {
       await tester.pump();
 
       expect(find.byType(RoundSummaryPanel), findsNothing);
-      expect(manager.gameState.currentLevelNumber, 1, reason: 'the same level again');
+      expect(manager.gameState.currentLevelNumber, 1,
+          reason: 'the same level again');
       expect(manager.gameState.ballsRemaining, 20);
       expect(manager.gameState.levelScore, 0);
       expect(manager.ballLauncher.currentBall, isNull);
       expect(manager.gameState.canLaunchBall, isTrue);
     });
 
-    testWidgets('given the summary, when Next Level is tapped, then the next level is ready to play', (tester) async {
+    testWidgets(
+        'given the summary, when Next Level is tapped, then the next level is ready to play',
+        (tester) async {
       await pumpScreen(tester);
       await playRound(tester);
 
@@ -195,7 +217,8 @@ void main() {
       expect(manager.gameState.canLaunchBall, isTrue);
     });
 
-    testWidgets('given the summary, when Menu is tapped, then the game screen closes and its loop stops',
+    testWidgets(
+        'given the summary, when Menu is tapped, then the game screen closes and its loop stops',
         (tester) async {
       await pumpScreen(tester);
       await playRound(tester);
@@ -208,7 +231,8 @@ void main() {
       expect(manager.isRunning, isFalse);
     });
 
-    testWidgets('given a score change, then the header counts up to it', (tester) async {
+    testWidgets('given a score change, then the header counts up to it',
+        (tester) async {
       await pumpScreen(tester);
       expect(find.text('0'), findsOneWidget);
 
@@ -224,7 +248,8 @@ void main() {
   });
 
   test('the panel takes its colours from the theme and the roles', () {
-    final source = File('lib/widgets/round_summary_panel.dart').readAsStringSync();
+    final source =
+        File('lib/widgets/round_summary_panel.dart').readAsStringSync();
 
     expect(source, isNot(contains('Colors.')));
     expect(source, isNot(contains(RegExp(r'Color(\.from\w+)?\('))));

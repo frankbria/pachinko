@@ -22,7 +22,8 @@ import 'package:pachinko_game/widgets/floating_text.dart';
 // Generate mocks for PhysicsEngine, GameState, and BallLauncher
 @GenerateMocks([PhysicsEngine, GameState, BallLauncher, Level])
 import 'game_manager_test.mocks.dart';
-import '../screens/achievements_screen_test.mocks.dart' show MockAchievementService;
+import '../screens/achievements_screen_test.mocks.dart'
+    show MockAchievementService;
 import '../screens/high_scores_screen_test.mocks.dart' show MockStorageService;
 
 void main() {
@@ -70,7 +71,9 @@ void main() {
   group('Game Initialization', () {
     /// Tests GameManager constructor with dependency injection
     /// Verifies mocked dependencies are properly injected
-    test('Given mocked dependencies When GameManager created Then dependencies injected correctly', () {
+    test(
+        'Given mocked dependencies When GameManager created Then dependencies injected correctly',
+        () {
       // Given/When: GameManager created in setUp with mocks
 
       // Then: Getters should return mocked instances
@@ -80,7 +83,9 @@ void main() {
     });
 
     /// Tests default dependency creation when no mocks provided
-    test('Given no dependencies When GameManager created Then default instances created', () {
+    test(
+        'Given no dependencies When GameManager created Then default instances created',
+        () {
       // Given/When: Create GameManager without mocks
       final defaultGameManager = GameManager();
 
@@ -94,7 +99,9 @@ void main() {
     });
 
     /// Tests game initialization when startGame called
-    test('Given new GameManager When startGame called Then GameState.startNewGame invoked with level', () {
+    test(
+        'Given new GameManager When startGame called Then GameState.startNewGame invoked with level',
+        () {
       // Given: Fresh GameManager
 
       // When: Start game at level 3
@@ -108,7 +115,9 @@ void main() {
   group('Game Loop Timing and Delta Time', () {
     /// Tests that game loop runs at approximately 60 FPS (16ms intervals)
     /// Timer.periodic should be created with 16ms duration
-    test('Given game started When game loop runs Then timer created with 16ms interval', () {
+    test(
+        'Given game started When game loop runs Then timer created with 16ms interval',
+        () {
       // Given: Mock level to enable updates
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
@@ -177,7 +186,9 @@ void main() {
 
   group('Ball Launcher Integration', () {
     /// Tests ball launcher charging coordination
-    test('Given canLaunchBall true When startLaunchCharging called Then BallLauncher.startCharging invoked', () {
+    test(
+        'Given canLaunchBall true When startLaunchCharging called Then BallLauncher.startCharging invoked',
+        () {
       // Given: Can launch ball
       when(mockGameState.canLaunchBall).thenReturn(true);
 
@@ -189,7 +200,9 @@ void main() {
     });
 
     /// Tests ball launcher charging blocked when cannot launch
-    test('Given canLaunchBall false When startLaunchCharging called Then BallLauncher not charged', () {
+    test(
+        'Given canLaunchBall false When startLaunchCharging called Then BallLauncher not charged',
+        () {
       // Given: Cannot launch ball
       when(mockGameState.canLaunchBall).thenReturn(false);
 
@@ -201,7 +214,9 @@ void main() {
     });
 
     /// Tests launch power updates forwarded to BallLauncher
-    test('Given charging When updateLaunchPower called Then BallLauncher.updateCharging invoked', () {
+    test(
+        'Given charging When updateLaunchPower called Then BallLauncher.updateCharging invoked',
+        () {
       // Given: Charging state
       when(mockBallLauncher.phase).thenReturn(LaunchPhase.charging);
 
@@ -213,7 +228,9 @@ void main() {
     });
 
     /// Tests ball launch coordination with GameState
-    test('Given charged launcher When launchBall called Then ball added to GameState', () {
+    test(
+        'Given charged launcher When launchBall called Then ball added to GameState',
+        () {
       // Given: Launcher ready to launch
       final ball = Ball(
         position: Vector2(100, 100),
@@ -231,7 +248,9 @@ void main() {
     });
 
     /// Tests launch blocked when cannot launch
-    test('Given canLaunchBall false When launchBall called Then ball not launched', () {
+    test(
+        'Given canLaunchBall false When launchBall called Then ball not launched',
+        () {
       // Given: Cannot launch
       when(mockGameState.canLaunchBall).thenReturn(false);
 
@@ -244,7 +263,9 @@ void main() {
     });
 
     /// Tests game loop starts automatically after first ball launch
-    test('Given game not running When launchBall succeeds Then game loop started', () {
+    test(
+        'Given game not running When launchBall succeeds Then game loop started',
+        () {
       // Given: Game not running, can launch
       final ball = Ball(
         position: Vector2(100, 100),
@@ -266,7 +287,9 @@ void main() {
   group('Physics Integration and Phase Coordination', () {
     /// Tests PhysicsEngine.updateBalls called during game loop
     /// Note: This is difficult to test with real Timer, so we verify the coordination logic
-    test('Given active balls When physics update needed Then PhysicsEngine.updateBalls called', () async {
+    test(
+        'Given active balls When physics update needed Then PhysicsEngine.updateBalls called',
+        () async {
       // Given: Active balls and level
       final ball = Ball(
         position: Vector2(200, 200),
@@ -293,7 +316,9 @@ void main() {
     });
 
     /// Tests peg collision handling forwarded to PhysicsEngine
-    test('Given active balls and pegs When physics updates Then checkPegCollisions called', () async {
+    test(
+        'Given active balls and pegs When physics updates Then checkPegCollisions called',
+        () async {
       // Given: Ball and pegs
       final ball = Ball(
         position: Vector2(200, 200),
@@ -320,11 +345,14 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 20));
 
       // Then: checkPegCollisions should be called
-      verify(mockPhysicsEngine.checkPegCollisions(any, any)).called(greaterThan(0));
+      verify(mockPhysicsEngine.checkPegCollisions(any, any))
+          .called(greaterThan(0));
     });
 
     /// Tests slot collision handling forwarded to PhysicsEngine
-    test('Given active balls and slots When physics updates Then checkSlotCollisions called', () async {
+    test(
+        'Given active balls and slots When physics updates Then checkSlotCollisions called',
+        () async {
       // Given: Ball and slots
       final ball = Ball(
         position: Vector2(200, 500),
@@ -352,13 +380,16 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 20));
 
       // Then: checkSlotCollisions should be called
-      verify(mockPhysicsEngine.checkSlotCollisions(any, any)).called(greaterThan(0));
+      verify(mockPhysicsEngine.checkSlotCollisions(any, any))
+          .called(greaterThan(0));
     });
   });
 
   group('Special Peg Bonus Triggering', () {
     /// Tests special peg bonus triggered when all special pegs hit
-    test('Given all special pegs hit When peg collision occurs Then GameState.triggerSpecialBonus called', () async {
+    test(
+        'Given all special pegs hit When peg collision occurs Then GameState.triggerSpecialBonus called',
+        () async {
       // Given: Level with all special pegs hit
       final ball = Ball(
         position: Vector2(200, 200),
@@ -377,7 +408,8 @@ void main() {
       when(mockGameState.activeBalls).thenReturn([ball]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
       when(mockGameState.specialBonusTriggered).thenReturn(false);
-      when(mockPhysicsEngine.checkPegCollisions(any, any)).thenReturn([specialPeg]);
+      when(mockPhysicsEngine.checkPegCollisions(any, any))
+          .thenReturn([specialPeg]);
       when(mockPhysicsEngine.checkSlotCollisions(any, any)).thenReturn([]);
 
       // When: Start game loop (will detect special peg hit)
@@ -391,7 +423,9 @@ void main() {
     });
 
     /// Tests special bonus not triggered if already triggered
-    test('Given bonus already triggered When special peg hit Then triggerSpecialBonus not called again', () async {
+    test(
+        'Given bonus already triggered When special peg hit Then triggerSpecialBonus not called again',
+        () async {
       // Given: Bonus already triggered
       final ball = Ball(
         position: Vector2(200, 200),
@@ -409,8 +443,10 @@ void main() {
       when(mockLevel.allSpecialPegsHit).thenReturn(true);
       when(mockGameState.activeBalls).thenReturn([ball]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
-      when(mockGameState.specialBonusTriggered).thenReturn(true); // Already triggered
-      when(mockPhysicsEngine.checkPegCollisions(any, any)).thenReturn([specialPeg]);
+      when(mockGameState.specialBonusTriggered)
+          .thenReturn(true); // Already triggered
+      when(mockPhysicsEngine.checkPegCollisions(any, any))
+          .thenReturn([specialPeg]);
       when(mockPhysicsEngine.checkSlotCollisions(any, any)).thenReturn([]);
 
       // When: Start game loop
@@ -424,7 +460,9 @@ void main() {
     });
 
     /// Tests special bonus requires all special pegs hit
-    test('Given not all special pegs hit When special peg collision Then bonus not triggered', () async {
+    test(
+        'Given not all special pegs hit When special peg collision Then bonus not triggered',
+        () async {
       // Given: Not all special pegs hit
       final ball = Ball(
         position: Vector2(200, 200),
@@ -443,7 +481,8 @@ void main() {
       when(mockGameState.activeBalls).thenReturn([ball]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
       when(mockGameState.specialBonusTriggered).thenReturn(false);
-      when(mockPhysicsEngine.checkPegCollisions(any, any)).thenReturn([specialPeg]);
+      when(mockPhysicsEngine.checkPegCollisions(any, any))
+          .thenReturn([specialPeg]);
       when(mockPhysicsEngine.checkSlotCollisions(any, any)).thenReturn([]);
 
       // When: Start game loop
@@ -459,7 +498,9 @@ void main() {
 
   group('Slot Hit Scoring', () {
     /// Tests score added when ball lands in slot
-    test('Given ball in slot When slot collision detected Then GameState.addScore called with slot pointValue', () async {
+    test(
+        'Given ball in slot When slot collision detected Then GameState.addScore called with slot pointValue',
+        () async {
       // Given: Ball and slot
       final ball = Ball(
         position: Vector2(200, 500),
@@ -491,19 +532,26 @@ void main() {
     });
 
     /// Tests multiple slot hits add scores correctly
-    test('Given multiple balls in slots When collisions detected Then addScore called for each', () async {
+    test(
+        'Given multiple balls in slots When collisions detected Then addScore called for each',
+        () async {
       // Given: Multiple slots hit
-      final ball1 = Ball(position: Vector2(100, 500), velocity: Vector2(0, 50), radius: 8.0);
-      final ball2 = Ball(position: Vector2(300, 500), velocity: Vector2(0, 50), radius: 8.0);
-      final slot1 = Slot(position: Vector2(100, 550), width: 50, height: 60, pointValue: 1000);
-      final slot2 = Slot(position: Vector2(300, 550), width: 50, height: 60, pointValue: 2000);
+      final ball1 = Ball(
+          position: Vector2(100, 500), velocity: Vector2(0, 50), radius: 8.0);
+      final ball2 = Ball(
+          position: Vector2(300, 500), velocity: Vector2(0, 50), radius: 8.0);
+      final slot1 = Slot(
+          position: Vector2(100, 550), width: 50, height: 60, pointValue: 1000);
+      final slot2 = Slot(
+          position: Vector2(300, 550), width: 50, height: 60, pointValue: 2000);
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
       when(mockLevel.slots).thenReturn([slot1, slot2]);
       when(mockGameState.activeBalls).thenReturn([ball1, ball2]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
       when(mockPhysicsEngine.checkPegCollisions(any, any)).thenReturn([]);
-      when(mockPhysicsEngine.checkSlotCollisions(any, any)).thenReturn([slot1, slot2]);
+      when(mockPhysicsEngine.checkSlotCollisions(any, any))
+          .thenReturn([slot1, slot2]);
 
       // When: Start game loop
       when(mockBallLauncher.launch()).thenReturn(ball1);
@@ -519,7 +567,9 @@ void main() {
 
   group('Pause and Resume Functionality', () {
     /// Tests pause stops game loop
-    test('Given running game When pauseGame called Then isRunning becomes false', () {
+    test(
+        'Given running game When pauseGame called Then isRunning becomes false',
+        () {
       // Given: Running game
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
@@ -541,7 +591,8 @@ void main() {
     });
 
     /// Tests resume restarts game loop
-    test('Given paused game When resumeGame called Then isRunning becomes true', () {
+    test('Given paused game When resumeGame called Then isRunning becomes true',
+        () {
       // Given: Paused game
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
@@ -619,7 +670,9 @@ void main() {
       expect(() => gameManager.dispose(), returnsNormally);
     });
 
-    test('Given running game When stopLoop called Then loop stops without resetting the game', () {
+    test(
+        'Given running game When stopLoop called Then loop stops without resetting the game',
+        () {
       // Given
       gameManager.startGame();
       expect(gameManager.isRunning, isTrue);
@@ -641,7 +694,9 @@ void main() {
   group('Level Management and Phase Transitions', () {
     /// The running score carries across levels; the saved high score and the
     /// achievement total take this level's points only.
-    test('Given a level finished mid-run When game over detected Then only this level\'s points are saved and tracked', () async {
+    test(
+        'Given a level finished mid-run When game over detected Then only this level\'s points are saved and tracked',
+        () async {
       // Given: level 2 of a run, running total 21000, of which 9000 on this level
       final mockStorage = MockStorageService();
       final mockAchievements = MockAchievementService();
@@ -705,7 +760,9 @@ void main() {
     });
 
     /// Tests level selection stops game loop
-    test('Given running game When selectLevel called Then timer cancelled and level loaded', () {
+    test(
+        'Given running game When selectLevel called Then timer cancelled and level loaded',
+        () {
       // Given: Running game
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
@@ -728,7 +785,9 @@ void main() {
     });
 
     /// Tests game phase transitions when all balls used
-    test('Given no active balls and no balls remaining When game loop updates Then phase changes to gameOver', () async {
+    test(
+        'Given no active balls and no balls remaining When game loop updates Then phase changes to gameOver',
+        () async {
       // Given: No balls
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
@@ -749,11 +808,14 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 20));
 
       // Then: Should update phase to gameOver
-      verify(mockGameState.updatePhase(GamePhase.gameOver)).called(greaterThan(0));
+      verify(mockGameState.updatePhase(GamePhase.gameOver))
+          .called(greaterThan(0));
     });
 
     /// Tests game phase transitions to ready when balls remain
-    test('Given no active balls but balls remaining When game loop updates Then phase changes to ready', () async {
+    test(
+        'Given no active balls but balls remaining When game loop updates Then phase changes to ready',
+        () async {
       // Given: Balls remaining but none active
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
@@ -779,7 +841,9 @@ void main() {
     /// The loop keeps running after game over while the last popup is still
     /// on screen, so it finishes animating. (It used to keep running for ever;
     /// since #42 it stops once nothing is left to animate.)
-    test('Given game over detected with a popup still showing When more loop ticks pass Then loop still runs and result is recorded once', () async {
+    test(
+        'Given game over detected with a popup still showing When more loop ticks pass Then loop still runs and result is recorded once',
+        () async {
       // Given: no balls active and none remaining, and the last ball's popup on screen
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
@@ -806,7 +870,9 @@ void main() {
       verify(mockGameState.updatePhase(GamePhase.gameOver)).called(1);
     });
 
-    test('Given game over recorded When resetGame then game over again Then result is recorded again', () async {
+    test(
+        'Given game over recorded When resetGame then game over again Then result is recorded again',
+        () async {
       // Given
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
@@ -839,7 +905,9 @@ void main() {
       'nextLevel': (manager) => manager.nextLevel(),
       'selectLevel': (manager) => manager.selectLevel(2),
     }.entries) {
-      test('Given game over recorded When ${transition.key} then game over again Then result is recorded again', () async {
+      test(
+          'Given game over recorded When ${transition.key} then game over again Then result is recorded again',
+          () async {
         // Given
         final mockLevel = MockLevel();
         when(mockLevel.pegs).thenReturn([]);
@@ -870,7 +938,9 @@ void main() {
   group('Launcher Reset on Game Transitions', () {
     /// Real objects (no mocks): reproduces the soft-lock where Restart during
     /// the launch-channel travel left the launcher stuck in `traveling`.
-    test('Given ball on launch path When resetGame called Then the next launch works', () {
+    test(
+        'Given ball on launch path When resetGame called Then the next launch works',
+        () {
       // Given: a real game with a ball travelling up the channel
       final realManager = GameManager();
       addTearDown(realManager.dispose);
@@ -897,7 +967,9 @@ void main() {
       'selectLevel': (manager) => manager.selectLevel(3),
       'nextLevel': (manager) => manager.nextLevel(),
     }.entries) {
-      test('Given ball on launch path When ${change.key} called Then the next launch puts exactly one ball in play', () {
+      test(
+          'Given ball on launch path When ${change.key} called Then the next launch puts exactly one ball in play',
+          () {
         // Given: a real game with a ball travelling up the channel
         final realManager = GameManager();
         addTearDown(realManager.dispose);
@@ -938,9 +1010,12 @@ void main() {
     /// Real objects (no mocks). The loop only needs to run while something
     /// it drives is changing: a ball, a score popup, confetti or the ball
     /// count highlight. Peg animation is the board's own business.
-    Future<void> ticks(int count) => Future<void>.delayed(Duration(milliseconds: 16 * count + 8));
+    Future<void> ticks(int count) =>
+        Future<void>.delayed(Duration(milliseconds: 16 * count + 8));
 
-    test('Given a ball in flight When the loop ticks Then its trail records where it was before each step', () async {
+    test(
+        'Given a ball in flight When the loop ticks Then its trail records where it was before each step',
+        () async {
       final manager = GameManager();
       addTearDown(manager.dispose);
       manager.startGame();
@@ -950,11 +1025,15 @@ void main() {
       await ticks(4);
 
       expect(ball.trail, isNotEmpty);
-      expect(ball.trail.first, Vector2(200, 150), reason: 'the first entry is where the ball started');
-      expect(ball.trail.last.y, lessThan(ball.position.y), reason: 'the ball has fallen past its trail');
+      expect(ball.trail.first, Vector2(200, 150),
+          reason: 'the first entry is where the ball started');
+      expect(ball.trail.last.y, lessThan(ball.position.y),
+          reason: 'the ball has fallen past its trail');
     });
 
-    test('Given a ball travelling up the launch channel When the loop ticks Then it leaves a trail too', () async {
+    test(
+        'Given a ball travelling up the launch channel When the loop ticks Then it leaves a trail too',
+        () async {
       final manager = GameManager();
       addTearDown(manager.dispose);
       manager.startGame();
@@ -966,10 +1045,13 @@ void main() {
 
       final ball = manager.gameState.activeBalls.single;
       expect(ball.trail, isNotEmpty);
-      expect(ball.trail.first.y, greaterThan(ball.position.y), reason: 'the ball has risen past its trail');
+      expect(ball.trail.first.y, greaterThan(ball.position.y),
+          reason: 'the ball has risen past its trail');
     });
 
-    test('Given many balls allowed When a ball has left the channel Then a second is launched without pausing', () async {
+    test(
+        'Given many balls allowed When a ball has left the channel Then a second is launched without pausing',
+        () async {
       final manager = GameManager();
       addTearDown(manager.dispose);
       manager.startGame();
@@ -990,11 +1072,14 @@ void main() {
       expect(manager.gameState.activeBalls, hasLength(1));
 
       // Until the first has left the channel
-      for (int i = 0; i < 200 && manager.ballLauncher.currentBall != null; i++) {
+      for (int i = 0;
+          i < 200 && manager.ballLauncher.currentBall != null;
+          i++) {
         await ticks(1);
       }
       expect(manager.ballLauncher.currentBall, isNull);
-      expect(manager.gameState.activeBalls, hasLength(1), reason: 'the first ball is still in play');
+      expect(manager.gameState.activeBalls, hasLength(1),
+          reason: 'the first ball is still in play');
       expect(manager.gameState.canLaunchBall, isTrue);
       launch();
 
@@ -1002,7 +1087,9 @@ void main() {
       expect(manager.gameState.ballsRemaining, 18);
     });
 
-    test('Given many balls allowed When the game is paused Then a launch is refused', () async {
+    test(
+        'Given many balls allowed When the game is paused Then a launch is refused',
+        () async {
       final manager = GameManager();
       addTearDown(manager.dispose);
       manager.startGame();
@@ -1019,16 +1106,21 @@ void main() {
 
     /// Drops a ball into [slot] and lets it land.
     Future<void> landIn(GameManager manager, Slot slot) async {
-      manager.gameState.launchBall(Ball(position: Vector2(slot.position.x, slot.top - 4), velocity: Vector2(0, 300)));
+      manager.gameState.launchBall(Ball(
+          position: Vector2(slot.position.x, slot.top - 4),
+          velocity: Vector2(0, 300)));
       manager.resumeGame();
       await ticks(3);
     }
 
-    test('Given a ball over a slot When it lands Then the slot lights and its popup starts above it in its colour', () async {
+    test(
+        'Given a ball over a slot When it lands Then the slot lights and its popup starts above it in its colour',
+        () async {
       final manager = GameManager();
       addTearDown(manager.dispose);
       manager.startGame();
-      final slot = manager.gameState.currentLevel!.slots.firstWhere((slot) => slot.pointValue == 1000);
+      final slot = manager.gameState.currentLevel!.slots
+          .firstWhere((slot) => slot.pointValue == 1000);
 
       await landIn(manager, slot);
 
@@ -1039,17 +1131,21 @@ void main() {
       expect(popup.color, slot.color);
       expect(popup.fontSize, FloatingText.sizeFor(1000));
       // Its line box ends above the slot's mouth, and it only rises from there
-      expect(popup.startPosition.dy + popup.fontSize * 1.3, lessThanOrEqualTo(slot.top));
+      expect(popup.startPosition.dy + popup.fontSize * 1.3,
+          lessThanOrEqualTo(slot.top));
     });
 
-    test('Given a lit slot and nothing else When ticks pass Then the loop runs until the light is out', () async {
+    test(
+        'Given a lit slot and nothing else When ticks pass Then the loop runs until the light is out',
+        () async {
       final manager = GameManager();
       addTearDown(manager.dispose);
       manager.startGame();
       await ticks(3);
       expect(manager.isRunning, isFalse);
 
-      manager.gameState.lightSlot(manager.gameState.currentLevel!.slots.firstWhere((slot) => slot.pointValue == 2000));
+      manager.gameState.lightSlot(manager.gameState.currentLevel!.slots
+          .firstWhere((slot) => slot.pointValue == 2000));
       manager.resumeGame();
       await ticks(5);
       expect(manager.isRunning, isTrue);
@@ -1059,13 +1155,17 @@ void main() {
       expect(manager.isRunning, isFalse);
     });
 
-    test('Given stored scores When rounds finish Then the manager says whether each was a new best', () async {
+    test(
+        'Given stored scores When rounds finish Then the manager says whether each was a new best',
+        () async {
       SharedPreferences.setMockInitialValues({});
-      final storage = StorageService(prefs: await SharedPreferences.getInstance());
+      final storage =
+          StorageService(prefs: await SharedPreferences.getInstance());
       final manager = GameManager(storageService: storage);
       addTearDown(manager.dispose);
       Future<void> playRoundInto(int value) async {
-        final slot = manager.gameState.currentLevel!.slots.firstWhere((slot) => slot.pointValue == value);
+        final slot = manager.gameState.currentLevel!.slots
+            .firstWhere((slot) => slot.pointValue == value);
         while (manager.gameState.ballsRemaining > 0) {
           await landIn(manager, slot);
         }
@@ -1076,10 +1176,12 @@ void main() {
       expect(manager.roundIsNewBest, isNull);
       await playRoundInto(200);
       expect(manager.gameState.phase, GamePhase.gameOver);
-      expect(manager.roundIsNewBest, isTrue, reason: 'the first score on a level is its best');
+      expect(manager.roundIsNewBest, isTrue,
+          reason: 'the first score on a level is its best');
 
       manager.resetGame();
-      expect(manager.roundIsNewBest, isNull, reason: 'not known again until the next round ends');
+      expect(manager.roundIsNewBest, isNull,
+          reason: 'not known again until the next round ends');
       await playRoundInto(50);
       expect(manager.roundIsNewBest, isFalse);
 
@@ -1088,17 +1190,22 @@ void main() {
       expect(manager.roundIsNewBest, isTrue);
     }, timeout: const Timeout(Duration(minutes: 2)));
 
-    test('Given no stored score When the first round ends without a point Then it is not announced as a best', () async {
+    test(
+        'Given no stored score When the first round ends without a point Then it is not announced as a best',
+        () async {
       // Nothing is stored yet, so zero is technically the level's best. The
       // summary would say "New best" over a score of 0, which reads as a joke
       SharedPreferences.setMockInitialValues({});
-      final manager = GameManager(storageService: StorageService(prefs: await SharedPreferences.getInstance()));
+      final manager = GameManager(
+          storageService:
+              StorageService(prefs: await SharedPreferences.getInstance()));
       addTearDown(manager.dispose);
       manager.startGame();
 
       while (manager.gameState.ballsRemaining > 0) {
         // Below the slots: the ball leaves play without landing in one
-        manager.gameState.launchBall(Ball(position: Vector2(200, GameConstants.boardHeight + 50)));
+        manager.gameState.launchBall(
+            Ball(position: Vector2(200, GameConstants.boardHeight + 50)));
         manager.resumeGame();
         await ticks(2);
       }
@@ -1109,13 +1216,16 @@ void main() {
       expect(manager.roundIsNewBest, isFalse);
     }, timeout: const Timeout(Duration(minutes: 2)));
 
-    test('Given storage that answers late When another round has finished meanwhile Then the old answer is not shown for it', () async {
+    test(
+        'Given storage that answers late When another round has finished meanwhile Then the old answer is not shown for it',
+        () async {
       SharedPreferences.setMockInitialValues({});
       final storage = _GatedStorage(await SharedPreferences.getInstance());
       final manager = GameManager(storageService: storage);
       addTearDown(manager.dispose);
       Future<void> playRoundInto(int value) async {
-        final slot = manager.gameState.currentLevel!.slots.firstWhere((slot) => slot.pointValue == value);
+        final slot = manager.gameState.currentLevel!.slots
+            .firstWhere((slot) => slot.pointValue == value);
         while (manager.gameState.ballsRemaining > 0) {
           await landIn(manager, slot);
         }
@@ -1136,14 +1246,17 @@ void main() {
       // Now the answer for the first round arrives
       storage.gates[0].complete();
       await ticks(2);
-      expect(manager.roundIsNewBest, isNull, reason: 'that answer was about a round no longer on screen');
+      expect(manager.roundIsNewBest, isNull,
+          reason: 'that answer was about a round no longer on screen');
 
       storage.gates[1].complete();
       await ticks(2);
       expect(manager.roundIsNewBest, isNotNull);
     }, timeout: const Timeout(Duration(minutes: 2)));
 
-    test('Given a new game with nothing in play When a few ticks pass Then the loop has stopped', () async {
+    test(
+        'Given a new game with nothing in play When a few ticks pass Then the loop has stopped',
+        () async {
       final manager = GameManager();
       addTearDown(manager.dispose);
 
@@ -1153,7 +1266,9 @@ void main() {
       expect(manager.isRunning, isFalse);
     });
 
-    test('Given a stopped loop When a ball is launched Then the loop runs while the ball is in play', () async {
+    test(
+        'Given a stopped loop When a ball is launched Then the loop runs while the ball is in play',
+        () async {
       final manager = GameManager();
       addTearDown(manager.dispose);
       manager.startGame();
@@ -1169,11 +1284,14 @@ void main() {
       expect(manager.isRunning, isTrue);
     });
 
-    test('Given no ball but a score popup on screen When ticks pass Then the loop runs until the popup is gone', () async {
+    test(
+        'Given no ball but a score popup on screen When ticks pass Then the loop runs until the popup is gone',
+        () async {
       final manager = GameManager();
       addTearDown(manager.dispose);
       manager.startGame();
-      manager.gameState.addFloatingText('+2000', const Offset(200, 560), const Color(0xFFFFD700));
+      manager.gameState.addFloatingText(
+          '+2000', const Offset(200, 560), const Color(0xFFFFD700));
 
       await ticks(5);
       expect(manager.gameState.floatingTexts, hasLength(1));
@@ -1186,9 +1304,14 @@ void main() {
     });
 
     // With mocks: each effect on its own is enough to keep the loop running
-    test('Given no ball but confetti still falling When ticks pass Then the loop keeps running', () async {
+    test(
+        'Given no ball but confetti still falling When ticks pass Then the loop keeps running',
+        () async {
       when(mockGameState.confettiParticles).thenReturn([
-        ConfettiParticle(position: Vector2(200, 300), velocity: Vector2(0, 50), color: const Color(0xFFFFD700)),
+        ConfettiParticle(
+            position: Vector2(200, 300),
+            velocity: Vector2(0, 50),
+            color: const Color(0xFFFFD700)),
       ]);
 
       gameManager.startGame();
@@ -1197,7 +1320,9 @@ void main() {
       expect(gameManager.isRunning, isTrue);
     });
 
-    test('Given no ball but the ball count still highlighted When ticks pass Then the loop keeps running', () async {
+    test(
+        'Given no ball but the ball count still highlighted When ticks pass Then the loop keeps running',
+        () async {
       when(mockGameState.ballCountHighlighted).thenReturn(true);
 
       gameManager.startGame();
@@ -1206,14 +1331,18 @@ void main() {
       expect(gameManager.isRunning, isTrue);
     });
 
-    test('Given nothing in play and no effect showing When ticks pass Then the loop has stopped', () async {
+    test(
+        'Given nothing in play and no effect showing When ticks pass Then the loop has stopped',
+        () async {
       gameManager.startGame();
       await ticks(3);
 
       expect(gameManager.isRunning, isFalse);
     });
 
-    test('Given the last ball has landed When its popup has finished Then the result is saved and the loop stops', () async {
+    test(
+        'Given the last ball has landed When its popup has finished Then the result is saved and the loop stops',
+        () async {
       final manager = GameManager();
       addTearDown(manager.dispose);
       manager.startGame();
@@ -1225,7 +1354,8 @@ void main() {
       }
       final last = Ball(position: Vector2(200, 300));
       state.launchBall(last);
-      state.addFloatingText('+50', const Offset(200, 560), const Color(0xFFFFFFFF));
+      state.addFloatingText(
+          '+50', const Offset(200, 560), const Color(0xFFFFFFFF));
       state.removeBall(last);
       manager.resumeGame(); // any call that starts the loop
 

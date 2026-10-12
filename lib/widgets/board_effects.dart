@@ -11,13 +11,17 @@ import 'board_static_layer.dart';
 /// board stays visible but recedes, a gold glow, and the number of balls won.
 ///
 /// [opacity] runs from 1.0, fully shown, to 0.0 as the overlay fades.
-void paintBonusOverlay(Canvas canvas, {required double opacity, required int bonusBalls}) {
+void paintBonusOverlay(Canvas canvas,
+    {required double opacity, required int bonusBalls}) {
   canvas.drawRect(
-    const Rect.fromLTWH(0, 0, GameConstants.boardWidth, GameConstants.boardHeight),
-    Paint()..color = GameConstants.cabinetColor.withValues(alpha: 0.55 * opacity),
+    const Rect.fromLTWH(
+        0, 0, GameConstants.boardWidth, GameConstants.boardHeight),
+    Paint()
+      ..color = GameConstants.cabinetColor.withValues(alpha: 0.55 * opacity),
   );
 
-  const centre = Offset(GameConstants.boardWidth / 2, GameConstants.boardHeight / 2);
+  const centre =
+      Offset(GameConstants.boardWidth / 2, GameConstants.boardHeight / 2);
   const glowRadius = 170.0;
   canvas.drawCircle(
     centre,
@@ -59,7 +63,10 @@ void paintBonusOverlay(Canvas canvas, {required double opacity, required int bon
   )..layout();
 
   amount.paint(canvas, centre - Offset(amount.width / 2, amount.height / 2));
-  caption.paint(canvas, centre - Offset(caption.width / 2, amount.height / 2 + caption.height + 4));
+  caption.paint(
+      canvas,
+      centre -
+          Offset(caption.width / 2, amount.height / 2 + caption.height + 4));
   caption.dispose();
   amount.dispose();
 }
@@ -69,7 +76,8 @@ void paintBonusOverlay(Canvas canvas, {required double opacity, required int bon
 /// The shape goes by the piece's size, so a burst is a mix: small pieces are
 /// discs, middling ones diamonds, and large ones streamers.
 void paintConfettiPiece(Canvas canvas, ConfettiParticle particle) {
-  final paint = Paint()..color = particle.color.withValues(alpha: particle.opacity);
+  final paint = Paint()
+    ..color = particle.color.withValues(alpha: particle.opacity);
   final size = particle.size;
 
   canvas.save();
@@ -90,7 +98,8 @@ void paintConfettiPiece(Canvas canvas, ConfettiParticle particle) {
   } else {
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset.zero, width: size * 1.3, height: size * 0.3),
+        Rect.fromCenter(
+            center: Offset.zero, width: size * 1.3, height: size * 0.3),
         Radius.circular(size * 0.15),
       ),
       paint,
@@ -107,8 +116,10 @@ const double _prizeLampSpacing = 20.0;
 /// Draws one lamp per prize peg in the dome, centred under the level sign.
 /// The first [collected] of the [total] are lit, so the row shows at a glance
 /// how many prizes are left to win.
-void paintPrizeLamps(Canvas canvas, {required int total, required int collected}) {
-  const centreX = (GameConstants.topCurveStartX + GameConstants.topCurveEndX) / 2;
+void paintPrizeLamps(Canvas canvas,
+    {required int total, required int collected}) {
+  const centreX =
+      (GameConstants.topCurveStartX + GameConstants.topCurveEndX) / 2;
   final firstX = centreX - _prizeLampSpacing * (total - 1) / 2;
 
   for (int i = 0; i < total; i++) {
@@ -157,7 +168,8 @@ void paintSlotCounts(Canvas canvas, List<Slot> slots, {required bool inTray}) {
   if (inTray) {
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTRB(slots.first.left, trayTop, slots.last.right, trayTop + slotTrayHeight),
+        Rect.fromLTRB(slots.first.left, trayTop, slots.last.right,
+            trayTop + slotTrayHeight),
         const Radius.circular(6),
       ),
       Paint()..color = GameConstants.cabinetColor.withValues(alpha: 0.7),
@@ -179,7 +191,9 @@ void paintSlotCounts(Canvas canvas, List<Slot> slots, {required bool inTray}) {
       ),
       textDirection: TextDirection.ltr,
     )..layout();
-    final top = inTray ? trayTop + (slotTrayHeight - count.height) / 2 : slot.bottom - count.height - 3;
+    final top = inTray
+        ? trayTop + (slotTrayHeight - count.height) / 2
+        : slot.bottom - count.height - 3;
     count.paint(canvas, Offset(slot.position.x - count.width / 2, top));
   }
 }
@@ -206,7 +220,8 @@ void paintSlotLights(Canvas canvas, List<Slot> slots) {
       ),
       textDirection: TextDirection.ltr,
     )..layout();
-    value.paint(canvas, slot.bounds.center - Offset(value.width / 2, value.height / 2));
+    value.paint(
+        canvas, slot.bounds.center - Offset(value.width / 2, value.height / 2));
   }
 }
 
@@ -251,13 +266,16 @@ void paintScorePopup(
 Color launchPowerColour(double ratio) {
   final power = ratio.clamp(0.0, 1.0);
   return power <= 0.5
-      ? Color.lerp(GameConstants.cyanColor, GameConstants.violetColor, power * 2)!
-      : Color.lerp(GameConstants.violetColor, GameConstants.magentaColor, power * 2 - 1)!;
+      ? Color.lerp(
+          GameConstants.cyanColor, GameConstants.violetColor, power * 2)!
+      : Color.lerp(GameConstants.violetColor, GameConstants.magentaColor,
+          power * 2 - 1)!;
 }
 
 /// What the launcher asks of the player in [phase].
-String launchHintFor(LaunchPhase phase) =>
-    phase == LaunchPhase.charging ? GameStrings.launchHintCharging : GameStrings.launchHintReady;
+String launchHintFor(LaunchPhase phase) => phase == LaunchPhase.charging
+    ? GameStrings.launchHintCharging
+    : GameStrings.launchHintReady;
 
 /// Draws launch power as light in the launch channel, rising from the
 /// plunger, with the percentage beside the channel's foot.
@@ -269,7 +287,8 @@ String launchHintFor(LaunchPhase phase) =>
 void paintLaunchPower(Canvas canvas, double ratio) {
   final power = ratio.clamp(0.0, 1.0);
   const left = GameConstants.launchChannelStartX + 2;
-  const right = GameConstants.launchChannelStartX + GameConstants.launchChannelWidth - 2;
+  const right =
+      GameConstants.launchChannelStartX + GameConstants.launchChannelWidth - 2;
   const bottom = GameConstants.launchChannelStartY - GameConstants.ballRadius;
   const top = GameConstants.launchChannelInnerWallTopY;
   const middle = (bottom + top) / 2;

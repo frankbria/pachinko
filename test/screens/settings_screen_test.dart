@@ -38,11 +38,13 @@ void main() {
 
     await pump(tester, manager, const SettingsScreen());
 
-    expect(tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value, isTrue);
+    expect(tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+        isTrue);
     expect(manager.gameState.singleBallLaunch, isTrue);
   });
 
-  testWidgets('given the toggle is switched off, then the game follows and the choice survives a restart',
+  testWidgets(
+      'given the toggle is switched off, then the game follows and the choice survives a restart',
       (tester) async {
     final manager = managerOn(prefs);
     addTearDown(manager.dispose);
@@ -51,7 +53,8 @@ void main() {
     await tester.tap(find.byType(SwitchListTile));
     await tester.pumpAndSettle();
 
-    expect(tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value, isFalse);
+    expect(tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+        isFalse);
     expect(manager.gameState.singleBallLaunch, isFalse);
 
     // A restart: a new manager over the same stored preferences
@@ -59,10 +62,13 @@ void main() {
     addTearDown(restarted.dispose);
     expect(restarted.gameState.singleBallLaunch, isFalse);
     await pump(tester, restarted, const SettingsScreen());
-    expect(tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value, isFalse);
+    expect(tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+        isFalse);
   });
 
-  testWidgets('given the menu, when Settings is tapped, then the settings screen opens', (tester) async {
+  testWidgets(
+      'given the menu, when Settings is tapped, then the settings screen opens',
+      (tester) async {
     final manager = managerOn(prefs);
     addTearDown(manager.dispose);
     await pump(tester, manager, const MenuScreen());
@@ -74,7 +80,9 @@ void main() {
     expect(find.byType(SettingsScreen), findsOneWidget);
   });
 
-  test('given no storage, when the setting is changed, then the game still follows', () async {
+  test(
+      'given no storage, when the setting is changed, then the game still follows',
+      () async {
     final manager = GameManager();
     addTearDown(manager.dispose);
 
@@ -83,7 +91,8 @@ void main() {
     expect(manager.gameState.singleBallLaunch, isFalse);
   });
 
-  test('the settings screen takes its colours from the theme and the roles', () {
+  test('the settings screen takes its colours from the theme and the roles',
+      () {
     final source = File('lib/screens/settings_screen.dart').readAsStringSync();
 
     expect(source, isNot(contains('Colors.')));

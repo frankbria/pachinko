@@ -18,7 +18,9 @@ void main() {
       expect(floatingText.timer, 0.0);
     });
 
-    test('given floating text, when updated halfway, then moves upward and stays opaque', () {
+    test(
+        'given floating text, when updated halfway, then moves upward and stays opaque',
+        () {
       // Arrange
       final floatingText = FloatingText(
         text: '+100',
@@ -27,7 +29,8 @@ void main() {
       );
 
       // Act
-      final expired = floatingText.update(0.75); // Halfway through 1.5s duration
+      final expired =
+          floatingText.update(0.75); // Halfway through 1.5s duration
 
       // Assert
       expect(expired, false);
@@ -36,7 +39,8 @@ void main() {
       expect(floatingText.currentPosition.dy, closeTo(62.5, 0.1)); // 100 - 37.5
     });
 
-    test('given floating text, when in fade-out period, then opacity decreases', () {
+    test('given floating text, when in fade-out period, then opacity decreases',
+        () {
       // Arrange
       final floatingText = FloatingText(
         text: '+100',
@@ -48,10 +52,12 @@ void main() {
       floatingText.update(1.25);
 
       // Assert
-      expect(floatingText.opacity, closeTo(0.5, 0.1)); // (1.5 - 1.25) / 0.5 = 0.5
+      expect(
+          floatingText.opacity, closeTo(0.5, 0.1)); // (1.5 - 1.25) / 0.5 = 0.5
     });
 
-    test('given floating text, when duration expires, then update returns true', () {
+    test('given floating text, when duration expires, then update returns true',
+        () {
       // Arrange
       final floatingText = FloatingText(
         text: '+100',
@@ -66,7 +72,9 @@ void main() {
       expect(expired, true);
     });
 
-    test('given floating text, when multiple updates, then accumulates correctly', () {
+    test(
+        'given floating text, when multiple updates, then accumulates correctly',
+        () {
       // Arrange
       final floatingText = FloatingText(
         text: '+100',
@@ -84,7 +92,9 @@ void main() {
       expect(floatingText.timer, 1.5);
     });
 
-    test('given floating text, when accessing currentPosition, then calculates correctly', () {
+    test(
+        'given floating text, when accessing currentPosition, then calculates correctly',
+        () {
       // Arrange
       final floatingText = FloatingText(
         text: '+100',
@@ -97,7 +107,8 @@ void main() {
 
       // Assert
       expect(floatingText.currentPosition.dx, 100); // X stays the same
-      expect(floatingText.currentPosition.dy, closeTo(150, 0.1)); // 200 - (1.0 * 50)
+      expect(floatingText.currentPosition.dy,
+          closeTo(150, 0.1)); // 200 - (1.0 * 50)
     });
   });
 }

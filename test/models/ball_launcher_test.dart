@@ -5,7 +5,8 @@ import 'dart:math' as math;
 
 void main() {
   group('BallLauncher Initialization -', () {
-    test('given new launcher, when created, then initializes in ready phase', () {
+    test('given new launcher, when created, then initializes in ready phase',
+        () {
       // Given / When
       final launcher = BallLauncher();
 
@@ -13,7 +14,8 @@ void main() {
       expect(launcher.phase, equals(LaunchPhase.ready));
     });
 
-    test('given new launcher, when created, then initializes with zero power', () {
+    test('given new launcher, when created, then initializes with zero power',
+        () {
       // Given / When
       final launcher = BallLauncher();
 
@@ -21,7 +23,9 @@ void main() {
       expect(launcher.launchPower, equals(0.0));
     });
 
-    test('given new launcher, when created, then generates launch path automatically', () {
+    test(
+        'given new launcher, when created, then generates launch path automatically',
+        () {
       // Given / When
       final launcher = BallLauncher();
       final path = launcher.getLaunchPath();
@@ -48,7 +52,8 @@ void main() {
     /// - Quarter-circle curve: 15 points (curveSegments=15, i from 1 to 15)
     /// - Entry point to peg field: 1 point
     /// Total: 37 points (21 + 15 + 1)
-    test('given launcher, when path generated, then contains exactly 37 points', () {
+    test('given launcher, when path generated, then contains exactly 37 points',
+        () {
       // Given
       final launcher = BallLauncher();
 
@@ -59,7 +64,9 @@ void main() {
       expect(path.length, equals(37)); // 21 straight + 15 curve + 1 entry
     });
 
-    test('given launcher, when path generated, then starts at bottom-right launch position', () {
+    test(
+        'given launcher, when path generated, then starts at bottom-right launch position',
+        () {
       // Given
       final launcher = BallLauncher();
 
@@ -77,7 +84,9 @@ void main() {
     /// Final point is entry to peg field after quarter-circle curve.
     /// Position: (curveStartX - curveRadius, curveEndY - curveRadius)
     /// With curveRadius = 40px
-    test('given launcher, when path generated, then ends at peg field entry point', () {
+    test(
+        'given launcher, when path generated, then ends at peg field entry point',
+        () {
       // Given
       final launcher = BallLauncher();
       const curveRadius = 40.0;
@@ -93,7 +102,9 @@ void main() {
       expect(endPoint.y, closeTo(expectedY, 0.01));
     });
 
-    test('given launcher, when getLaunchPath called, then returns immutable copy', () {
+    test(
+        'given launcher, when getLaunchPath called, then returns immutable copy',
+        () {
       // Given
       final launcher = BallLauncher();
 
@@ -111,7 +122,9 @@ void main() {
     /// First 21 points should form straight vertical line from bottom to top.
     /// All x-coordinates should equal ballLaunchX (constant).
     /// Y-coordinates should decrease monotonically (moving upward).
-    test('given launcher, when path generated, then first 21 points form straight vertical path', () {
+    test(
+        'given launcher, when path generated, then first 21 points form straight vertical path',
+        () {
       // Given
       final launcher = BallLauncher();
 
@@ -126,7 +139,8 @@ void main() {
 
       // Then - y coordinates should decrease monotonically (moving up)
       for (int i = 0; i < straightPathPoints.length - 1; i++) {
-        expect(straightPathPoints[i].y, greaterThan(straightPathPoints[i + 1].y));
+        expect(
+            straightPathPoints[i].y, greaterThan(straightPathPoints[i + 1].y));
       }
     });
   });
@@ -147,7 +161,9 @@ void main() {
     /// All curve points must satisfy circle equation:
     /// (x - cx)² + (y - cy)² = r²
     /// Tolerance: ±1.0px for floating-point precision
-    test('given launcher, when path generated, then curve points satisfy circle equation', () {
+    test(
+        'given launcher, when path generated, then curve points satisfy circle equation',
+        () {
       // Given
       final launcher = BallLauncher();
       const curveRadius = 40.0;
@@ -167,7 +183,8 @@ void main() {
         final distanceSquared = dx * dx + dy * dy;
         const radiusSquared = curveRadius * curveRadius;
 
-        expect(distanceSquared, closeTo(radiusSquared, 1.0)); // ±1.0px tolerance
+        expect(
+            distanceSquared, closeTo(radiusSquared, 1.0)); // ±1.0px tolerance
       }
     });
 
@@ -175,7 +192,9 @@ void main() {
     ///
     /// All curve points should be exactly 40px from curve center.
     /// This validates the parametric circle formula implementation.
-    test('given launcher, when path generated, then all curve points are 40px from curve center', () {
+    test(
+        'given launcher, when path generated, then all curve points are 40px from curve center',
+        () {
       // Given
       final launcher = BallLauncher();
       const curveRadius = 40.0;
@@ -191,8 +210,7 @@ void main() {
       // Then
       for (final point in curvePoints) {
         final distance = math.sqrt(
-          math.pow(point.x - centerX, 2) + math.pow(point.y - centerY, 2)
-        );
+            math.pow(point.x - centerX, 2) + math.pow(point.y - centerY, 2));
         expect(distance, closeTo(curveRadius, 0.5)); // ±0.5px tolerance
       }
     });
@@ -201,7 +219,9 @@ void main() {
     ///
     /// Curve should progress through quarter-circle (π/2 radians = 90°).
     /// First curve point should start at small angle, last near 90° (pointing down).
-    test('given launcher, when path generated, then curve spans quarter-circle angle', () {
+    test(
+        'given launcher, when path generated, then curve spans quarter-circle angle',
+        () {
       // Given
       final launcher = BallLauncher();
       const curveRadius = 40.0;
@@ -216,25 +236,26 @@ void main() {
       final lastCurvePoint = path[35]; // Last curve point
 
       // Then - first point should be near 0° (small negative angle in screen coords)
-      final firstAngle = math.atan2(
-        firstCurvePoint.y - centerY,
-        firstCurvePoint.x - centerX
-      ).abs();
+      final firstAngle = math
+          .atan2(firstCurvePoint.y - centerY, firstCurvePoint.x - centerX)
+          .abs();
       expect(firstAngle, lessThan(0.3)); // Near 0 radians (small angle)
 
       // Then - last point should be near 90° (angle ≈ -π/2 due to screen coords)
-      final lastAngle = math.atan2(
-        lastCurvePoint.y - centerY,
-        lastCurvePoint.x - centerX
-      ).abs();
-      expect(lastAngle, closeTo(math.pi / 2, 0.2)); // Near π/2 radians magnitude
+      final lastAngle = math
+          .atan2(lastCurvePoint.y - centerY, lastCurvePoint.x - centerX)
+          .abs();
+      expect(
+          lastAngle, closeTo(math.pi / 2, 0.2)); // Near π/2 radians magnitude
     });
 
     /// Tests curve direction (right to left, top to bottom).
     ///
     /// X-coordinates should decrease (moving left).
     /// Y-coordinates should decrease (moving down, as y-axis increases downward).
-    test('given launcher, when path generated, then curve moves right-to-left and top-to-bottom', () {
+    test(
+        'given launcher, when path generated, then curve moves right-to-left and top-to-bottom',
+        () {
       // Given
       final launcher = BallLauncher();
 
@@ -257,7 +278,9 @@ void main() {
     ///
     /// Consecutive curve points should be roughly equidistant.
     /// This validates uniform angle distribution across curve.
-    test('given launcher, when path generated, then curve segments have roughly uniform spacing', () {
+    test(
+        'given launcher, when path generated, then curve segments have roughly uniform spacing',
+        () {
       // Given
       final launcher = BallLauncher();
 
@@ -283,7 +306,9 @@ void main() {
     ///
     /// Point at index 20 (last straight path point) should be near point at index 21 (first curve point).
     /// This validates smooth transition from straight path to curve.
-    test('given launcher, when path generated, then straight path connects smoothly to curve', () {
+    test(
+        'given launcher, when path generated, then straight path connects smoothly to curve',
+        () {
       // Given
       final launcher = BallLauncher();
 
@@ -299,7 +324,9 @@ void main() {
   });
 
   group('Power Calculation -', () {
-    test('given charging launcher, when power updated, then stays within 0-100 range', () {
+    test(
+        'given charging launcher, when power updated, then stays within 0-100 range',
+        () {
       // Given
       final launcher = BallLauncher();
       launcher.startCharging();
@@ -311,7 +338,8 @@ void main() {
       expect(launcher.launchPower, equals(100.0));
     });
 
-    test('given charging launcher, when negative power set, then clamps to 0', () {
+    test('given charging launcher, when negative power set, then clamps to 0',
+        () {
       // Given
       final launcher = BallLauncher();
       launcher.startCharging();
@@ -323,7 +351,9 @@ void main() {
       expect(launcher.launchPower, equals(0.0));
     });
 
-    test('given charging launcher, when power updated multiple times, then uses latest value', () {
+    test(
+        'given charging launcher, when power updated multiple times, then uses latest value',
+        () {
       // Given
       final launcher = BallLauncher();
       launcher.startCharging();
@@ -337,7 +367,9 @@ void main() {
       expect(launcher.launchPower, equals(50.0));
     });
 
-    test('given ready launcher, when power updated without charging, then power unchanged', () {
+    test(
+        'given ready launcher, when power updated without charging, then power unchanged',
+        () {
       // Given
       final launcher = BallLauncher();
       expect(launcher.phase, equals(LaunchPhase.ready));
@@ -358,7 +390,9 @@ void main() {
     /// charging → launching (launch) → traveling (automatic)
     /// traveling → released (on path completion)
     /// any → ready (reset)
-    test('given ready launcher, when startCharging called, then transitions to charging phase', () {
+    test(
+        'given ready launcher, when startCharging called, then transitions to charging phase',
+        () {
       // Given
       final launcher = BallLauncher();
       expect(launcher.phase, equals(LaunchPhase.ready));
@@ -370,7 +404,9 @@ void main() {
       expect(launcher.phase, equals(LaunchPhase.charging));
     });
 
-    test('given charging launcher, when launch called, then transitions to traveling phase', () {
+    test(
+        'given charging launcher, when launch called, then transitions to traveling phase',
+        () {
       // Given
       final launcher = BallLauncher();
       launcher.startCharging();
@@ -384,7 +420,9 @@ void main() {
       expect(ball, isNotNull);
     });
 
-    test('given ready launcher, when launch called without charging, then returns null', () {
+    test(
+        'given ready launcher, when launch called without charging, then returns null',
+        () {
       // Given
       final launcher = BallLauncher();
       expect(launcher.phase, equals(LaunchPhase.ready));
@@ -397,7 +435,9 @@ void main() {
       expect(launcher.phase, equals(LaunchPhase.ready)); // Phase unchanged
     });
 
-    test('given traveling launcher, when path completes, then transitions to released phase', () {
+    test(
+        'given traveling launcher, when path completes, then transitions to released phase',
+        () {
       // Given
       final launcher = BallLauncher();
       launcher.startCharging();
@@ -417,7 +457,9 @@ void main() {
       expect(launcher.phase, equals(LaunchPhase.released));
     });
 
-    test('given non-ready launcher, when startCharging called, then phase unchanged', () {
+    test(
+        'given non-ready launcher, when startCharging called, then phase unchanged',
+        () {
       // Given
       final launcher = BallLauncher();
       launcher.startCharging();
@@ -430,7 +472,8 @@ void main() {
       expect(launcher.phase, equals(LaunchPhase.charging));
     });
 
-    test('given any launcher, when reset called, then returns to ready phase', () {
+    test('given any launcher, when reset called, then returns to ready phase',
+        () {
       // Given
       final launcher = BallLauncher();
       launcher.startCharging();
@@ -458,7 +501,9 @@ void main() {
     /// - Ball should have leftward (negative X) velocity from curve direction
     /// - Ball should have downward (positive Y) velocity from curve direction
     /// - Velocity magnitude should scale with launch power
-    test('given zero power launch, when ball released, then uses minimum velocity multiplier 0.5', () {
+    test(
+        'given zero power launch, when ball released, then uses minimum velocity multiplier 0.5',
+        () {
       // Given
       final launcher = BallLauncher();
       launcher.startCharging();
@@ -482,10 +527,13 @@ void main() {
       // With easing: finalSpeed = 180 * 0.85 = 153 px/s
       expect(ball!.velocity.length, closeTo(153.0, 10.0));
       expect(ball.velocity.x, lessThan(0)); // Leftward
-      expect(ball.velocity.y, lessThan(0)); // Downward (negative Y in screen coords means down)
+      expect(ball.velocity.y,
+          lessThan(0)); // Downward (negative Y in screen coords means down)
     });
 
-    test('given full power launch, when ball released, then uses maximum velocity multiplier 1.5', () {
+    test(
+        'given full power launch, when ball released, then uses maximum velocity multiplier 1.5',
+        () {
       // Given
       final launcher = BallLauncher();
       launcher.startCharging();
@@ -511,7 +559,9 @@ void main() {
       expect(ball.velocity.y, lessThan(0)); // Downward
     });
 
-    test('given mid power launch, when ball released, then uses mid-range velocity', () {
+    test(
+        'given mid power launch, when ball released, then uses mid-range velocity',
+        () {
       // Given
       final launcher = BallLauncher();
       launcher.startCharging();
@@ -536,7 +586,9 @@ void main() {
       expect(ball.velocity.y, lessThan(0)); // Downward
     });
 
-    test('given different power levels, when ball released, then velocity magnitude increases with power', () {
+    test(
+        'given different power levels, when ball released, then velocity magnitude increases with power',
+        () {
       // Given - launch with low power
       final launcher1 = BallLauncher();
       launcher1.startCharging();
@@ -561,7 +613,9 @@ void main() {
       expect(highPowerVelocity, greaterThan(lowPowerVelocity));
     });
 
-    test('given any power launch, when ball released, then velocity has both X and Y components', () {
+    test(
+        'given any power launch, when ball released, then velocity has both X and Y components',
+        () {
       // Given
       final launcher = BallLauncher();
       launcher.startCharging();
@@ -576,11 +630,15 @@ void main() {
       // Then - verify velocity is not purely vertical (both components non-zero)
       final ball = launcher.currentBall;
       expect(ball, isNotNull);
-      expect(ball!.velocity.x.abs(), greaterThan(0.1)); // Significant horizontal component
-      expect(ball.velocity.y.abs(), greaterThan(0.1)); // Significant vertical component
+      expect(ball!.velocity.x.abs(),
+          greaterThan(0.1)); // Significant horizontal component
+      expect(ball.velocity.y.abs(),
+          greaterThan(0.1)); // Significant vertical component
     });
 
-    test('given ball released, when velocity calculated, then follows curve direction leftward and downward', () {
+    test(
+        'given ball released, when velocity calculated, then follows curve direction leftward and downward',
+        () {
       // Given
       final launcher = BallLauncher();
       launcher.startCharging();
@@ -609,7 +667,9 @@ void main() {
     /// - pathProgress += speed * deltaTime
     /// - Advance pathIndex every 20px of progress
     /// - Interpolate between current and next path segment
-    test('given traveling ball, when updateBallPath called, then ball position interpolates along path', () {
+    test(
+        'given traveling ball, when updateBallPath called, then ball position interpolates along path',
+        () {
       // Given
       final launcher = BallLauncher();
       launcher.startCharging();
@@ -626,7 +686,9 @@ void main() {
       expect(distanceMoved, greaterThan(0));
     });
 
-    test('given traveling ball with high power, when updated, then moves faster than low power', () {
+    test(
+        'given traveling ball with high power, when updated, then moves faster than low power',
+        () {
       // Given - high power launch
       final launcher1 = BallLauncher();
       launcher1.startCharging();
@@ -634,7 +696,8 @@ void main() {
       launcher1.launch();
       final initialPos1 = launcher1.currentBall!.position.clone();
       launcher1.updateBallPath(0.1);
-      final highPowerDistance = (launcher1.currentBall!.position - initialPos1).length;
+      final highPowerDistance =
+          (launcher1.currentBall!.position - initialPos1).length;
 
       // Given - low power launch
       final launcher2 = BallLauncher();
@@ -643,13 +706,16 @@ void main() {
       launcher2.launch();
       final initialPos2 = launcher2.currentBall!.position.clone();
       launcher2.updateBallPath(0.1);
-      final lowPowerDistance = (launcher2.currentBall!.position - initialPos2).length;
+      final lowPowerDistance =
+          (launcher2.currentBall!.position - initialPos2).length;
 
       // Then
       expect(highPowerDistance, greaterThan(lowPowerDistance));
     });
 
-    test('given traveling ball, when path not complete, then updateBallPath returns false', () {
+    test(
+        'given traveling ball, when path not complete, then updateBallPath returns false',
+        () {
       // Given
       final launcher = BallLauncher();
       launcher.startCharging();
@@ -664,7 +730,9 @@ void main() {
       expect(launcher.phase, equals(LaunchPhase.traveling));
     });
 
-    test('given traveling ball, when path completes, then updateBallPath returns true', () {
+    test(
+        'given traveling ball, when path completes, then updateBallPath returns true',
+        () {
       // Given
       final launcher = BallLauncher();
       launcher.startCharging();
@@ -683,7 +751,8 @@ void main() {
       expect(launcher.phase, equals(LaunchPhase.released));
     });
 
-    test('given released ball, when updateBallPath called, then returns false', () {
+    test('given released ball, when updateBallPath called, then returns false',
+        () {
       // Given - ball already released
       final launcher = BallLauncher();
       launcher.startCharging();
@@ -701,7 +770,8 @@ void main() {
       expect(result, isFalse); // No longer tracking
     });
 
-    test('given ready launcher, when updateBallPath called, then returns false', () {
+    test('given ready launcher, when updateBallPath called, then returns false',
+        () {
       // Given
       final launcher = BallLauncher();
       expect(launcher.phase, equals(LaunchPhase.ready));
@@ -726,7 +796,9 @@ void main() {
   });
 
   group('Reset Functionality -', () {
-    test('given launcher with power, when reset called, then power returns to zero', () {
+    test(
+        'given launcher with power, when reset called, then power returns to zero',
+        () {
       // Given
       final launcher = BallLauncher();
       launcher.startCharging();
@@ -740,7 +812,9 @@ void main() {
       expect(launcher.launchPower, equals(0.0));
     });
 
-    test('given launcher with ball, when reset called, then currentBall becomes null', () {
+    test(
+        'given launcher with ball, when reset called, then currentBall becomes null',
+        () {
       // Given
       final launcher = BallLauncher();
       launcher.startCharging();
@@ -755,7 +829,8 @@ void main() {
       expect(launcher.currentBall, isNull);
     });
 
-    test('given traveling ball, when reset called, then phase returns to ready', () {
+    test('given traveling ball, when reset called, then phase returns to ready',
+        () {
       // Given
       final launcher = BallLauncher();
       launcher.startCharging();

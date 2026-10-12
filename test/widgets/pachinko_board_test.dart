@@ -59,8 +59,10 @@ void main() {
     when(mockBallLauncher.maxPower).thenReturn(100.0);
     when(mockBallLauncher.currentBall).thenReturn(null);
     when(mockBallLauncher.getLaunchPath()).thenReturn([
-      Vector2(GameConstants.launchChannelStartX, GameConstants.launchChannelStartY),
-      Vector2(GameConstants.launchChannelStartX, GameConstants.launchChannelEndY),
+      Vector2(
+          GameConstants.launchChannelStartX, GameConstants.launchChannelStartY),
+      Vector2(
+          GameConstants.launchChannelStartX, GameConstants.launchChannelEndY),
     ]);
 
     // Stub Level properties
@@ -103,8 +105,9 @@ void main() {
     /// GIVEN PachinkoBoard is rendered with mocked GameManager
     /// WHEN checking widget tree
     /// THEN PachinkoBoard builds without errors
-    testWidgets('givenPachinkoBoardRendered_whenCheckingWidgetTree_thenBuildsWithoutErrors',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenPachinkoBoardRendered_whenCheckingWidgetTree_thenBuildsWithoutErrors',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       expect(find.byType(PachinkoBoard), findsOneWidget);
@@ -115,8 +118,9 @@ void main() {
     /// THEN CustomPaint widget is present
     ///
     /// PachinkoBoard uses CustomPaint with _PachinkoBoardPainter to render game board.
-    testWidgets('givenPachinkoBoardRendered_whenCheckingStructure_thenCustomPaintPresent',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenPachinkoBoardRendered_whenCheckingStructure_thenCustomPaintPresent',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Find CustomPaint widgets (may include Material's CustomPaint)
@@ -126,8 +130,9 @@ void main() {
     /// GIVEN PachinkoBoard is rendered
     /// WHEN checking gesture handling structure
     /// THEN GestureDetector wraps CustomPaint
-    testWidgets('givenPachinkoBoardRendered_whenCheckingGestureStructure_thenGestureDetectorPresent',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenPachinkoBoardRendered_whenCheckingGestureStructure_thenGestureDetectorPresent',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       expect(find.byType(GestureDetector), findsOneWidget);
@@ -138,8 +143,9 @@ void main() {
     /// THEN GameManager is accessed via Provider
     ///
     /// Verifies Provider<GameManager> integration works correctly in widget context.
-    testWidgets('givenPachinkoBoardWithMockedGameManager_whenConsumerAccesses_thenGameManagerAccessedViaProvider',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenPachinkoBoardWithMockedGameManager_whenConsumerAccesses_thenGameManagerAccessedViaProvider',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Consumer should access gameManager.gameState
@@ -154,8 +160,9 @@ void main() {
     ///
     /// Launch area is defined by GameConstants.launchChannelStartX/Y.
     /// Tests coordinate validation for valid launch area tap.
-    testWidgets('givenPachinkoBoardWithCanLaunch_whenUserTapsLaunchArea_thenStartLaunchChargingCalled',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenPachinkoBoardWithCanLaunch_whenUserTapsLaunchArea_thenStartLaunchChargingCalled',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Tap in launch area (scale-adjusted coordinates)
@@ -170,8 +177,9 @@ void main() {
     /// GIVEN PachinkoBoard with canLaunchBall=true
     /// WHEN user taps outside launch area
     /// THEN GameManager.startLaunchCharging() is NOT called
-    testWidgets('givenPachinkoBoardWithCanLaunch_whenUserTapsOutsideLaunchArea_thenStartLaunchChargingNotCalled',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenPachinkoBoardWithCanLaunch_whenUserTapsOutsideLaunchArea_thenStartLaunchChargingNotCalled',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Tap outside launch area (top left corner)
@@ -186,8 +194,9 @@ void main() {
     /// THEN GameManager.startLaunchCharging() is NOT called
     ///
     /// Tests that launch is disabled when canLaunchBall=false.
-    testWidgets('givenPachinkoBoardWithCannotLaunch_whenUserTapsLaunchArea_thenStartLaunchChargingNotCalled',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenPachinkoBoardWithCannotLaunch_whenUserTapsLaunchArea_thenStartLaunchChargingNotCalled',
+        (WidgetTester tester) async {
       when(mockGameState.canLaunchBall).thenReturn(false);
 
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
@@ -207,14 +216,16 @@ void main() {
     ///
     /// Note: Testing internal state is done indirectly by verifying subsequent behavior.
     /// Starting a drag should enable power updates on pan update.
-    testWidgets('givenPachinkoBoardWithCanLaunch_whenUserStartsDragInLaunchArea_thenDragStateUpdates',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenPachinkoBoardWithCanLaunch_whenUserStartsDragInLaunchArea_thenDragStateUpdates',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Start drag in launch area
       const launchX = GameConstants.launchChannelStartX;
       const launchY = GameConstants.launchChannelStartY;
-      await tester.dragFrom(const Offset(launchX, launchY), const Offset(0, -50));
+      await tester.dragFrom(
+          const Offset(launchX, launchY), const Offset(0, -50));
       await tester.pump();
 
       // Verify that drag was processed (startLaunchCharging called)
@@ -228,20 +239,23 @@ void main() {
     /// THEN drag start position is captured
     ///
     /// Verified indirectly through power calculation on pan update.
-    testWidgets('givenPachinkoBoardWithCanLaunch_whenUserStartsDrag_thenDragStartPositionCaptured',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenPachinkoBoardWithCanLaunch_whenUserStartsDrag_thenDragStartPositionCaptured',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Start and complete drag in launch area
       const launchX = GameConstants.launchChannelStartX;
       const launchY = GameConstants.launchChannelStartY;
-      await tester.dragFrom(const Offset(launchX, launchY), const Offset(0, -100));
+      await tester.dragFrom(
+          const Offset(launchX, launchY), const Offset(0, -100));
       await tester.pump();
 
       // Verify power was calculated based on drag distance (100 pixels)
       // Power = (dragDistance / 2.0).clamp(0.0, 100.0)
       // Expected power = (100 / 2.0) = 50.0
-      verify(mockGameManager.updateLaunchPower(argThat(closeTo(50.0, 5.0)))).called(greaterThan(0));
+      verify(mockGameManager.updateLaunchPower(argThat(closeTo(50.0, 5.0))))
+          .called(greaterThan(0));
     });
   });
 
@@ -249,14 +263,16 @@ void main() {
     /// GIVEN user is dragging from launch area
     /// WHEN pan update occurs
     /// THEN GameManager.updateLaunchPower() is called
-    testWidgets('givenUserDragging_whenPanUpdateOccurs_thenUpdateLaunchPowerCalled',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenUserDragging_whenPanUpdateOccurs_thenUpdateLaunchPowerCalled',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Drag from launch area
       const launchX = GameConstants.launchChannelStartX;
       const launchY = GameConstants.launchChannelStartY;
-      await tester.dragFrom(const Offset(launchX, launchY), const Offset(0, -50));
+      await tester.dragFrom(
+          const Offset(launchX, launchY), const Offset(0, -50));
       await tester.pump();
 
       verify(mockGameManager.updateLaunchPower(any)).called(greaterThan(0));
@@ -269,17 +285,19 @@ void main() {
     /// Power formula: (dragDistance / 2.0).clamp(0.0, 100.0)
     /// 100px drag = 50.0 power
     testWidgets('givenUserDrags100Pixels_whenPowerCalculated_thenPowerIs50',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Drag exactly 100 pixels from launch area
       const launchX = GameConstants.launchChannelStartX;
       const launchY = GameConstants.launchChannelStartY;
-      await tester.dragFrom(const Offset(launchX, launchY), const Offset(0, -100));
+      await tester.dragFrom(
+          const Offset(launchX, launchY), const Offset(0, -100));
       await tester.pump();
 
       // Verify power calculation: 100 / 2.0 = 50.0
-      verify(mockGameManager.updateLaunchPower(argThat(closeTo(50.0, 5.0)))).called(greaterThan(0));
+      verify(mockGameManager.updateLaunchPower(argThat(closeTo(50.0, 5.0))))
+          .called(greaterThan(0));
     });
 
     /// GIVEN user is NOT dragging
@@ -287,8 +305,9 @@ void main() {
     /// THEN updateLaunchPower is NOT called
     ///
     /// Tests that pan updates are ignored when drag hasn't started in launch area.
-    testWidgets('givenUserNotDragging_whenPanUpdateOccurs_thenUpdateLaunchPowerNotCalled',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenUserNotDragging_whenPanUpdateOccurs_thenUpdateLaunchPowerNotCalled',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Drag from outside launch area (should not start charging)
@@ -301,8 +320,9 @@ void main() {
     /// GIVEN canLaunchBall=false
     /// WHEN user attempts pan update
     /// THEN updateLaunchPower is NOT called
-    testWidgets('givenCannotLaunch_whenUserAttemptsPanUpdate_thenUpdateLaunchPowerNotCalled',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenCannotLaunch_whenUserAttemptsPanUpdate_thenUpdateLaunchPowerNotCalled',
+        (WidgetTester tester) async {
       when(mockGameState.canLaunchBall).thenReturn(false);
 
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
@@ -310,7 +330,8 @@ void main() {
       // Attempt drag from launch area
       const launchX = GameConstants.launchChannelStartX;
       const launchY = GameConstants.launchChannelStartY;
-      await tester.dragFrom(const Offset(launchX, launchY), const Offset(0, -50));
+      await tester.dragFrom(
+          const Offset(launchX, launchY), const Offset(0, -50));
       await tester.pump();
 
       verifyNever(mockGameManager.updateLaunchPower(any));
@@ -321,14 +342,16 @@ void main() {
     /// GIVEN user has completed valid drag from launch area
     /// WHEN pan end occurs
     /// THEN GameManager.launchBall() is called
-    testWidgets('givenUserCompletedValidDrag_whenPanEndOccurs_thenLaunchBallCalled',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenUserCompletedValidDrag_whenPanEndOccurs_thenLaunchBallCalled',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Complete drag from launch area
       const launchX = GameConstants.launchChannelStartX;
       const launchY = GameConstants.launchChannelStartY;
-      await tester.dragFrom(const Offset(launchX, launchY), const Offset(0, -100));
+      await tester.dragFrom(
+          const Offset(launchX, launchY), const Offset(0, -100));
       await tester.pumpAndSettle();
 
       verify(mockGameManager.launchBall()).called(1);
@@ -340,13 +363,14 @@ void main() {
     ///
     /// Verified indirectly by checking that subsequent taps require new drag start.
     testWidgets('givenUserCompletedDrag_whenPanEndOccurs_thenDragStateReset',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Complete first drag
       const launchX = GameConstants.launchChannelStartX;
       const launchY = GameConstants.launchChannelStartY;
-      await tester.dragFrom(const Offset(launchX, launchY), const Offset(0, -50));
+      await tester.dragFrom(
+          const Offset(launchX, launchY), const Offset(0, -50));
       await tester.pumpAndSettle();
 
       // Reset mock to clear previous calls
@@ -355,7 +379,8 @@ void main() {
       when(mockGameManager.ballLauncher).thenReturn(mockBallLauncher);
 
       // Start new drag - should call startLaunchCharging again
-      await tester.dragFrom(const Offset(launchX, launchY), const Offset(0, -50));
+      await tester.dragFrom(
+          const Offset(launchX, launchY), const Offset(0, -50));
       await tester.pump();
 
       verify(mockGameManager.startLaunchCharging()).called(1);
@@ -364,8 +389,9 @@ void main() {
     /// GIVEN user taps without dragging
     /// WHEN pan end occurs
     /// THEN launchBall is NOT called
-    testWidgets('givenUserTapsWithoutDragging_whenPanEndOccurs_thenLaunchBallNotCalled',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenUserTapsWithoutDragging_whenPanEndOccurs_thenLaunchBallNotCalled',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Tap outside launch area (no drag)
@@ -380,8 +406,9 @@ void main() {
     /// GIVEN PachinkoBoard is rendered
     /// WHEN CustomPaint painter is created
     /// THEN painter receives correct GameManager instance
-    testWidgets('givenPachinkoBoardRendered_whenPainterCreated_thenReceivesGameManager',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenPachinkoBoardRendered_whenPainterCreated_thenReceivesGameManager',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Verify painter accesses GameManager's gameState
@@ -397,7 +424,7 @@ void main() {
     /// the painter is created with drag state by checking visual rendering via golden tests.
     /// This test verifies the painter is invoked during drag.
     testWidgets('givenUserDragging_whenPainterCreated_thenReceivesDragState',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Start drag (this will cause painter to receive drag state)
@@ -418,8 +445,9 @@ void main() {
     /// The game's own changes reach the painter through its repaint
     /// listenable. A rebuilt painter asks for a repaint only when what it was
     /// built with differs.
-    testWidgets('given the board rebuilt with nothing changed, when shouldRepaint is asked, then it says no',
-      (WidgetTester tester) async {
+    testWidgets(
+        'given the board rebuilt with nothing changed, when shouldRepaint is asked, then it says no',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
       final before = boardPainter(tester);
 
@@ -433,8 +461,9 @@ void main() {
       expect(after.shouldRepaint(before), isFalse);
     });
 
-    testWidgets('given a drag in progress, when shouldRepaint is asked, then it says yes',
-      (WidgetTester tester) async {
+    testWidgets(
+        'given a drag in progress, when shouldRepaint is asked, then it says yes',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
       final before = boardPainter(tester);
 
@@ -457,8 +486,9 @@ void main() {
   group('PachinkoBoard Repaint Without Rebuild', () {
     /// A real GameManager, so that it can notify. The board repaints from the
     /// manager's notifications without being rebuilt by them.
-    testWidgets('given a real game, when the manager notifies, then the board is not rebuilt',
-      (WidgetTester tester) async {
+    testWidgets(
+        'given a real game, when the manager notifies, then the board is not rebuilt',
+        (WidgetTester tester) async {
       final manager = GameManager();
       addTearDown(manager.dispose);
       await tester.pumpWidget(createTestWidget(gameManager: manager));
@@ -473,8 +503,9 @@ void main() {
       expect(identical(boardPainter(tester), before), isTrue);
     });
 
-    testWidgets('given a real game, when the manager notifies, then the board is marked for repaint',
-      (WidgetTester tester) async {
+    testWidgets(
+        'given a real game, when the manager notifies, then the board is marked for repaint',
+        (WidgetTester tester) async {
       final manager = GameManager();
       addTearDown(manager.dispose);
       await tester.pumpWidget(createTestWidget(gameManager: manager));
@@ -499,8 +530,9 @@ void main() {
     /// notifies GameState's own listeners and not the manager's. With the
     /// game loop stopped (a pause during the bonus), nothing else would
     /// repaint the board.
-    testWidgets('given the game loop is not running, when the game state notifies, then the board is marked for repaint',
-      (WidgetTester tester) async {
+    testWidgets(
+        'given the game loop is not running, when the game state notifies, then the board is marked for repaint',
+        (WidgetTester tester) async {
       final realState = GameState();
       addTearDown(realState.dispose);
       when(mockGameManager.gameState).thenReturn(realState);
@@ -524,8 +556,9 @@ void main() {
   group('PachinkoBoard Peg Animation Clock', () {
     /// Peg animation runs on the board's own ticker. The mocked manager never
     /// notifies, so any change in a peg here comes from the ticker alone.
-    testWidgets('given an unhit prize peg, when time passes with no game loop, then its shimmer still moves',
-      (WidgetTester tester) async {
+    testWidgets(
+        'given an unhit prize peg, when time passes with no game loop, then its shimmer still moves',
+        (WidgetTester tester) async {
       final prizePeg = Peg(position: Vector2(200, 200), type: PegType.special);
       when(mockLevel.pegs).thenReturn([prizePeg]);
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
@@ -537,18 +570,22 @@ void main() {
 
       // Then: 0.3 + 0.3 * sin(2t) a quarter of a second on
       expect(prizePeg.shimmerIntensity, isNot(before));
-      expect(prizePeg.shimmerIntensity, closeTo(0.3 + 0.3 * math.sin(0.5), 0.02));
-      expect(tester.binding.hasScheduledFrame, isTrue, reason: 'the shimmer keeps the ticker running');
+      expect(
+          prizePeg.shimmerIntensity, closeTo(0.3 + 0.3 * math.sin(0.5), 0.02));
+      expect(tester.binding.hasScheduledFrame, isTrue,
+          reason: 'the shimmer keeps the ticker running');
     });
 
-    testWidgets('given a peg that has been hit, when its pulse has finished, then the board stops drawing frames',
-      (WidgetTester tester) async {
+    testWidgets(
+        'given a peg that has been hit, when its pulse has finished, then the board stops drawing frames',
+        (WidgetTester tester) async {
       final peg = Peg(position: Vector2(200, 200));
       peg.onHit();
       when(mockLevel.pegs).thenReturn([peg]);
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
       await tester.pump();
-      expect(tester.binding.hasScheduledFrame, isTrue, reason: 'the pulse is running');
+      expect(tester.binding.hasScheduledFrame, isTrue,
+          reason: 'the pulse is running');
 
       // When: the pulse lasts 0.8 seconds
       await tester.pump(const Duration(milliseconds: 500));
@@ -560,8 +597,9 @@ void main() {
       expect(tester.binding.hasScheduledFrame, isFalse);
     });
 
-    testWidgets('given no peg is animating, when the board is shown, then it draws no further frames',
-      (WidgetTester tester) async {
+    testWidgets(
+        'given no peg is animating, when the board is shown, then it draws no further frames',
+        (WidgetTester tester) async {
       when(mockLevel.pegs).thenReturn([Peg(position: Vector2(200, 200))]);
 
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
@@ -578,8 +616,9 @@ void main() {
     ///
     /// Note: Actual visual rendering tested via golden tests.
     /// This test verifies the conditions for power indicator rendering.
-    testWidgets('givenUserDraggingWithCanLaunch_whenRendered_thenPowerIndicatorRendered',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenUserDraggingWithCanLaunch_whenRendered_thenPowerIndicatorRendered',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Start drag to trigger power indicator
@@ -601,8 +640,9 @@ void main() {
     /// GIVEN user is NOT dragging (isDragging=false)
     /// WHEN CustomPaint renders
     /// THEN power indicator is NOT rendered
-    testWidgets('givenUserNotDragging_whenRendered_thenPowerIndicatorNotRendered',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenUserNotDragging_whenRendered_thenPowerIndicatorNotRendered',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Don't start drag, just render
@@ -617,8 +657,9 @@ void main() {
     /// GIVEN specialBonusTriggered=true
     /// WHEN CustomPaint renders
     /// THEN special bonus effect overlay is rendered
-    testWidgets('givenSpecialBonusTriggered_whenRendered_thenBonusEffectRendered',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenSpecialBonusTriggered_whenRendered_thenBonusEffectRendered',
+        (WidgetTester tester) async {
       when(mockGameState.specialBonusTriggered).thenReturn(true);
 
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
@@ -631,8 +672,9 @@ void main() {
     /// GIVEN specialBonusTriggered=false
     /// WHEN CustomPaint renders
     /// THEN special bonus effect is NOT rendered
-    testWidgets('givenSpecialBonusNotTriggered_whenRendered_thenBonusEffectNotRendered',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenSpecialBonusNotTriggered_whenRendered_thenBonusEffectNotRendered',
+        (WidgetTester tester) async {
       when(mockGameState.specialBonusTriggered).thenReturn(false);
 
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
@@ -650,7 +692,7 @@ void main() {
     ///
     /// Golden test for base board state with launch area and channel visible.
     testWidgets('givenEmptyBoard_whenRendered_thenMatchesGoldenBaseline',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
       await tester.pumpAndSettle();
 
@@ -663,8 +705,9 @@ void main() {
     /// GIVEN board with pegs and slots
     /// WHEN rendering board
     /// THEN matches golden baseline for board with pegs and slots
-    testWidgets('givenBoardWithPegsAndSlots_whenRendered_thenMatchesGoldenBaseline',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenBoardWithPegsAndSlots_whenRendered_thenMatchesGoldenBaseline',
+        (WidgetTester tester) async {
       // Add pegs to level
       final testPegs = [
         Peg(position: Vector2(200, 200), type: PegType.normal),
@@ -675,9 +718,18 @@ void main() {
 
       // Add slots to level
       final testSlots = [
-        Slot(position: Vector2(100, 750), width: 40, height: 20, pointValue: 50),
-        Slot(position: Vector2(200, 750), width: 40, height: 20, pointValue: 100),
-        Slot(position: Vector2(300, 750), width: 40, height: 20, pointValue: 200),
+        Slot(
+            position: Vector2(100, 750), width: 40, height: 20, pointValue: 50),
+        Slot(
+            position: Vector2(200, 750),
+            width: 40,
+            height: 20,
+            pointValue: 100),
+        Slot(
+            position: Vector2(300, 750),
+            width: 40,
+            height: 20,
+            pointValue: 200),
       ];
       when(mockLevel.slots).thenReturn(testSlots);
 
@@ -695,8 +747,9 @@ void main() {
     /// GIVEN board with active balls
     /// WHEN rendering board
     /// THEN matches golden baseline for board with balls
-    testWidgets('givenBoardWithActiveBalls_whenRendered_thenMatchesGoldenBaseline',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenBoardWithActiveBalls_whenRendered_thenMatchesGoldenBaseline',
+        (WidgetTester tester) async {
       // Add active balls
       final testBalls = [
         Ball(position: Vector2(200, 300)),
@@ -717,7 +770,7 @@ void main() {
     /// WHEN rendering board during drag
     /// THEN matches golden baseline for power indicator
     testWidgets('givenUserDragging_whenRendered_thenMatchesGoldenBaseline',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       when(mockBallLauncher.launchPower).thenReturn(75.0);
 
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
@@ -742,8 +795,9 @@ void main() {
     /// GIVEN specialBonusTriggered=true
     /// WHEN rendering board
     /// THEN matches golden baseline for special bonus effect
-    testWidgets('givenSpecialBonusTriggered_whenRendered_thenMatchesGoldenBaseline',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenSpecialBonusTriggered_whenRendered_thenMatchesGoldenBaseline',
+        (WidgetTester tester) async {
       when(mockGameState.specialBonusTriggered).thenReturn(true);
 
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
@@ -758,13 +812,17 @@ void main() {
     /// GIVEN board with launch channel and area visualization
     /// WHEN rendering board
     /// THEN matches golden baseline for launch visualization
-    testWidgets('givenBoardWithLaunchVisualization_whenRendered_thenMatchesGoldenBaseline',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenBoardWithLaunchVisualization_whenRendered_thenMatchesGoldenBaseline',
+        (WidgetTester tester) async {
       // Set launch path
       when(mockBallLauncher.getLaunchPath()).thenReturn([
-        Vector2(GameConstants.launchChannelStartX, GameConstants.launchChannelStartY),
-        Vector2(GameConstants.launchChannelStartX, GameConstants.launchChannelEndY),
-        Vector2(GameConstants.launchChannelStartX - 20, GameConstants.launchChannelEndY - 50),
+        Vector2(GameConstants.launchChannelStartX,
+            GameConstants.launchChannelStartY),
+        Vector2(
+            GameConstants.launchChannelStartX, GameConstants.launchChannelEndY),
+        Vector2(GameConstants.launchChannelStartX - 20,
+            GameConstants.launchChannelEndY - 50),
       ]);
 
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
@@ -782,7 +840,7 @@ void main() {
     /// WHEN CustomPaint renders
     /// THEN painter handles gracefully (early return, no crash)
     testWidgets('givenNullCurrentLevel_whenRendered_thenHandlesGracefully',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       when(mockGameState.currentLevel).thenReturn(null);
 
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
@@ -797,8 +855,9 @@ void main() {
     /// THEN scale calculation adapts correctly
     ///
     /// Tests that board scales to fit different screen dimensions.
-    testWidgets('givenVariousScreenSizes_whenRendered_thenScaleCalculationAdapts',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenVariousScreenSizes_whenRendered_thenScaleCalculationAdapts',
+        (WidgetTester tester) async {
       // Test with small screen
       tester.view.physicalSize = const Size(600, 800);
       tester.view.devicePixelRatio = 1.0;
@@ -821,9 +880,10 @@ void main() {
     /// WHEN rendering board
     /// THEN all balls are rendered correctly
     testWidgets('givenMultipleActiveBalls_whenRendered_thenAllBallsRendered',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       // Add 5 active balls
-      final testBalls = List.generate(5, (i) => Ball(position: Vector2(200.0 + i * 50, 300.0 + i * 50)));
+      final testBalls = List.generate(
+          5, (i) => Ball(position: Vector2(200.0 + i * 50, 300.0 + i * 50)));
       when(mockGameState.activeBalls).thenReturn(testBalls);
 
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
@@ -840,7 +900,7 @@ void main() {
     /// WHEN power is being charged
     /// THEN power indicator is shown
     testWidgets('givenBallLauncher_whenChargingPower_thenPowerIndicatorShown',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       when(mockGameState.canLaunchBall).thenReturn(true);
       when(mockBallLauncher.phase).thenReturn(LaunchPhase.charging);
       when(mockBallLauncher.launchPower).thenReturn(50.0);
@@ -866,8 +926,9 @@ void main() {
     /// GIVEN launch channel with curved boundary
     /// WHEN board is rendered
     /// THEN curved boundary spans from left edge to launch column
-    testWidgets('givenLaunchChannel_whenRendered_thenCurvedBoundaryCorrectlyPositioned',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenLaunchChannel_whenRendered_thenCurvedBoundaryCorrectlyPositioned',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
       await tester.pump();
 
@@ -883,7 +944,7 @@ void main() {
     /// WHEN ball hits peg
     /// THEN pulse effect is triggered on peg
     testWidgets('givenPegCollision_whenBallHitsPeg_thenPulseEffectTriggered',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       final testPeg = Peg(position: Vector2(200, 200), type: PegType.normal);
       testPeg.onHit(); // Simulate hit
       when(mockLevel.pegs).thenReturn([testPeg]);
@@ -899,7 +960,7 @@ void main() {
     /// WHEN animation completes
     /// THEN peg returns to normal state
     testWidgets('givenPulseAnimation_whenComplete_thenPegReturnsToNormalState',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       final testPeg = Peg(position: Vector2(200, 200), type: PegType.normal);
       when(mockLevel.pegs).thenReturn([testPeg]);
 
@@ -918,8 +979,9 @@ void main() {
     /// WHEN rendered
     /// THEN shimmer effect is visible
     testWidgets('givenSpecialPeg_whenRendered_thenShimmerEffectVisible',
-      (WidgetTester tester) async {
-      final specialPeg = Peg(position: Vector2(200, 200), type: PegType.special);
+        (WidgetTester tester) async {
+      final specialPeg =
+          Peg(position: Vector2(200, 200), type: PegType.special);
       when(mockLevel.pegs).thenReturn([specialPeg]);
 
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
@@ -933,8 +995,9 @@ void main() {
     /// WHEN all hit
     /// THEN glow animation stops
     testWidgets('givenSpecialPegHit_whenAllHit_thenGlowAnimationStops',
-      (WidgetTester tester) async {
-      final specialPeg = Peg(position: Vector2(200, 200), type: PegType.special);
+        (WidgetTester tester) async {
+      final specialPeg =
+          Peg(position: Vector2(200, 200), type: PegType.special);
       specialPeg.onHit(); // Hit the special peg
       when(mockLevel.pegs).thenReturn([specialPeg]);
 
@@ -951,7 +1014,7 @@ void main() {
     /// WHEN score awarded
     /// THEN floating text appears
     testWidgets('givenSlotHit_whenScoreAwarded_thenFloatingTextAppears',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       // This test will verify score popup rendering
       // Actual implementation will add AnimatedWidget overlay
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
@@ -965,7 +1028,7 @@ void main() {
     /// WHEN animation complete
     /// THEN text fades out
     testWidgets('givenScorePopup_whenAnimationComplete_thenTextFadesOut',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
       // Animate for 2 seconds (score popup duration)
@@ -980,7 +1043,7 @@ void main() {
     /// WHEN triggered
     /// THEN screen flash animation plays
     testWidgets('givenSpecialBonus_whenTriggered_thenScreenFlashAnimationPlays',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       when(mockGameState.specialBonusTriggered).thenReturn(true);
 
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
@@ -993,7 +1056,7 @@ void main() {
     /// WHEN triggered
     /// THEN particle burst is visible
     testWidgets('givenBonusParticles_whenTriggered_thenParticleBurstVisible',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       when(mockGameState.specialBonusTriggered).thenReturn(true);
 
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
@@ -1010,7 +1073,7 @@ void main() {
     /// WHEN transitioning
     /// THEN fade animation plays
     testWidgets('givenLevelComplete_whenTransitioning_thenFadeAnimationPlays',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       when(mockGameState.phase).thenReturn(GamePhase.levelComplete);
 
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
@@ -1025,7 +1088,7 @@ void main() {
     /// WHEN loaded
     /// THEN fade in animation smooth
     testWidgets('givenNewLevel_whenLoaded_thenFadeInAnimationSmooth',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       when(mockGameState.currentLevelNumber).thenReturn(2);
 
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
@@ -1042,7 +1105,7 @@ void main() {
     /// WHEN rendered
     /// THEN matches golden for launch path visualization
     testWidgets('givenLaunchCharging_whenRendered_thenMatchesGolden',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       when(mockBallLauncher.phase).thenReturn(LaunchPhase.charging);
       when(mockBallLauncher.launchPower).thenReturn(75.0);
 
@@ -1067,7 +1130,7 @@ void main() {
     /// WHEN rendered mid-animation
     /// THEN matches golden for peg pulse
     testWidgets('givenPegHitPulse_whenRendered_thenMatchesGolden',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       final testPeg = Peg(position: Vector2(250, 300), type: PegType.normal);
       testPeg.onHit();
       when(mockLevel.pegs).thenReturn([testPeg]);
@@ -1085,8 +1148,9 @@ void main() {
     /// WHEN rendered
     /// THEN matches golden for shimmer state
     testWidgets('givenSpecialPegShimmer_whenRendered_thenMatchesGolden',
-      (WidgetTester tester) async {
-      final specialPeg = Peg(position: Vector2(250, 300), type: PegType.special);
+        (WidgetTester tester) async {
+      final specialPeg =
+          Peg(position: Vector2(250, 300), type: PegType.special);
       when(mockLevel.pegs).thenReturn([specialPeg]);
 
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
@@ -1102,7 +1166,7 @@ void main() {
     /// WHEN rendered
     /// THEN matches golden for screen flash
     testWidgets('givenBonusFlash_whenRendered_thenMatchesGolden',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       when(mockGameState.specialBonusTriggered).thenReturn(true);
 
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));

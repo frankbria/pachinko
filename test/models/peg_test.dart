@@ -22,7 +22,9 @@ import 'package:pachinko_game/utils/constants.dart';
 
 void main() {
   group('Peg Initialization -', () {
-    test('given a position, when peg is created, then it initializes with correct defaults', () {
+    test(
+        'given a position, when peg is created, then it initializes with correct defaults',
+        () {
       // Given
       final position = Vector2(100, 200);
 
@@ -37,7 +39,9 @@ void main() {
       expect(peg.hasBeenHit, isFalse);
     });
 
-    test('given custom parameters, when peg is created, then it uses provided values', () {
+    test(
+        'given custom parameters, when peg is created, then it uses provided values',
+        () {
       // Given
       final position = Vector2(150, 250);
       const customRadius = 15.0;
@@ -62,7 +66,9 @@ void main() {
       expect(peg.hasBeenHit, isTrue);
     });
 
-    test('given normal type, when peg is created, then color defaults to the brass pin color', () {
+    test(
+        'given normal type, when peg is created, then color defaults to the brass pin color',
+        () {
       // Given
       final position = Vector2(100, 100);
 
@@ -73,7 +79,9 @@ void main() {
       expect(peg.color, equals(GameConstants.normalPegColor));
     });
 
-    test('given special type, when peg is created, then color defaults to the gold prize color', () {
+    test(
+        'given special type, when peg is created, then color defaults to the gold prize color',
+        () {
       // Given
       final position = Vector2(100, 100);
 
@@ -84,7 +92,8 @@ void main() {
       expect(peg.color, equals(GameConstants.specialPegColor));
     });
 
-    test('given bonus type, when peg is created, then color defaults to pink', () {
+    test('given bonus type, when peg is created, then color defaults to pink',
+        () {
       // Given
       final position = Vector2(100, 100);
 
@@ -95,7 +104,9 @@ void main() {
       expect(peg.color, equals(const Color(0xFFE91E63))); // Pink
     });
 
-    test('given custom color, when peg is created, then it overrides default color', () {
+    test(
+        'given custom color, when peg is created, then it overrides default color',
+        () {
       // Given
       final position = Vector2(100, 100);
       const customColor = Color(0xFFFFFFFF); // White
@@ -119,30 +130,38 @@ void main() {
     /// This test verifies the core collision detection logic where two circles
     /// (peg and ball) are considered colliding when the distance between their
     /// centers is less than or equal to the sum of their radii.
-    test('given ball within peg radius, when checkCollision called, then returns true', () {
+    test(
+        'given ball within peg radius, when checkCollision called, then returns true',
+        () {
       // Given
       final peg = Peg(position: Vector2(100, 100), radius: 12.0);
-      final ballPosition = Vector2(105, 100); // 5 pixels away, within combined radius
+      final ballPosition =
+          Vector2(105, 100); // 5 pixels away, within combined radius
       const ballRadius = 8.0;
 
       // When
       final result = peg.checkCollision(ballPosition, ballRadius);
 
       // Then
-      expect(result, isTrue); // distance (5) <= pegRadius (12) + ballRadius (8) = 20
+      expect(result,
+          isTrue); // distance (5) <= pegRadius (12) + ballRadius (8) = 20
     });
 
-    test('given ball outside peg radius, when checkCollision called, then returns false', () {
+    test(
+        'given ball outside peg radius, when checkCollision called, then returns false',
+        () {
       // Given
       final peg = Peg(position: Vector2(100, 100), radius: 12.0);
-      final ballPosition = Vector2(150, 100); // 50 pixels away, outside combined radius
+      final ballPosition =
+          Vector2(150, 100); // 50 pixels away, outside combined radius
       const ballRadius = 8.0;
 
       // When
       final result = peg.checkCollision(ballPosition, ballRadius);
 
       // Then
-      expect(result, isFalse); // distance (50) > pegRadius (12) + ballRadius (8) = 20
+      expect(result,
+          isFalse); // distance (50) > pegRadius (12) + ballRadius (8) = 20
     });
 
     /// Edge case: Verifies exact boundary handling in collision detection
@@ -150,7 +169,9 @@ void main() {
     /// When the ball is positioned exactly at the sum of the radii, the
     /// collision should still be detected (<=, not <). This prevents
     /// off-by-one errors in collision response.
-    test('given ball exactly at peg radius boundary, when checkCollision called, then returns true', () {
+    test(
+        'given ball exactly at peg radius boundary, when checkCollision called, then returns true',
+        () {
       // Given
       final peg = Peg(position: Vector2(100, 100), radius: 12.0);
       final ballPosition = Vector2(120, 100); // Exactly 20 pixels away (12 + 8)
@@ -160,14 +181,17 @@ void main() {
       final result = peg.checkCollision(ballPosition, ballRadius);
 
       // Then
-      expect(result, isTrue); // distance (20) == pegRadius (12) + ballRadius (8) = 20
+      expect(result,
+          isTrue); // distance (20) == pegRadius (12) + ballRadius (8) = 20
     });
 
     /// Edge case: Ball overlapping peg center (distance = 0)
     ///
     /// This extreme case verifies collision detection handles zero distance
     /// correctly, which can occur during physics edge cases or initialization.
-    test('given ball at peg center, when checkCollision called, then returns true', () {
+    test(
+        'given ball at peg center, when checkCollision called, then returns true',
+        () {
       // Given
       final peg = Peg(position: Vector2(100, 100), radius: 12.0);
       final ballPosition = Vector2(100, 100); // Exact same position
@@ -177,10 +201,13 @@ void main() {
       final result = peg.checkCollision(ballPosition, ballRadius);
 
       // Then
-      expect(result, isTrue); // distance (0) <= pegRadius (12) + ballRadius (8) = 20
+      expect(result,
+          isTrue); // distance (0) <= pegRadius (12) + ballRadius (8) = 20
     });
 
-    test('given ball grazing peg edge, when checkCollision called, then returns true', () {
+    test(
+        'given ball grazing peg edge, when checkCollision called, then returns true',
+        () {
       // Given
       final peg = Peg(position: Vector2(100, 100), radius: 12.0);
       // Place ball 19.5 pixels away (just barely within combined radius of 20)
@@ -191,10 +218,13 @@ void main() {
       final result = peg.checkCollision(ballPosition, ballRadius);
 
       // Then
-      expect(result, isTrue); // distance (19.5) < pegRadius (12) + ballRadius (8) = 20
+      expect(result,
+          isTrue); // distance (19.5) < pegRadius (12) + ballRadius (8) = 20
     });
 
-    test('given ball just beyond peg radius, when checkCollision called, then returns false', () {
+    test(
+        'given ball just beyond peg radius, when checkCollision called, then returns false',
+        () {
       // Given
       final peg = Peg(position: Vector2(100, 100), radius: 12.0);
       // Place ball 20.1 pixels away (just beyond combined radius of 20)
@@ -205,7 +235,8 @@ void main() {
       final result = peg.checkCollision(ballPosition, ballRadius);
 
       // Then
-      expect(result, isFalse); // distance (20.1) > pegRadius (12) + ballRadius (8) = 20
+      expect(result,
+          isFalse); // distance (20.1) > pegRadius (12) + ballRadius (8) = 20
     });
   });
 
@@ -215,7 +246,9 @@ void main() {
     /// The collision normal points from the peg center toward the ball contact point.
     /// This direction is crucial for realistic bounce physics. The normal must be
     /// normalized to unit length for consistent force application.
-    test('given ball to the right of peg, when getCollisionNormal called, then returns normalized right vector', () {
+    test(
+        'given ball to the right of peg, when getCollisionNormal called, then returns normalized right vector',
+        () {
       // Given
       final peg = Peg(position: Vector2(100, 100));
       final ballPosition = Vector2(150, 100); // 50 pixels to the right
@@ -228,7 +261,9 @@ void main() {
       expect(normal.y, closeTo(0.0, 0.001));
     });
 
-    test('given ball to the left of peg, when getCollisionNormal called, then returns normalized left vector', () {
+    test(
+        'given ball to the left of peg, when getCollisionNormal called, then returns normalized left vector',
+        () {
       // Given
       final peg = Peg(position: Vector2(100, 100));
       final ballPosition = Vector2(50, 100); // 50 pixels to the left
@@ -241,7 +276,9 @@ void main() {
       expect(normal.y, closeTo(0.0, 0.001));
     });
 
-    test('given ball above peg, when getCollisionNormal called, then returns normalized up vector', () {
+    test(
+        'given ball above peg, when getCollisionNormal called, then returns normalized up vector',
+        () {
       // Given
       final peg = Peg(position: Vector2(100, 100));
       final ballPosition = Vector2(100, 50); // 50 pixels above (lower y value)
@@ -254,10 +291,13 @@ void main() {
       expect(normal.y, closeTo(-1.0, 0.001)); // Points up (0, -1)
     });
 
-    test('given ball below peg, when getCollisionNormal called, then returns normalized down vector', () {
+    test(
+        'given ball below peg, when getCollisionNormal called, then returns normalized down vector',
+        () {
       // Given
       final peg = Peg(position: Vector2(100, 100));
-      final ballPosition = Vector2(100, 150); // 50 pixels below (higher y value)
+      final ballPosition =
+          Vector2(100, 150); // 50 pixels below (higher y value)
 
       // When
       final normal = peg.getCollisionNormal(ballPosition);
@@ -271,7 +311,9 @@ void main() {
     ///
     /// For a 45-degree angle, the normalized normal should be (√2/2, √2/2) ≈ (0.707, 0.707).
     /// This tests the normalization process for non-axis-aligned collisions.
-    test('given ball at 45 degree angle, when getCollisionNormal called, then returns normalized diagonal vector', () {
+    test(
+        'given ball at 45 degree angle, when getCollisionNormal called, then returns normalized diagonal vector',
+        () {
       // Given
       final peg = Peg(position: Vector2(100, 100));
       final ballPosition = Vector2(150, 150); // 45 degrees down-right
@@ -290,15 +332,17 @@ void main() {
     /// Verifies the normalization invariant: |n| = √(nx² + ny²) = 1
     /// This property is essential for consistent physics calculations across
     /// all collision angles.
-    test('given any ball position, when getCollisionNormal called, then normal vector has unit length', () {
+    test(
+        'given any ball position, when getCollisionNormal called, then normal vector has unit length',
+        () {
       // Given
       final peg = Peg(position: Vector2(100, 100));
       final testPositions = [
-        Vector2(120, 130),  // Arbitrary position 1
-        Vector2(85, 95),    // Arbitrary position 2
-        Vector2(150, 75),   // Arbitrary position 3
-        Vector2(100, 200),  // Vertical
-        Vector2(200, 100),  // Horizontal
+        Vector2(120, 130), // Arbitrary position 1
+        Vector2(85, 95), // Arbitrary position 2
+        Vector2(150, 75), // Arbitrary position 3
+        Vector2(100, 200), // Vertical
+        Vector2(200, 100), // Horizontal
       ];
 
       // When & Then
@@ -324,7 +368,9 @@ void main() {
     ///
     /// Special pegs should be visually highlighted at the start of each level
     /// to indicate they trigger bonus ball mechanics when hit.
-    test('given special peg, when reset is called, then isHighlighted becomes true', () {
+    test(
+        'given special peg, when reset is called, then isHighlighted becomes true',
+        () {
       // Given
       final peg = Peg(
         position: Vector2(100, 100),
@@ -343,7 +389,9 @@ void main() {
     ///
     /// Once a special peg is hit, it should lose its highlight to indicate
     /// it has already been triggered and won't grant additional bonuses.
-    test('given highlighted special peg, when onHit is called, then isHighlighted becomes false', () {
+    test(
+        'given highlighted special peg, when onHit is called, then isHighlighted becomes false',
+        () {
       // Given
       final peg = Peg(
         position: Vector2(100, 100),
@@ -359,7 +407,9 @@ void main() {
       expect(peg.hasBeenHit, isTrue);
     });
 
-    test('given bonus peg, when reset is called, then isHighlighted remains false', () {
+    test(
+        'given bonus peg, when reset is called, then isHighlighted remains false',
+        () {
       // Given
       final peg = Peg(
         position: Vector2(100, 100),
@@ -376,7 +426,8 @@ void main() {
   });
 
   group('Hit Tracking -', () {
-    test('given unhit peg, when onHit is called, then hasBeenHit becomes true', () {
+    test('given unhit peg, when onHit is called, then hasBeenHit becomes true',
+        () {
       // Given
       final peg = Peg(position: Vector2(100, 100), hasBeenHit: false);
 
@@ -392,7 +443,8 @@ void main() {
     /// Once a peg is hit, subsequent hits should not change its state.
     /// This prevents double-counting scoring and ensures each peg
     /// contributes to game mechanics only once per level.
-    test('given hit peg, when onHit called again, then hasBeenHit remains true', () {
+    test('given hit peg, when onHit called again, then hasBeenHit remains true',
+        () {
       // Given
       final peg = Peg(position: Vector2(100, 100), hasBeenHit: true);
 
@@ -403,7 +455,8 @@ void main() {
       expect(peg.hasBeenHit, isTrue); // Still true, no state change
     });
 
-    test('given hit peg, when reset is called, then hasBeenHit becomes false', () {
+    test('given hit peg, when reset is called, then hasBeenHit becomes false',
+        () {
       // Given
       final peg = Peg(position: Vector2(100, 100), hasBeenHit: true);
 
@@ -416,7 +469,9 @@ void main() {
   });
 
   group('Color Rendering -', () {
-    test('given normal unhit peg, when renderColor accessed, then returns full opacity color', () {
+    test(
+        'given normal unhit peg, when renderColor accessed, then returns full opacity color',
+        () {
       // Given
       final peg = Peg(
         position: Vector2(100, 100),
@@ -432,7 +487,9 @@ void main() {
       expect(renderColor, equals(GameConstants.normalPegColor));
     });
 
-    test('given hit peg with completed animation, when renderColor accessed, then returns normal color', () {
+    test(
+        'given hit peg with completed animation, when renderColor accessed, then returns normal color',
+        () {
       // Given
       final peg = Peg(
         position: Vector2(100, 100),
@@ -442,7 +499,7 @@ void main() {
 
       // Simulate animation completion by updating many times
       for (int i = 0; i < 60; i++) {
-        peg.updateAnimation(1/60); // Simulate 1 second of updates
+        peg.updateAnimation(1 / 60); // Simulate 1 second of updates
       }
 
       // When
@@ -456,7 +513,9 @@ void main() {
 
     /// A prize peg is gold and nothing else is. Its shimmer shows in the halo
     /// the board draws around it, not in the colour of the peg itself.
-    test('given an unhit prize peg mid-shimmer, when renderColor accessed, then it is the prize gold', () {
+    test(
+        'given an unhit prize peg mid-shimmer, when renderColor accessed, then it is the prize gold',
+        () {
       // Given
       final peg = Peg(position: Vector2(100, 100), type: PegType.special);
       peg.updateAnimation(0.5);
@@ -467,7 +526,9 @@ void main() {
       expect(peg.isCollected, isFalse);
     });
 
-    test('given unhighlighted special peg, when renderColor accessed, then returns normal special color', () {
+    test(
+        'given unhighlighted special peg, when renderColor accessed, then returns normal special color',
+        () {
       // Given
       final peg = Peg(
         position: Vector2(100, 100),
@@ -487,7 +548,9 @@ void main() {
       expect(renderColor.a, equals(1.0));
     });
 
-    test('given a prize peg that has been hit, when its flash has finished, then it is dimmed to dark gold', () {
+    test(
+        'given a prize peg that has been hit, when its flash has finished, then it is dimmed to dark gold',
+        () {
       // A collected peg has to look different from one that is still to win
       final peg = Peg(position: Vector2(100, 100), type: PegType.special);
 
@@ -504,19 +567,25 @@ void main() {
       );
     });
 
-    test('given a prize peg at the moment it is hit, when renderColor accessed, then it flashes towards the ink colour', () {
+    test(
+        'given a prize peg at the moment it is hit, when renderColor accessed, then it flashes towards the ink colour',
+        () {
       final peg = Peg(position: Vector2(100, 100), type: PegType.special);
 
       peg.onHit();
 
       expect(
         peg.renderColor,
-        equals(Color.lerp(Peg.collectedPrizeColor, GameConstants.inkColor, 0.7)),
+        equals(
+            Color.lerp(Peg.collectedPrizeColor, GameConstants.inkColor, 0.7)),
       );
     });
 
-    test('given a collected prize peg, when reset, then it is gold and uncollected again', () {
-      final peg = Peg(position: Vector2(100, 100), type: PegType.special)..onHit();
+    test(
+        'given a collected prize peg, when reset, then it is gold and uncollected again',
+        () {
+      final peg = Peg(position: Vector2(100, 100), type: PegType.special)
+        ..onHit();
 
       peg.reset();
 
@@ -524,7 +593,9 @@ void main() {
       expect(peg.renderColor, equals(GameConstants.specialPegColor));
     });
 
-    test('given a brass pin that has been hit, then it is never collected and returns to brass', () {
+    test(
+        'given a brass pin that has been hit, then it is never collected and returns to brass',
+        () {
       final peg = Peg(position: Vector2(100, 100))..onHit();
       for (int i = 0; i < 60; i++) {
         peg.updateAnimation(1 / 60);
@@ -536,12 +607,14 @@ void main() {
   });
 
   group('Peg Hit Animation Lifecycle -', () {
-    test('given unhit peg, when updateAnimation called, then no animation occurs', () {
+    test(
+        'given unhit peg, when updateAnimation called, then no animation occurs',
+        () {
       // Given
       final peg = Peg(position: Vector2(100, 100));
 
       // When
-      peg.updateAnimation(1/60);
+      peg.updateAnimation(1 / 60);
 
       // Then
       expect(peg.isAnimating, isFalse);
@@ -561,14 +634,16 @@ void main() {
       expect(peg.hasBeenHit, isTrue);
     });
 
-    test('given peg animating, when updateAnimation called repeatedly, then progress increases', () {
+    test(
+        'given peg animating, when updateAnimation called repeatedly, then progress increases',
+        () {
       // Given
       final peg = Peg(position: Vector2(100, 100));
       peg.onHit();
 
       // When - Simulate 0.4 seconds (24 frames at 60 FPS)
       for (int i = 0; i < 24; i++) {
-        peg.updateAnimation(1/60);
+        peg.updateAnimation(1 / 60);
       }
 
       // Then
@@ -578,14 +653,16 @@ void main() {
       expect(peg.pulseProgress, lessThan(0.6));
     });
 
-    test('given peg animating, when full duration elapses, then animation completes', () {
+    test(
+        'given peg animating, when full duration elapses, then animation completes',
+        () {
       // Given
       final peg = Peg(position: Vector2(100, 100));
       peg.onHit();
 
       // When - Simulate 0.9 seconds (54 frames at 60 FPS) - past 0.8s duration
       for (int i = 0; i < 54; i++) {
-        peg.updateAnimation(1/60);
+        peg.updateAnimation(1 / 60);
       }
 
       // Then
@@ -609,7 +686,9 @@ void main() {
       expect(renderColorStart.g, greaterThan(GameConstants.normalPegColor.g));
     });
 
-    test('given special peg hit, when animation completes, then it stays dimmed as a collected prize', () {
+    test(
+        'given special peg hit, when animation completes, then it stays dimmed as a collected prize',
+        () {
       // Given
       final peg = Peg(
         position: Vector2(100, 100),
@@ -622,7 +701,7 @@ void main() {
 
       // Complete animation
       for (int i = 0; i < 60; i++) {
-        peg.updateAnimation(1/60);
+        peg.updateAnimation(1 / 60);
       }
 
       // Then
@@ -631,14 +710,16 @@ void main() {
       expect(peg.hasBeenHit, isTrue);
     });
 
-    test('given peg hit twice, when onHit called second time, then animation does not restart', () {
+    test(
+        'given peg hit twice, when onHit called second time, then animation does not restart',
+        () {
       // Given
       final peg = Peg(position: Vector2(100, 100));
       peg.onHit(); // First hit
 
       // Complete animation
       for (int i = 0; i < 60; i++) {
-        peg.updateAnimation(1/60);
+        peg.updateAnimation(1 / 60);
       }
 
       expect(peg.isAnimating, isFalse); // Animation complete
@@ -652,7 +733,9 @@ void main() {
       expect(peg.hasBeenHit, isTrue);
     });
 
-    test('given multiple pegs hit at different times, when updated, then each animates independently', () {
+    test(
+        'given multiple pegs hit at different times, when updated, then each animates independently',
+        () {
       // Given
       final peg1 = Peg(position: Vector2(100, 100));
       final peg2 = Peg(position: Vector2(200, 200));
@@ -662,15 +745,15 @@ void main() {
 
       // Advance first peg animation by 12 frames (0.2s)
       for (int i = 0; i < 12; i++) {
-        peg1.updateAnimation(1/60);
+        peg1.updateAnimation(1 / 60);
       }
 
       peg2.onHit(); // Hit second peg later
 
       // Advance both by 12 more frames
       for (int i = 0; i < 12; i++) {
-        peg1.updateAnimation(1/60);
-        peg2.updateAnimation(1/60);
+        peg1.updateAnimation(1 / 60);
+        peg2.updateAnimation(1 / 60);
       }
 
       // Then
@@ -685,7 +768,9 @@ void main() {
     /// The shimmer is driven by the time passed to updateAnimation, not by the
     /// wall clock, so a rendered frame depends only on how many frames came
     /// before it. Golden images of a prize peg rely on that.
-    test('given two special pegs advanced by the same time, when a real pause separates them, then their shimmer matches', () async {
+    test(
+        'given two special pegs advanced by the same time, when a real pause separates them, then their shimmer matches',
+        () async {
       // Given
       final first = Peg(position: Vector2(100, 100), type: PegType.special);
       final second = Peg(position: Vector2(100, 100), type: PegType.special);
@@ -704,7 +789,9 @@ void main() {
       expect(second.renderColor, first.renderColor);
     });
 
-    test('given a special peg, when advanced, then the shimmer follows a sine wave over about three seconds', () {
+    test(
+        'given a special peg, when advanced, then the shimmer follows a sine wave over about three seconds',
+        () {
       // Given
       final peg = Peg(position: Vector2(100, 100), type: PegType.special);
 
@@ -715,7 +802,9 @@ void main() {
       expect(peg.shimmerIntensity, closeTo(0.3 + 0.3 * math.sin(1.5), 1e-9));
     });
 
-    test('given a shimmering special peg, when reset, then the shimmer starts again from the beginning', () {
+    test(
+        'given a shimmering special peg, when reset, then the shimmer starts again from the beginning',
+        () {
       // Given
       final peg = Peg(position: Vector2(100, 100), type: PegType.special);
       final fresh = Peg(position: Vector2(100, 100), type: PegType.special);

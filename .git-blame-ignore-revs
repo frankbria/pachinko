@@ -1,0 +1,6 @@
+# Commits that `git blame` should look through.
+# Use it locally with: git config blame.ignoreRevsFile .git-blame-ignore-revs
+# GitHub's blame view reads this file by itself.
+
+# style: dart format, and nothing else (#80)
+1e5eac4304578d345df1e6f2e4b13c1755223d7b

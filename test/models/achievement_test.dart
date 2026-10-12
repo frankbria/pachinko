@@ -101,7 +101,9 @@ void main() {
       expect(achievement.unlockedDate, equals(timestamp));
     });
 
-    test('givenJsonWithoutUnlockedDate_whenFromJsonCalled_thenAchievementNotUnlocked', () {
+    test(
+        'givenJsonWithoutUnlockedDate_whenFromJsonCalled_thenAchievementNotUnlocked',
+        () {
       // Given
       final json = {
         'id': 'test_id',
@@ -162,8 +164,10 @@ void main() {
       expect(achievement.progress, equals(100));
       expect(achievement.isUnlocked, isTrue);
       expect(achievement.unlockedDate, isNotNull);
-      expect(achievement.unlockedDate!.isAfter(beforeUpdate) ||
-          achievement.unlockedDate!.isAtSameMomentAs(beforeUpdate), isTrue);
+      expect(
+          achievement.unlockedDate!.isAfter(beforeUpdate) ||
+              achievement.unlockedDate!.isAtSameMomentAs(beforeUpdate),
+          isTrue);
     });
 
     /// Tests that progress updates to unlocked achievements have no effect,
@@ -244,8 +248,10 @@ void main() {
 
       // Then
       expect(achievement.unlockedDate, isNotNull);
-      expect(achievement.unlockedDate!.isAfter(beforeUnlock) ||
-          achievement.unlockedDate!.isAtSameMomentAs(beforeUnlock), isTrue);
+      expect(
+          achievement.unlockedDate!.isAfter(beforeUnlock) ||
+              achievement.unlockedDate!.isAtSameMomentAs(beforeUnlock),
+          isTrue);
     });
 
     test('givenLockedAchievement_whenUnlockCalled_thenIsUnlockedTrue', () {

@@ -44,7 +44,8 @@ class _PachinkoBoardState extends State<PachinkoBoard>
     super.initState();
     _gameManager = context.read<GameManager>();
     _pegTicker = createTicker(_onPegTick);
-    _repaint = Listenable.merge([_gameManager, _gameManager.gameState, _pegFrame]);
+    _repaint =
+        Listenable.merge([_gameManager, _gameManager.gameState, _pegFrame]);
     _gameManager.addListener(_syncPegTicker);
     _syncPegTicker();
   }
@@ -59,7 +60,8 @@ class _PachinkoBoardState extends State<PachinkoBoard>
   }
 
   bool get _pegsAnimating =>
-      _gameManager.gameState.currentLevel?.pegs.any((peg) => peg.isAnimating) ?? false;
+      _gameManager.gameState.currentLevel?.pegs.any((peg) => peg.isAnimating) ??
+      false;
 
   /// Runs the peg ticker while a peg is animating and stops it otherwise, so
   /// a board with nothing to animate draws no frames.
@@ -75,7 +77,8 @@ class _PachinkoBoardState extends State<PachinkoBoard>
   }
 
   void _onPegTick(Duration elapsed) {
-    final deltaTime = (elapsed - _lastPegTick).inMicroseconds / Duration.microsecondsPerSecond;
+    final deltaTime = (elapsed - _lastPegTick).inMicroseconds /
+        Duration.microsecondsPerSecond;
     _lastPegTick = elapsed;
     final pegs = _gameManager.gameState.currentLevel?.pegs ?? const <Peg>[];
     for (final peg in pegs) {
@@ -117,17 +120,17 @@ class _PachinkoBoardState extends State<PachinkoBoard>
 
   void _onPanStart(DragStartDetails details, GameManager gameManager) {
     if (!gameManager.gameState.canLaunchBall) return;
-    
+
     // Check if tap is in launch area (bottom right)
     final tapX = details.localPosition.dx;
     final tapY = details.localPosition.dy;
-    
+
     // Scale coordinates to game coordinates
     final gameX = tapX / _getScale(gameManager);
     final gameY = tapY / _getScale(gameManager);
-    
+
     // Check if tap is near the launch area
-    if (gameX > GameConstants.launchChannelStartX - 50 && 
+    if (gameX > GameConstants.launchChannelStartX - 50 &&
         gameY > GameConstants.launchChannelStartY - 50) {
       gameManager.startLaunchCharging();
       setState(() {
@@ -139,11 +142,11 @@ class _PachinkoBoardState extends State<PachinkoBoard>
 
   void _onPanUpdate(DragUpdateDetails details, GameManager gameManager) {
     if (!_isDragging || !gameManager.gameState.canLaunchBall) return;
-    
+
     setState(() {
       _dragEnd = vm.Vector2(details.localPosition.dx, details.localPosition.dy);
     });
-    
+
     // Calculate power based on drag distance
     if (_dragStart != null && _dragEnd != null) {
       final dragDistance = (_dragEnd! - _dragStart!).length;
@@ -156,14 +159,14 @@ class _PachinkoBoardState extends State<PachinkoBoard>
     if (_isDragging && gameManager.gameState.canLaunchBall) {
       gameManager.launchBall();
     }
-    
+
     setState(() {
       _isDragging = false;
       _dragStart = null;
       _dragEnd = null;
     });
   }
-  
+
   double _getScale(GameManager gameManager) {
     return _currentScale;
   }
@@ -189,17 +192,17 @@ class _PachinkoBoardPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final gameState = gameManager.gameState;
     final level = gameState.currentLevel;
-    
+
     if (level == null) return;
-    
+
     // Scale the board to fit the available space
     final scaleX = size.width / GameConstants.boardWidth;
     final scaleY = size.height / GameConstants.boardHeight;
     final scale = scaleX < scaleY ? scaleX : scaleY;
-    
+
     canvas.save();
     canvas.scale(scale);
-    
+
     // Felt, rail, pins and slots: recorded once per level and replayed
     canvas.drawPicture(staticLayer.pictureFor(level));
 
@@ -207,7 +210,8 @@ class _PachinkoBoardPainter extends CustomPainter {
 
     // A phone's screen is taller than the board; the counts go in the strip below it
     final roomBelow = size.height / scale - GameConstants.boardHeight;
-    paintSlotCounts(canvas, level.slots, inTray: roomBelow >= slotTrayHeight + 8);
+    paintSlotCounts(canvas, level.slots,
+        inTray: roomBelow >= slotTrayHeight + 8);
 
     _drawAnimatedPegs(canvas, level);
     final prizes = level.pegs.where((peg) => peg.type == PegType.special);
@@ -231,9 +235,12 @@ class _PachinkoBoardPainter extends CustomPainter {
     _drawBalls(canvas, gameState);
 
     _drawLaunchArea(canvas, level);
-    
+
     // Draw launch power indicator
-    if (isDragging && dragStart != null && dragEnd != null && gameState.canLaunchBall) {
+    if (isDragging &&
+        dragStart != null &&
+        dragEnd != null &&
+        gameState.canLaunchBall) {
       _drawLaunchPowerIndicator(canvas, scale);
     }
 
@@ -269,7 +276,8 @@ class _PachinkoBoardPainter extends CustomPainter {
       // A hit: a gold ring that spreads from the peg and fades
       final flashing = peg.pulseGlowRadius > 0.0;
       if (flashing) {
-        canvas.drawCircle(centre, peg.pulseGlowRadius, ring(2, peg.pulseGlowOpacity));
+        canvas.drawCircle(
+            centre, peg.pulseGlowRadius, ring(2, peg.pulseGlowOpacity));
       }
 
       if (peg.type != PegType.special) {

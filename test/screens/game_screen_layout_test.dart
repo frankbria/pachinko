@@ -33,7 +33,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
   }
 
-  testWidgets('given a Pixel 7 screen, then the header is one row and the board panel is taller than before',
+  testWidgets(
+      'given a Pixel 7 screen, then the header is one row and the board panel is taller than before',
       (tester) async {
     await pumpGameScreen(tester);
 
@@ -45,13 +46,20 @@ void main() {
 
     // One row: the three tiles sit side by side, and inside each the label
     // and the value are on one line
-    final labels = [GameStrings.score, GameStrings.ballsRemaining, GameStrings.level];
-    final rows = labels.map((label) => tester.getCenter(find.text(label)).dy).toSet();
+    final labels = [
+      GameStrings.score,
+      GameStrings.ballsRemaining,
+      GameStrings.level
+    ];
+    final rows =
+        labels.map((label) => tester.getCenter(find.text(label)).dy).toSet();
     expect(rows, hasLength(1));
-    expect(tester.getCenter(find.text('20')).dy, closeTo(rows.single, 4), reason: 'the ball count beside its label');
+    expect(tester.getCenter(find.text('20')).dy, closeTo(rows.single, 4),
+        reason: 'the ball count beside its label');
   });
 
-  testWidgets('given a level in another band, then the panel around the board takes that band\'s colours',
+  testWidgets(
+      'given a level in another band, then the panel around the board takes that band\'s colours',
       (tester) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 2.625;
@@ -65,7 +73,11 @@ void main() {
     ));
     await tester.pump(const Duration(milliseconds: 50));
     BoxDecoration panel() => tester
-        .widget<Container>(find.ancestor(of: find.byType(PachinkoBoard), matching: find.byType(Container)).first)
+        .widget<Container>(find
+            .ancestor(
+                of: find.byType(PachinkoBoard),
+                matching: find.byType(Container))
+            .first)
         .decoration! as BoxDecoration;
 
     expect(panel().color, GameConstants.levelBands[1].feltShade);
@@ -76,12 +88,15 @@ void main() {
     expect(panel().color, GameConstants.levelBands[0].feltShade);
   });
 
-  testWidgets('given a score of six digits, then it still fits its tile', (tester) async {
+  testWidgets('given a score of six digits, then it still fits its tile',
+      (tester) async {
     await pumpGameScreen(tester, score: 123456);
 
     expect(tester.takeException(), isNull);
     expect(find.text('123456'), findsOneWidget);
-    final tile = tester.getRect(find.ancestor(of: find.text('123456'), matching: find.byType(AnimatedContainer)));
-    expect(tester.getRect(find.text('123456')).right, lessThanOrEqualTo(tile.right));
+    final tile = tester.getRect(find.ancestor(
+        of: find.text('123456'), matching: find.byType(AnimatedContainer)));
+    expect(tester.getRect(find.text('123456')).right,
+        lessThanOrEqualTo(tile.right));
   });
 }

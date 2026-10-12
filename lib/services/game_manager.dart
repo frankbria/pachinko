@@ -47,12 +47,13 @@ class GameManager extends ChangeNotifier {
     AudioService? audioService,
     StorageService? storageService,
     AchievementService? achievementService,
-  }) : _audioService = audioService,
-       _storageService = storageService,
-       _achievementService = achievementService,
-       _gameState = gameState ?? GameState(),
-       _physicsEngine = physicsEngine ?? PhysicsEngine(audioService: audioService),
-       _ballLauncher = ballLauncher ?? BallLauncher() {
+  })  : _audioService = audioService,
+        _storageService = storageService,
+        _achievementService = achievementService,
+        _gameState = gameState ?? GameState(),
+        _physicsEngine =
+            physicsEngine ?? PhysicsEngine(audioService: audioService),
+        _ballLauncher = ballLauncher ?? BallLauncher() {
     // The player's saved choice, when there is storage to read it from
     if (storageService != null) {
       _gameState.singleBallLaunch = storageService.singleBallLaunch;
@@ -69,9 +70,13 @@ class GameManager extends ChangeNotifier {
   /// A choice the player made while there was no storage stands: it is saved
   /// now, and the stored value does not replace it. This is called while
   /// widgets are being built, so listeners hear of a change just afterwards.
-  void attachServices({StorageService? storageService, AchievementService? achievementService}) {
+  void attachServices(
+      {StorageService? storageService,
+      AchievementService? achievementService}) {
     if (achievementService != null) _achievementService = achievementService;
-    if (storageService == null || identical(storageService, _storageService)) return;
+    if (storageService == null || identical(storageService, _storageService)) {
+      return;
+    }
     _storageService = storageService;
 
     final unsaved = _unsavedSingleBallLaunch;
@@ -123,7 +128,7 @@ class GameManager extends ChangeNotifier {
   /// that is not known: before the stored scores have been read, when there
   /// is no storage, and once another round has begun.
   bool? get roundIsNewBest => _roundIsNewBest;
-  
+
   void startGame({int level = 1}) {
     _ballLauncher.reset();
     _levelResultSaved = false;
@@ -169,12 +174,12 @@ class GameManager extends ChangeNotifier {
       notifyListeners();
     }
   }
-  
+
   void updateLaunchPower(double power) {
     _ballLauncher.updateCharging(power);
     notifyListeners();
   }
-  
+
   void launchBall() {
     if (!_gameState.canLaunchBall) return;
 
@@ -201,7 +206,7 @@ class GameManager extends ChangeNotifier {
 
   void _startGameLoop() {
     if (_gameTimer?.isActive == true) return;
-    
+
     _lastFrameTime = DateTime.now();
     _gameTimer = Timer.periodic(
       const Duration(milliseconds: 16), // ~60 FPS
@@ -211,7 +216,8 @@ class GameManager extends ChangeNotifier {
 
   void _updateGame(Timer timer) {
     final currentTime = DateTime.now();
-    final deltaTime = currentTime.difference(_lastFrameTime).inMicroseconds / 1000000.0;
+    final deltaTime =
+        currentTime.difference(_lastFrameTime).inMicroseconds / 1000000.0;
     _lastFrameTime = currentTime;
 
     // Cap delta time to prevent large jumps
@@ -247,7 +253,7 @@ class GameManager extends ChangeNotifier {
   void _updatePhysics(double deltaTime) {
     final balls = _gameState.activeBalls;
     final level = _gameState.currentLevel;
-    
+
     if (level == null) return;
 
     // Where each ball is before this step moves it, for the trail behind it
@@ -264,23 +270,26 @@ class GameManager extends ChangeNotifier {
         _gameState.launcherBusy = false;
       }
     }
-    
+
     if (balls.isEmpty) return;
-    
+
     // Update ball physics (only for balls not on guided path)
-    final freeBalls = balls.where((ball) => 
-      _ballLauncher.currentBall == null || ball != _ballLauncher.currentBall).toList();
-    
+    final freeBalls = balls
+        .where((ball) =>
+            _ballLauncher.currentBall == null ||
+            ball != _ballLauncher.currentBall)
+        .toList();
+
     _physicsEngine.updateBalls(freeBalls, deltaTime);
-    
+
     // Check peg collisions (only for free balls)
     final hitPegs = _physicsEngine.checkPegCollisions(freeBalls, level.pegs);
     _handlePegHits(hitPegs);
-    
+
     // Check slot collisions (only for free balls)
     final hitSlots = _physicsEngine.checkSlotCollisions(freeBalls, level.slots);
     _handleSlotHits(hitSlots);
-    
+
     // Remove inactive balls
     for (final ball in List.from(balls)) {
       if (!ball.isActive) {
@@ -378,7 +387,8 @@ class GameManager extends ChangeNotifier {
 
   /// Saves [score] for [level], and works out first whether it beats the
   /// level's best so that the round summary can say so.
-  Future<void> _recordScore(StorageService storage, int level, int score) async {
+  Future<void> _recordScore(
+      StorageService storage, int level, int score) async {
     final round = _round;
     // No score stored counts as a best of zero: a first round without a point
     // is saved, but the summary does not call it a best
@@ -415,7 +425,6 @@ class GameManager extends ChangeNotifier {
     _gameState.loadLevel(levelNumber);
     notifyListeners();
   }
-
 
   @override
   void dispose() {

@@ -13,7 +13,7 @@ class Level {
   final List<Peg> specialPegs;
   final double boardWidth;
   final double boardHeight;
-  
+
   Level({
     required this.levelNumber,
     required this.name,
@@ -24,25 +24,29 @@ class Level {
     this.boardHeight = 600.0,
   });
 
-  factory Level.generate(int levelNumber, double boardWidth, double boardHeight) {
-    final random = Random(levelNumber); // Deterministic random for consistent levels
+  factory Level.generate(
+      int levelNumber, double boardWidth, double boardHeight) {
+    final random =
+        Random(levelNumber); // Deterministic random for consistent levels
     final pegs = <Peg>[];
     final slots = <Slot>[];
     final specialPegs = <Peg>[];
-    
+
     // Generate regular pegs using pattern-based approach
-    final regularPegs = PegPatterns.getPatternForLevel(random, levelNumber, boardWidth, boardHeight);
+    final regularPegs = PegPatterns.getPatternForLevel(
+        random, levelNumber, boardWidth, boardHeight);
     pegs.addAll(regularPegs);
-    
+
     // Generate special pegs (2-4 per level) with proper spacing
     final specialPegCount = 2 + random.nextInt(3);
     // Centre to centre, between special pegs. It leaves a 20 px gap, which is
     // more than minPegGap, so making room for one never removes another.
     const specialMinSpacing = 50.0;
-    
+
     for (int i = 0; i < specialPegCount; i++) {
       Vector2? position;
-      Vector2? crowdedSpot; // The candidate with the fewest regular pegs in its way
+      Vector2?
+          crowdedSpot; // The candidate with the fewest regular pegs in its way
       int fewestInTheWay = pegs.length + 1;
 
       // Try to find a valid position with proper spacing
@@ -53,12 +57,22 @@ class Level {
         final candidate = Vector2(x, y);
         // Field walls only, which also keeps it out of the launch channel beyond
         // the right wall; the pegs in the way are counted below
-        if (!PegPatterns.leavesRoomForBall(const [], candidate, GameConstants.specialPegRadius)) continue;
-        if (specialPegs.any((peg) => (candidate - peg.position).length < specialMinSpacing)) continue;
+        if (!PegPatterns.leavesRoomForBall(
+            const [], candidate, GameConstants.specialPegRadius)) {
+          continue;
+        }
+        if (specialPegs.any(
+            (peg) => (candidate - peg.position).length < specialMinSpacing)) {
+          continue;
+        }
 
         // A ball must fit past every peg
-        final inTheWay = pegs.where((peg) =>
-            PegPatterns.gapTo(peg, candidate, GameConstants.specialPegRadius) < GameConstants.minPegGap).length;
+        final inTheWay = pegs
+            .where((peg) =>
+                PegPatterns.gapTo(
+                    peg, candidate, GameConstants.specialPegRadius) <
+                GameConstants.minPegGap)
+            .length;
         if (inTheWay == 0) {
           position = candidate;
         } else if (inTheWay < fewestInTheWay) {
@@ -71,7 +85,9 @@ class Level {
         // A dense field has no free spot. Clear the regular pegs around the
         // least crowded candidate, so every level keeps its special pegs and its bonus.
         final spot = crowdedSpot;
-        pegs.removeWhere((peg) => PegPatterns.gapTo(peg, spot, GameConstants.specialPegRadius) < GameConstants.minPegGap);
+        pegs.removeWhere((peg) =>
+            PegPatterns.gapTo(peg, spot, GameConstants.specialPegRadius) <
+            GameConstants.minPegGap);
         position = spot;
       }
 
@@ -86,15 +102,15 @@ class Level {
         specialPegs.add(specialPeg);
       }
     }
-    
+
     // Generate slots with inverse probability distribution
     const slotCount = 7;
     final slotWidth = boardWidth / slotCount;
-    
+
     for (int i = 0; i < slotCount; i++) {
       final x = slotWidth * i + slotWidth / 2;
       final y = boardHeight - 40;
-      
+
       // Inverse probability distribution for scoring
       int points;
       if (i == 0 || i == slotCount - 1) {
@@ -106,7 +122,7 @@ class Level {
       } else {
         points = 50; // Low points at 1/3 and 2/3 positions (high probability)
       }
-      
+
       final slot = Slot(
         position: Vector2(x, y),
         width: slotWidth - 4,
@@ -115,7 +131,7 @@ class Level {
       );
       slots.add(slot);
     }
-    
+
     return Level(
       levelNumber: levelNumber,
       name: 'Level $levelNumber',

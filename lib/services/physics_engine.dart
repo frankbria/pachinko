@@ -21,23 +21,23 @@ class PhysicsEngine {
   PhysicsEngine({AudioService? audioService, math.Random? random})
       : _audioService = audioService,
         _random = random ?? math.Random();
-  
+
   void updateBalls(List<Ball> balls, double deltaTime) {
     for (final ball in balls) {
       if (!ball.isActive || ball.hasLanded) continue;
-      
+
       // Apply gravity
       ball.acceleration.setValues(0, _gravity);
-      
+
       // Update velocity with acceleration
       ball.velocity.add(ball.acceleration * deltaTime);
-      
+
       // Apply air resistance
       ball.velocity.scale(_airResistance);
-      
+
       // Update position
       ball.position.add(ball.velocity * deltaTime);
-      
+
       // Check boundaries
       _checkBoundaryCollisions(ball);
     }
@@ -47,9 +47,8 @@ class PhysicsEngine {
     // Left boundary - CONDITIONAL based on ball Y position
     // When y <= 110 (in top/launch area): left boundary at x=0 (board left edge)
     // When y > 110 (in playfield): tighter left boundary to align with leftmost slot
-    final leftBoundaryX = ball.position.y <= 110.0
-        ? 0.0
-        : GameConstants.fieldLeftBoundaryX;
+    final leftBoundaryX =
+        ball.position.y <= 110.0 ? 0.0 : GameConstants.fieldLeftBoundaryX;
 
     if (ball.position.x - ball.radius <= leftBoundaryX) {
       ball.position.x = leftBoundaryX + ball.radius;
@@ -59,9 +58,8 @@ class PhysicsEngine {
     // Right field boundary - CONDITIONAL based on ball Y position
     // When y <= 110 (in top/launch area): right boundary at x=390 (board right edge)
     // When y > 110 (in playfield): tighter right boundary to make edge scoring harder
-    final rightBoundaryX = ball.position.y <= 110.0
-        ? 390.0
-        : GameConstants.fieldRightBoundaryX;
+    final rightBoundaryX =
+        ball.position.y <= 110.0 ? 390.0 : GameConstants.fieldRightBoundaryX;
 
     if (ball.position.x + ball.radius >= rightBoundaryX) {
       ball.position.x = rightBoundaryX - ball.radius;
@@ -71,21 +69,24 @@ class PhysicsEngine {
     // Top curved boundary collision - quadratic bezier curve
     // Starts at x=30 to match visual rendering
     const topBoundaryStartX = GameConstants.topCurveStartX;
-    const topBoundaryStartY = GameConstants.topCurveStartY;  // Matches left field barrier top
+    const topBoundaryStartY =
+        GameConstants.topCurveStartY; // Matches left field barrier top
     const topBoundaryControlX = GameConstants.topCurveControlX;
     const topBoundaryControlY = GameConstants.topCurveControlY;
     const topBoundaryEndX = GameConstants.topCurveEndX;
     const topBoundaryEndY = GameConstants.topCurveEndY;
 
     // Check if ball is in the region of the curved boundary
-    if (ball.position.x >= topBoundaryStartX && ball.position.x <= topBoundaryEndX) {
+    if (ball.position.x >= topBoundaryStartX &&
+        ball.position.x <= topBoundaryEndX) {
       // Calculate t parameter for the bezier curve based on x position
-      final t = (ball.position.x - topBoundaryStartX) / (topBoundaryEndX - topBoundaryStartX);
+      final t = (ball.position.x - topBoundaryStartX) /
+          (topBoundaryEndX - topBoundaryStartX);
 
       // Quadratic bezier formula: B(t) = (1-t)²P₀ + 2(1-t)tP₁ + t²P₂
       final curveY = (1 - t) * (1 - t) * topBoundaryStartY +
-                     2 * (1 - t) * t * topBoundaryControlY +
-                     t * t * topBoundaryEndY;
+          2 * (1 - t) * t * topBoundaryControlY +
+          t * t * topBoundaryEndY;
 
       // Distance from BOTTOM of ball to the curve (not center)
       final distanceToCurve = (ball.position.y - ball.radius) - curveY;
@@ -94,14 +95,17 @@ class PhysicsEngine {
       if (distanceToCurve < 0) {
         // Calculate the derivative for the normal vector
         // Derivative: B'(t) = 2(1-t)(P₁-P₀) + 2t(P₂-P₁)
-        final derivativeX = 2 * (1 - t) * (topBoundaryControlX - topBoundaryStartX) +
-                           2 * t * (topBoundaryEndX - topBoundaryControlX);
-        final derivativeY = 2 * (1 - t) * (topBoundaryControlY - topBoundaryStartY) +
-                           2 * t * (topBoundaryEndY - topBoundaryControlY);
+        final derivativeX =
+            2 * (1 - t) * (topBoundaryControlX - topBoundaryStartX) +
+                2 * t * (topBoundaryEndX - topBoundaryControlX);
+        final derivativeY =
+            2 * (1 - t) * (topBoundaryControlY - topBoundaryStartY) +
+                2 * t * (topBoundaryEndY - topBoundaryControlY);
 
         // Calculate the normal (perpendicular to derivative, pointing down)
-        final normalLength = math.sqrt(derivativeX * derivativeX + derivativeY * derivativeY);
-        final normalX = derivativeY / normalLength;  // Perpendicular
+        final normalLength =
+            math.sqrt(derivativeX * derivativeX + derivativeY * derivativeY);
+        final normalX = derivativeY / normalLength; // Perpendicular
         final normalY = -derivativeX / normalLength;
 
         // Ensure normal points downward (away from curve)
@@ -109,19 +113,24 @@ class PhysicsEngine {
         final normalXFinal = normalY > 0 ? normalX : -normalX;
 
         // Push ball below the curve
-        final overlap = -distanceToCurve;  // distanceToCurve is negative, so overlap is positive
+        final overlap =
+            -distanceToCurve; // distanceToCurve is negative, so overlap is positive
         ball.position.x += normalXFinal * overlap;
         ball.position.y += normalYFinal * overlap;
 
         // Reflect velocity along the normal
-        final dotProduct = ball.velocity.x * normalXFinal + ball.velocity.y * normalYFinal;
-        if (dotProduct < 0) {  // Only bounce if moving toward the curve
-          ball.velocity.x = (ball.velocity.x - 2 * dotProduct * normalXFinal) * _damping;
-          ball.velocity.y = (ball.velocity.y - 2 * dotProduct * normalYFinal) * _damping;
+        final dotProduct =
+            ball.velocity.x * normalXFinal + ball.velocity.y * normalYFinal;
+        if (dotProduct < 0) {
+          // Only bounce if moving toward the curve
+          ball.velocity.x =
+              (ball.velocity.x - 2 * dotProduct * normalXFinal) * _damping;
+          ball.velocity.y =
+              (ball.velocity.y - 2 * dotProduct * normalYFinal) * _damping;
         }
       }
     }
-    
+
     // Bottom boundary (ball has left the board)
     if (ball.position.y > GameConstants.boardHeight + ball.radius) {
       ball.isActive = false;
@@ -154,32 +163,33 @@ class PhysicsEngine {
   void _resolvePegCollision(Ball ball, Peg peg) {
     // Calculate collision normal
     final collisionNormal = peg.getCollisionNormal(ball.position);
-    
+
     // Separate the ball from the peg
-    final overlap = (peg.radius + ball.radius) - (ball.position - peg.position).length;
+    final overlap =
+        (peg.radius + ball.radius) - (ball.position - peg.position).length;
     if (overlap > 0) {
       ball.position.add(collisionNormal * overlap);
     }
-    
+
     // Calculate relative velocity
     final relativeVelocity = ball.velocity.clone();
-    
+
     // Calculate relative velocity in collision normal direction
     final velocityAlongNormal = relativeVelocity.dot(collisionNormal);
-    
+
     // Do not resolve if velocities are separating
     if (velocityAlongNormal > 0) return;
-    
+
     // Calculate restitution (bounciness)
     const restitution = 0.8;
-    
+
     // Calculate impulse scalar
     final impulseScalar = -(1 + restitution) * velocityAlongNormal;
-    
+
     // Apply impulse
     final impulse = collisionNormal * impulseScalar;
     ball.velocity.add(impulse);
-    
+
     // Add some randomness to prevent perfect patterns
     final randomAngle = (_random.nextDouble() - 0.5) * 0.2;
     final rotationMatrix = Matrix2.rotation(randomAngle);
@@ -188,12 +198,12 @@ class PhysicsEngine {
 
   List<Slot> checkSlotCollisions(List<Ball> balls, List<Slot> slots) {
     final hitSlots = <Slot>[];
-    
+
     for (final ball in balls) {
       if (!ball.isActive || ball.hasLanded) continue;
-      
+
       for (final slot in slots) {
-        if (slot.containsPoint(ball.position) && 
+        if (slot.containsPoint(ball.position) &&
             ball.position.y >= slot.position.y - slot.height / 2) {
           ball.hasLanded = true;
           ball.isActive = false;
@@ -203,11 +213,12 @@ class PhysicsEngine {
         }
       }
     }
-    
+
     return hitSlots;
   }
 
-  Vector2 calculateLaunchVelocity(Vector2 startPosition, Vector2 targetPosition, double force) {
+  Vector2 calculateLaunchVelocity(
+      Vector2 startPosition, Vector2 targetPosition, double force) {
     final direction = (targetPosition - startPosition).normalized();
     return direction * force;
   }
@@ -217,31 +228,32 @@ class PhysicsEngine {
     return angle >= math.pi * 0.25 && angle <= math.pi * 0.75;
   }
 
-  double calculateTrajectoryMaxHeight(Vector2 launchVelocity, Vector2 startPosition) {
+  double calculateTrajectoryMaxHeight(
+      Vector2 launchVelocity, Vector2 startPosition) {
     // Calculate maximum height of projectile motion
     final verticalVelocity = launchVelocity.y.abs();
     final maxHeight = (verticalVelocity * verticalVelocity) / (2 * _gravity);
     return startPosition.y - maxHeight;
   }
 
-  List<Vector2> calculateTrajectoryPoints(Vector2 startPosition, Vector2 launchVelocity, 
-                                         int numPoints, double timeStep) {
+  List<Vector2> calculateTrajectoryPoints(Vector2 startPosition,
+      Vector2 launchVelocity, int numPoints, double timeStep) {
     final points = <Vector2>[];
     var position = startPosition.clone();
     var velocity = launchVelocity.clone();
-    
+
     for (int i = 0; i < numPoints; i++) {
       points.add(position.clone());
-      
+
       // Update position and velocity for next point
       position.add(velocity * timeStep);
       velocity.y += _gravity * timeStep;
       velocity.scale(_airResistance);
-      
+
       // Stop if ball goes off screen
       if (position.y > GameConstants.boardHeight) break;
     }
-    
+
     return points;
   }
 }

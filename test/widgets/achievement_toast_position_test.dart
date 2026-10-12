@@ -126,12 +126,14 @@ void main() {
   void expectUncovered(WidgetTester tester, Rect toast, List<String> texts) {
     for (final text in texts) {
       final rect = tester.getRect(find.text(text));
-      expect(toast.overlaps(rect), isFalse, reason: 'the toast $toast covers "$text" at $rect');
+      expect(toast.overlaps(rect), isFalse,
+          reason: 'the toast $toast covers "$text" at $rect');
     }
   }
 
   group('Game screen -', () {
-    testWidgets('given a toast is showing, then the score, ball count and level stay uncovered',
+    testWidgets(
+        'given a toast is showing, then the score, ball count and level stay uncovered',
         (tester) async {
       final overlayKey = await pumpUnderOverlay(tester, const GameScreen());
 
@@ -140,7 +142,8 @@ void main() {
       expectUncovered(tester, toast, headerTexts);
     });
 
-    testWidgets('given a toast is showing, then it starts exactly where the header ends',
+    testWidgets(
+        'given a toast is showing, then it starts exactly where the header ends',
         (tester) async {
       final overlayKey = await pumpUnderOverlay(tester, const GameScreen());
 
@@ -148,19 +151,24 @@ void main() {
 
       final header = tester.getRect(find.byType(SizeChangedLayoutNotifier));
       expect(toast.top, header.bottom);
-      expect(header.bottom, greaterThan(AchievementToastOverlayState.defaultTopOffset));
+      expect(header.bottom,
+          greaterThan(AchievementToastOverlayState.defaultTopOffset));
     });
 
-    testWidgets('given a toast is showing, then the controls stay uncovered', (tester) async {
+    testWidgets('given a toast is showing, then the controls stay uncovered',
+        (tester) async {
       final overlayKey = await pumpUnderOverlay(tester, const GameScreen());
 
       final toast = await showToast(tester, overlayKey);
 
-      expect(toast.overlaps(tester.getRect(find.byIcon(Icons.arrow_back))), isFalse);
-      expect(toast.overlaps(tester.getRect(find.byIcon(Icons.restart_alt))), isFalse);
+      expect(toast.overlaps(tester.getRect(find.byIcon(Icons.arrow_back))),
+          isFalse);
+      expect(toast.overlaps(tester.getRect(find.byIcon(Icons.restart_alt))),
+          isFalse);
     });
 
-    testWidgets('given text at twice its size, when a toast is showing, then the taller header stays uncovered',
+    testWidgets(
+        'given text at twice its size, when a toast is showing, then the taller header stays uncovered',
         (tester) async {
       // A wide surface, so the larger header text still fits on one row
       final overlayKey = await pumpUnderOverlay(
@@ -173,13 +181,17 @@ void main() {
       final toast = await showToast(tester, overlayKey);
 
       expectUncovered(tester, toast, headerTexts);
-      expect(toast.top, tester.getRect(find.byType(SizeChangedLayoutNotifier)).bottom);
+      expect(toast.top,
+          tester.getRect(find.byType(SizeChangedLayoutNotifier)).bottom);
     });
 
-    testWidgets('given the text size changes while the screen is open, when a toast is showing, then it follows the header',
+    testWidgets(
+        'given the text size changes while the screen is open, when a toast is showing, then it follows the header',
         (tester) async {
-      final overlayKey = await pumpUnderOverlay(tester, const GameScreen(), size: const Size(900, 1400));
-      final before = tester.getRect(find.byType(SizeChangedLayoutNotifier)).bottom;
+      final overlayKey = await pumpUnderOverlay(tester, const GameScreen(),
+          size: const Size(900, 1400));
+      final before =
+          tester.getRect(find.byType(SizeChangedLayoutNotifier)).bottom;
 
       // When: the player raises the system text size
       tester.platformDispatcher.textScaleFactorTestValue = 2.0;
@@ -188,12 +200,14 @@ void main() {
       final toast = await showToast(tester, overlayKey);
 
       // Then
-      final after = tester.getRect(find.byType(SizeChangedLayoutNotifier)).bottom;
+      final after =
+          tester.getRect(find.byType(SizeChangedLayoutNotifier)).bottom;
       expect(after, greaterThan(before));
       expect(toast.top, after);
     });
 
-    testWidgets('given the player goes back to the menu, when a toast is showing, then it is at the top again',
+    testWidgets(
+        'given the player goes back to the menu, when a toast is showing, then it is at the top again',
         (tester) async {
       final overlayKey = await pumpUnderOverlay(tester, const MenuScreen());
       await tester.tap(find.text(GameStrings.play));
@@ -214,7 +228,8 @@ void main() {
   });
 
   group('Menu screen -', () {
-    testWidgets('given a toast is showing, then it is at the top and the buttons stay uncovered',
+    testWidgets(
+        'given a toast is showing, then it is at the top and the buttons stay uncovered',
         (tester) async {
       final overlayKey = await pumpUnderOverlay(tester, const MenuScreen());
 
@@ -224,9 +239,11 @@ void main() {
       expectUncovered(tester, toast, menuButtons);
     });
 
-    testWidgets('given a small phone, when a toast is showing, then the buttons stay uncovered',
+    testWidgets(
+        'given a small phone, when a toast is showing, then the buttons stay uncovered',
         (tester) async {
-      final overlayKey = await pumpUnderOverlay(tester, const MenuScreen(), size: const Size(360, 640));
+      final overlayKey = await pumpUnderOverlay(tester, const MenuScreen(),
+          size: const Size(360, 640));
 
       final toast = await showToast(tester, overlayKey);
 
@@ -235,7 +252,8 @@ void main() {
   });
 
   group('Anchor ownership -', () {
-    testWidgets('given a second screen has anchored the toasts, when the first releases, then the second anchor holds',
+    testWidgets(
+        'given a second screen has anchored the toasts, when the first releases, then the second anchor holds',
         (tester) async {
       /// Two game screens overlap for a moment when the player goes back and
       /// straight into a new game: the old one is disposed after the new one

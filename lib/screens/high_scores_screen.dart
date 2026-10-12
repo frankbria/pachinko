@@ -85,13 +85,15 @@ class _HighScoresScreenState extends State<HighScoresScreen> {
                   child: Text(
                     'No high scores yet!\nPlay to set your first record.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: GameConstants.mutedColor),
+                    style: TextStyle(
+                        fontSize: 16, color: GameConstants.mutedColor),
                   ),
                 )
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: _allScores.length,
-                  itemBuilder: (context, index) => _scoreRow(context, index + 1, _allScores[index]),
+                  itemBuilder: (context, index) =>
+                      _scoreRow(context, index + 1, _allScores[index]),
                 ),
     );
   }
@@ -110,14 +112,17 @@ class _HighScoresScreenState extends State<HighScoresScreen> {
             '$rank',
             textAlign: TextAlign.center,
             style: text.titleLarge?.copyWith(
-              color: rank <= 3 ? GameConstants.secondaryColor : GameConstants.mutedColor,
+              color: rank <= 3
+                  ? GameConstants.secondaryColor
+                  : GameConstants.mutedColor,
               fontWeight: FontWeight.bold,
             ),
           ),
         ),
         title: Text(
           '${groupedThousands(score.score)} points',
-          style: text.titleMedium?.copyWith(color: GameConstants.inkColor, fontWeight: FontWeight.bold),
+          style: text.titleMedium?.copyWith(
+              color: GameConstants.inkColor, fontWeight: FontWeight.bold),
         ),
         subtitle: Text(
           '${GameStrings.level} ${score.level} · ${_formatTimestamp(score.timestamp)}',
@@ -134,7 +139,8 @@ class _HighScoresScreenState extends State<HighScoresScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Clear All Scores?'),
-        content: const Text('This will delete all high score data permanently.'),
+        content:
+            const Text('This will delete all high score data permanently.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -146,7 +152,8 @@ class _HighScoresScreenState extends State<HighScoresScreen> {
               await _storageService!.clearData();
               await _loadScores(); // Reload (will show empty)
             },
-            child: Text('Clear', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            child: Text('Clear',
+                style: TextStyle(color: Theme.of(context).colorScheme.error)),
           ),
         ],
       ),

@@ -118,7 +118,8 @@ class AudioService {
     } catch (e) {
       // Gracefully handle platforms where just_audio is not available (e.g., Linux desktop)
       // Audio will be disabled but app continues to function
-      debugPrint('AudioService: Failed to initialize (platform may not support just_audio): $e');
+      debugPrint(
+          'AudioService: Failed to initialize (platform may not support just_audio): $e');
     }
   }
 

@@ -18,7 +18,9 @@ import 'package:pachinko_game/models/ball.dart';
 
 void main() {
   group('Ball Initialization -', () {
-    test('given a position, when ball is created, then it initializes with correct defaults', () {
+    test(
+        'given a position, when ball is created, then it initializes with correct defaults',
+        () {
       // Given
       final position = Vector2(100, 200);
 
@@ -34,7 +36,9 @@ void main() {
       expect(ball.hasLanded, isFalse);
     });
 
-    test('given custom parameters, when ball is created, then it uses provided values', () {
+    test(
+        'given custom parameters, when ball is created, then it uses provided values',
+        () {
       // Given
       final position = Vector2(150, 250);
       final velocity = Vector2(10, 20);
@@ -60,7 +64,9 @@ void main() {
       expect(ball.hasLanded, isTrue);
     });
 
-    test('given no velocity, when ball is created, then velocity defaults to zero', () {
+    test(
+        'given no velocity, when ball is created, then velocity defaults to zero',
+        () {
       // Given
       final position = Vector2(50, 75);
 
@@ -72,7 +78,9 @@ void main() {
       expect(ball.velocity.y, equals(0.0));
     });
 
-    test('given no acceleration, when ball is created, then acceleration defaults to zero', () {
+    test(
+        'given no acceleration, when ball is created, then acceleration defaults to zero',
+        () {
       // Given
       final position = Vector2(50, 75);
 
@@ -86,7 +94,9 @@ void main() {
   });
 
   group('Ball Physics Update -', () {
-    test('given a ball at rest, when update is called, then gravity is applied to acceleration', () {
+    test(
+        'given a ball at rest, when update is called, then gravity is applied to acceleration',
+        () {
       // Given
       final ball = Ball(position: Vector2(100, 100));
       const deltaTime = 0.016; // ~60 FPS
@@ -108,7 +118,9 @@ void main() {
     /// - Time step: dt = 0.016s (60 FPS)
     /// - Raw velocity change: Δv = a*dt = 980 * 0.016 = 15.68
     /// - After air resistance: v = 15.68 * 0.999 ≈ 15.664
-    test('given a ball with acceleration, when update is called, then velocity increases by acceleration * deltaTime', () {
+    test(
+        'given a ball with acceleration, when update is called, then velocity increases by acceleration * deltaTime',
+        () {
       // Given
       final ball = Ball(position: Vector2(100, 100));
       const deltaTime = 0.016;
@@ -130,7 +142,9 @@ void main() {
     /// 1. Acceleration applied to velocity
     /// 2. Position updated by current velocity
     /// 3. Air resistance applied to velocity
-    test('given a ball with velocity, when update is called, then position updates by velocity * deltaTime', () {
+    test(
+        'given a ball with velocity, when update is called, then position updates by velocity * deltaTime',
+        () {
       // Given
       final ball = Ball(
         position: Vector2(100, 100),
@@ -157,7 +171,9 @@ void main() {
     /// creating a gradual deceleration effect. This prevents balls from
     /// maintaining infinite horizontal velocity and adds realistic physics.
     /// The damping factor of 0.999 means velocity decreases by 0.1% per frame.
-    test('given a ball with velocity, when update is called, then air resistance reduces velocity', () {
+    test(
+        'given a ball with velocity, when update is called, then air resistance reduces velocity',
+        () {
       // Given
       final ball = Ball(
         position: Vector2(100, 100),
@@ -179,7 +195,9 @@ void main() {
     /// When isActive=false, the ball should remain frozen in place regardless
     /// of its velocity or elapsed time. This allows the game to pause specific
     /// balls without affecting others in the simulation.
-    test('given an inactive ball, when update is called, then physics is not applied', () {
+    test(
+        'given an inactive ball, when update is called, then physics is not applied',
+        () {
       // Given
       final ball = Ball(
         position: Vector2(100, 100),
@@ -204,7 +222,9 @@ void main() {
     /// When hasLanded=true, the ball should stop simulating physics to represent
     /// it coming to rest in a scoring slot. This prevents continued movement after
     /// the ball has reached its final destination.
-    test('given a landed ball, when update is called, then physics is not applied', () {
+    test(
+        'given a landed ball, when update is called, then physics is not applied',
+        () {
       // Given
       final ball = Ball(
         position: Vector2(100, 100),
@@ -226,7 +246,9 @@ void main() {
   });
 
   group('Ball Impulse Application -', () {
-    test('given a ball at rest, when impulse is applied, then velocity changes by impulse amount', () {
+    test(
+        'given a ball at rest, when impulse is applied, then velocity changes by impulse amount',
+        () {
       // Given
       final ball = Ball(position: Vector2(100, 100));
       final impulse = Vector2(50, -30);
@@ -239,7 +261,9 @@ void main() {
       expect(ball.velocity.y, equals(-30.0));
     });
 
-    test('given a ball with velocity, when impulse is applied, then velocities are added together', () {
+    test(
+        'given a ball with velocity, when impulse is applied, then velocities are added together',
+        () {
       // Given
       final ball = Ball(
         position: Vector2(100, 100),
@@ -278,7 +302,9 @@ void main() {
     /// The reset method must clone the new position vector to prevent
     /// unintended side effects. If the same reference were used, external
     /// modifications to the position vector would affect the ball's state.
-    test('given a moving ball, when reset is called, then position updates to new position', () {
+    test(
+        'given a moving ball, when reset is called, then position updates to new position',
+        () {
       // Given
       final ball = Ball(
         position: Vector2(100, 100),
@@ -296,7 +322,9 @@ void main() {
       expect(ball.position, isNot(same(newPosition)));
     });
 
-    test('given a moving ball, when reset is called, then velocity resets to zero', () {
+    test(
+        'given a moving ball, when reset is called, then velocity resets to zero',
+        () {
       // Given
       final ball = Ball(
         position: Vector2(100, 100),
@@ -312,7 +340,9 @@ void main() {
       expect(ball.velocity.y, equals(0.0));
     });
 
-    test('given a moving ball, when reset is called, then acceleration resets to zero', () {
+    test(
+        'given a moving ball, when reset is called, then acceleration resets to zero',
+        () {
       // Given
       final ball = Ball(
         position: Vector2(100, 100),
@@ -328,7 +358,9 @@ void main() {
       expect(ball.acceleration.y, equals(0.0));
     });
 
-    test('given an inactive ball, when reset is called, then isActive becomes true', () {
+    test(
+        'given an inactive ball, when reset is called, then isActive becomes true',
+        () {
       // Given
       final ball = Ball(
         position: Vector2(100, 100),
@@ -343,7 +375,9 @@ void main() {
       expect(ball.isActive, isTrue);
     });
 
-    test('given a landed ball, when reset is called, then hasLanded becomes false', () {
+    test(
+        'given a landed ball, when reset is called, then hasLanded becomes false',
+        () {
       // Given
       final ball = Ball(
         position: Vector2(100, 100),
@@ -360,9 +394,12 @@ void main() {
   });
 
   group('Ball Bounds Detection -', () {
-    test('given a ball above bounds threshold, when isOutOfBounds checked, then returns false', () {
+    test(
+        'given a ball above bounds threshold, when isOutOfBounds checked, then returns false',
+        () {
       // Given
-      final ball = Ball(position: Vector2(100, 500)); // y = 500, threshold = 1000
+      final ball =
+          Ball(position: Vector2(100, 500)); // y = 500, threshold = 1000
 
       // When
       final result = ball.isOutOfBounds;
@@ -371,9 +408,12 @@ void main() {
       expect(result, isFalse);
     });
 
-    test('given a ball below bounds threshold, when isOutOfBounds checked, then returns true', () {
+    test(
+        'given a ball below bounds threshold, when isOutOfBounds checked, then returns true',
+        () {
       // Given
-      final ball = Ball(position: Vector2(100, 1500)); // y = 1500, threshold = 1000
+      final ball =
+          Ball(position: Vector2(100, 1500)); // y = 1500, threshold = 1000
 
       // When
       final result = ball.isOutOfBounds;
@@ -387,9 +427,12 @@ void main() {
     /// At the exact threshold (y = 1000), the ball should NOT be considered
     /// out of bounds. The condition is position.y > 1000, not >=, ensuring
     /// balls exactly at the boundary are still considered valid.
-    test('given a ball exactly at bounds threshold, when isOutOfBounds checked, then returns false', () {
+    test(
+        'given a ball exactly at bounds threshold, when isOutOfBounds checked, then returns false',
+        () {
       // Given
-      final ball = Ball(position: Vector2(100, 1000)); // y = 1000, threshold = 1000
+      final ball =
+          Ball(position: Vector2(100, 1000)); // y = 1000, threshold = 1000
 
       // When
       final result = ball.isOutOfBounds;
@@ -409,7 +452,9 @@ void main() {
       expect(ball.trail, isEmpty);
     });
 
-    test('given more recorded positions than the trail holds, then it keeps the newest, oldest first', () {
+    test(
+        'given more recorded positions than the trail holds, then it keeps the newest, oldest first',
+        () {
       final ball = Ball(position: Vector2.zero());
       const steps = Ball.maxTrailLength + 4;
 
@@ -423,7 +468,9 @@ void main() {
       expect(ball.trail.last.x, (steps - 1).toDouble());
     });
 
-    test('given a recorded position, when the ball moves on, then the trail still holds where it was', () {
+    test(
+        'given a recorded position, when the ball moves on, then the trail still holds where it was',
+        () {
       // The physics moves a ball by changing its position vector in place
       final ball = Ball(position: Vector2(10, 20));
       ball.recordTrail();
@@ -433,7 +480,8 @@ void main() {
       expect(ball.trail.single, Vector2(10, 20));
     });
 
-    test('given a ball with a trail, when reset, then the trail is cleared', () {
+    test('given a ball with a trail, when reset, then the trail is cleared',
+        () {
       final ball = Ball(position: Vector2(10, 20));
       ball.recordTrail();
       ball.recordTrail();
@@ -443,7 +491,9 @@ void main() {
       expect(ball.trail, isEmpty);
     });
 
-    test('given a ball that has landed or left play, then nothing more is recorded', () {
+    test(
+        'given a ball that has landed or left play, then nothing more is recorded',
+        () {
       final landed = Ball(position: Vector2(10, 20), hasLanded: true);
       final gone = Ball(position: Vector2(10, 20), isActive: false);
 

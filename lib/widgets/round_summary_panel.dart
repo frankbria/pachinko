@@ -30,49 +30,59 @@ class RoundSummaryPanel extends StatelessWidget {
       decoration: BoxDecoration(
         color: GameConstants.surfaceColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: GameConstants.secondaryColor.withValues(alpha: 0.6), width: 1.5),
+        border: Border.all(
+            color: GameConstants.secondaryColor.withValues(alpha: 0.6),
+            width: 1.5),
       ),
       // Scrolls when the board's panel is shorter than the summary
       child: SingleChildScrollView(
         child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            '${GameStrings.level} ${summary.levelNumber}',
-            style: text.titleMedium?.copyWith(color: GameConstants.mutedColor),
-          ),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              groupedThousands(summary.score),
-              style: text.displaySmall?.copyWith(
-                color: GameConstants.secondaryColor,
-                fontWeight: FontWeight.bold,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '${GameStrings.level} ${summary.levelNumber}',
+              style:
+                  text.titleMedium?.copyWith(color: GameConstants.mutedColor),
+            ),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                groupedThousands(summary.score),
+                style: text.displaySmall?.copyWith(
+                  color: GameConstants.secondaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-          ),
-          if (summary.isNewBest == true)
-            Text(
-              GameStrings.newBest,
-              style: text.labelLarge?.copyWith(color: GameConstants.secondaryColor),
+            if (summary.isNewBest == true)
+              Text(
+                GameStrings.newBest,
+                style: text.labelLarge
+                    ?.copyWith(color: GameConstants.secondaryColor),
+              ),
+            const SizedBox(height: 12),
+            for (final tier in summary.tiers) _row(text, tier),
+            const Divider(height: 20),
+            _line(text, GameStrings.prizePegs,
+                '${summary.prizePegsCollected} of ${summary.prizePegsTotal}'),
+            if (summary.bonusBalls > 0)
+              _line(text, GameStrings.bonusBalls, '+${summary.bonusBalls}'),
+            const SizedBox(height: 16),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                TextButton(
+                    onPressed: onMenu, child: const Text(GameStrings.menu)),
+                OutlinedButton(
+                    onPressed: onReplay, child: const Text(GameStrings.replay)),
+                FilledButton(
+                    onPressed: onNextLevel,
+                    child: const Text(GameStrings.nextLevel)),
+              ],
             ),
-          const SizedBox(height: 12),
-          for (final tier in summary.tiers) _row(text, tier),
-          const Divider(height: 20),
-          _line(text, GameStrings.prizePegs, '${summary.prizePegsCollected} of ${summary.prizePegsTotal}'),
-          if (summary.bonusBalls > 0) _line(text, GameStrings.bonusBalls, '+${summary.bonusBalls}'),
-          const SizedBox(height: 16),
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              TextButton(onPressed: onMenu, child: const Text(GameStrings.menu)),
-              OutlinedButton(onPressed: onReplay, child: const Text(GameStrings.replay)),
-              FilledButton(onPressed: onNextLevel, child: const Text(GameStrings.nextLevel)),
-            ],
-          ),
-        ],
+          ],
         ),
       ),
     );
@@ -89,12 +99,15 @@ class RoundSummaryPanel extends StatelessWidget {
             width: 64,
             child: Text(
               '${tier.pointValue}',
-              style: text.titleSmall?.copyWith(color: colour, fontWeight: FontWeight.bold),
+              style: text.titleSmall
+                  ?.copyWith(color: colour, fontWeight: FontWeight.bold),
             ),
           ),
-          Text('× ${tier.balls}', style: text.bodyMedium?.copyWith(color: GameConstants.inkColor)),
+          Text('× ${tier.balls}',
+              style: text.bodyMedium?.copyWith(color: GameConstants.inkColor)),
           const Spacer(),
-          Text(groupedThousands(tier.points), style: text.bodyMedium?.copyWith(color: GameConstants.inkColor)),
+          Text(groupedThousands(tier.points),
+              style: text.bodyMedium?.copyWith(color: GameConstants.inkColor)),
         ],
       ),
     );
@@ -104,9 +117,13 @@ class RoundSummaryPanel extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 2),
         child: Row(
           children: [
-            Text(label, style: text.bodyMedium?.copyWith(color: GameConstants.mutedColor)),
+            Text(label,
+                style:
+                    text.bodyMedium?.copyWith(color: GameConstants.mutedColor)),
             const Spacer(),
-            Text(value, style: text.bodyMedium?.copyWith(color: GameConstants.inkColor)),
+            Text(value,
+                style:
+                    text.bodyMedium?.copyWith(color: GameConstants.inkColor)),
           ],
         ),
       );

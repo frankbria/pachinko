@@ -74,10 +74,11 @@ void main() {
     /// GIVEN GameScreen is rendered with mocked GameState
     /// WHEN checking HUD display
     /// THEN GameScreen builds without errors
-    testWidgets('givenGameScreenRendered_whenCheckingDisplay_thenBuildsWithoutErrors',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenGameScreenRendered_whenCheckingDisplay_thenBuildsWithoutErrors',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
-      
+
       expect(find.byType(GameScreen), findsOneWidget);
     });
 
@@ -87,10 +88,11 @@ void main() {
     ///
     /// Uses Consumer<GameManager> pattern where gameManager.gameState.score is accessed.
     /// Verifies find.text() locates score value from mocked GameState.
-    testWidgets('givenGameScreenWithScore1000_whenCheckingHUD_thenScoreDisplayed',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenGameScreenWithScore1000_whenCheckingHUD_thenScoreDisplayed',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
-      
+
       expect(find.text('1000'), findsOneWidget);
       expect(find.text(GameStrings.score), findsOneWidget);
     });
@@ -98,10 +100,11 @@ void main() {
     /// GIVEN GameScreen is rendered with ballsRemaining=15
     /// WHEN checking HUD balls display
     /// THEN balls count "15" is displayed in HUD
-    testWidgets('givenGameScreenWithBalls15_whenCheckingHUD_thenBallsCountDisplayed',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenGameScreenWithBalls15_whenCheckingHUD_thenBallsCountDisplayed',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
-      
+
       expect(find.text('15'), findsOneWidget);
       expect(find.text(GameStrings.ballsRemaining), findsOneWidget);
     });
@@ -110,9 +113,9 @@ void main() {
     /// WHEN checking HUD level display
     /// THEN level "3" is displayed in HUD
     testWidgets('givenGameScreenWithLevel3_whenCheckingHUD_thenLevelDisplayed',
-      (WidgetTester tester) async {
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
-      
+
       expect(find.text('3'), findsOneWidget);
       expect(find.text(GameStrings.level), findsOneWidget);
     });
@@ -120,10 +123,11 @@ void main() {
     /// GIVEN GameScreen is rendered
     /// WHEN checking HUD icons
     /// THEN score, balls, and level icons are displayed
-    testWidgets('givenGameScreenRendered_whenCheckingHUDIcons_thenAllIconsDisplayed',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenGameScreenRendered_whenCheckingHUDIcons_thenAllIconsDisplayed',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
-      
+
       expect(find.byIcon(Icons.star), findsOneWidget);
       expect(find.byIcon(Icons.sports_golf), findsOneWidget);
       expect(find.byIcon(Icons.layers), findsOneWidget);
@@ -136,20 +140,22 @@ void main() {
     /// THEN PachinkoBoard is present in widget tree
     ///
     /// Uses find.byType(PachinkoBoard) to verify custom widget rendered.
-    testWidgets('givenGameScreenRendered_whenCheckingBoard_thenPachinkoBoardPresent',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenGameScreenRendered_whenCheckingBoard_thenPachinkoBoardPresent',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
-      
+
       expect(find.byType(PachinkoBoard), findsOneWidget);
     });
 
     /// GIVEN GameScreen is rendered
     /// WHEN checking widget structure
     /// THEN Scaffold and SafeArea are present
-    testWidgets('givenGameScreenRendered_whenCheckingStructure_thenScaffoldAndSafeAreaPresent',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenGameScreenRendered_whenCheckingStructure_thenScaffoldAndSafeAreaPresent',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
-      
+
       expect(find.byType(Scaffold), findsOneWidget);
       expect(find.byType(SafeArea), findsOneWidget);
     });
@@ -159,33 +165,36 @@ void main() {
     /// GIVEN GameScreen is rendered
     /// WHEN checking control buttons
     /// THEN back button is present
-    testWidgets('givenGameScreenRendered_whenCheckingControls_thenBackButtonPresent',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenGameScreenRendered_whenCheckingControls_thenBackButtonPresent',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
-      
+
       expect(find.byIcon(Icons.arrow_back), findsOneWidget);
     });
 
     /// GIVEN GameScreen is rendered
     /// WHEN checking control buttons
     /// THEN reset button is present
-    testWidgets('givenGameScreenRendered_whenCheckingControls_thenResetButtonPresent',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenGameScreenRendered_whenCheckingControls_thenResetButtonPresent',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
-      
+
       expect(find.byIcon(Icons.restart_alt), findsOneWidget);
     });
 
     /// GIVEN GameScreen is rendered with phase=ready
     /// WHEN user taps reset button
     /// THEN GameManager.resetGame is called
-    testWidgets('givenGameScreenRendered_whenUserTapsResetButton_thenResetGameCalled',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenGameScreenRendered_whenUserTapsResetButton_thenResetGameCalled',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
-      
+
       await tester.tap(find.byIcon(Icons.restart_alt));
       await tester.pump();
-      
+
       verify(mockGameManager.resetGame()).called(1);
     });
   });
@@ -196,12 +205,13 @@ void main() {
     /// THEN pause button is present (play_arrow is NOT present)
     ///
     /// Tests conditional rendering: pause button shown only when phase == GamePhase.playing
-    testWidgets('givenGameScreenWithPhasePlaying_whenCheckingControls_thenPauseButtonPresent',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenGameScreenWithPhasePlaying_whenCheckingControls_thenPauseButtonPresent',
+        (WidgetTester tester) async {
       when(mockGameState.phase).thenReturn(GamePhase.playing);
-      
+
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
-      
+
       expect(find.byIcon(Icons.pause), findsOneWidget);
       expect(find.byIcon(Icons.play_arrow), findsNothing);
     });
@@ -211,13 +221,15 @@ void main() {
     /// THEN resume button (play_arrow) is present
     ///
     /// Tests conditional rendering: resume button shown when phase == GamePhase.ready AND activeBalls.isNotEmpty
-    testWidgets('givenGameScreenWithPhaseReadyAndActiveBalls_whenCheckingControls_thenResumeButtonPresent',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenGameScreenWithPhaseReadyAndActiveBalls_whenCheckingControls_thenResumeButtonPresent',
+        (WidgetTester tester) async {
       when(mockGameState.phase).thenReturn(GamePhase.ready);
-      when(mockGameState.activeBalls).thenReturn([Ball(position: Vector2(100, 100))]);
-      
+      when(mockGameState.activeBalls)
+          .thenReturn([Ball(position: Vector2(100, 100))]);
+
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
-      
+
       expect(find.byIcon(Icons.play_arrow), findsOneWidget);
       expect(find.byIcon(Icons.pause), findsNothing);
     });
@@ -225,13 +237,14 @@ void main() {
     /// GIVEN GameScreen with phase=ready and activeBalls empty
     /// WHEN checking control buttons
     /// THEN neither pause nor resume button is present
-    testWidgets('givenGameScreenWithPhaseReadyAndNoActiveBalls_whenCheckingControls_thenNoPauseOrResumeButton',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenGameScreenWithPhaseReadyAndNoActiveBalls_whenCheckingControls_thenNoPauseOrResumeButton',
+        (WidgetTester tester) async {
       when(mockGameState.phase).thenReturn(GamePhase.ready);
       when(mockGameState.activeBalls).thenReturn([]);
-      
+
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
-      
+
       expect(find.byIcon(Icons.pause), findsNothing);
       expect(find.byIcon(Icons.play_arrow), findsNothing);
     });
@@ -239,31 +252,34 @@ void main() {
     /// GIVEN GameScreen with phase=playing
     /// WHEN user taps pause button
     /// THEN GameManager.pauseGame is called
-    testWidgets('givenGameScreenWithPhasePlaying_whenUserTapsPauseButton_thenPauseGameCalled',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenGameScreenWithPhasePlaying_whenUserTapsPauseButton_thenPauseGameCalled',
+        (WidgetTester tester) async {
       when(mockGameState.phase).thenReturn(GamePhase.playing);
-      
+
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
-      
+
       await tester.tap(find.byIcon(Icons.pause));
       await tester.pump();
-      
+
       verify(mockGameManager.pauseGame()).called(1);
     });
 
     /// GIVEN GameScreen with phase=ready and activeBalls not empty
     /// WHEN user taps resume button
     /// THEN GameManager.resumeGame is called
-    testWidgets('givenGameScreenWithPhaseReady_whenUserTapsResumeButton_thenResumeGameCalled',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenGameScreenWithPhaseReady_whenUserTapsResumeButton_thenResumeGameCalled',
+        (WidgetTester tester) async {
       when(mockGameState.phase).thenReturn(GamePhase.ready);
-      when(mockGameState.activeBalls).thenReturn([Ball(position: Vector2(100, 100))]);
-      
+      when(mockGameState.activeBalls)
+          .thenReturn([Ball(position: Vector2(100, 100))]);
+
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
-      
+
       await tester.tap(find.byIcon(Icons.play_arrow));
       await tester.pump();
-      
+
       verify(mockGameManager.resumeGame()).called(1);
     });
   });
@@ -274,15 +290,16 @@ void main() {
     /// THEN "Next Level" button is present
     ///
     /// Tests conditional rendering: next level button shown only when phase == GamePhase.gameOver AND ballsRemaining <= 0
-    testWidgets('givenGameScreenWithGameOverAndNoBalls_whenCheckingControls_thenTheSummaryOffersNextLevel',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenGameScreenWithGameOverAndNoBalls_whenCheckingControls_thenTheSummaryOffersNextLevel',
+        (WidgetTester tester) async {
       // The round summary carries Next Level now; the controls row no longer
       // grows a button of its own (#30)
       when(mockGameState.phase).thenReturn(GamePhase.gameOver);
       when(mockGameState.ballsRemaining).thenReturn(0);
-      
+
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
-      
+
       expect(find.byType(RoundSummaryPanel), findsOneWidget);
       expect(find.text('Next Level'), findsOneWidget);
       expect(find.byIcon(Icons.skip_next), findsNothing);
@@ -291,42 +308,45 @@ void main() {
     /// GIVEN GameScreen with phase=ready (not gameOver)
     /// WHEN checking control buttons
     /// THEN "Next Level" button is NOT present
-    testWidgets('givenGameScreenWithPhaseReady_whenCheckingControls_thenNextLevelButtonNotPresent',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenGameScreenWithPhaseReady_whenCheckingControls_thenNextLevelButtonNotPresent',
+        (WidgetTester tester) async {
       when(mockGameState.phase).thenReturn(GamePhase.ready);
       when(mockGameState.ballsRemaining).thenReturn(0);
-      
+
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
-      
+
       expect(find.text('Next Level'), findsNothing);
     });
 
     /// GIVEN GameScreen with phase=gameOver but ballsRemaining > 0
     /// WHEN checking control buttons
     /// THEN "Next Level" button is NOT present
-    testWidgets('givenGameScreenWithGameOverButBallsRemaining_whenCheckingControls_thenNextLevelButtonNotPresent',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenGameScreenWithGameOverButBallsRemaining_whenCheckingControls_thenNextLevelButtonNotPresent',
+        (WidgetTester tester) async {
       when(mockGameState.phase).thenReturn(GamePhase.gameOver);
       when(mockGameState.ballsRemaining).thenReturn(5);
-      
+
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
-      
+
       expect(find.text('Next Level'), findsNothing);
     });
 
     /// GIVEN GameScreen with phase=gameOver and ballsRemaining=0
     /// WHEN user taps "Next Level" button
     /// THEN GameManager.nextLevel is called
-    testWidgets('givenGameScreenWithGameOver_whenUserTapsNextLevelButton_thenNextLevelCalled',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenGameScreenWithGameOver_whenUserTapsNextLevelButton_thenNextLevelCalled',
+        (WidgetTester tester) async {
       when(mockGameState.phase).thenReturn(GamePhase.gameOver);
       when(mockGameState.ballsRemaining).thenReturn(0);
-      
+
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
-      
+
       await tester.tap(find.text('Next Level'));
       await tester.pump();
-      
+
       verify(mockGameManager.nextLevel()).called(1);
     });
   });
@@ -338,23 +358,25 @@ void main() {
     ///
     /// Back button triggers Navigator.of(context).pop(). We verify this by checking
     /// that tapping the button causes navigation away from GameScreen.
-    testWidgets('givenGameScreenRendered_whenUserTapsBackButton_thenNavigationOccurs',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenGameScreenRendered_whenUserTapsBackButton_thenNavigationOccurs',
+        (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
-      
+
       // Verify GameScreen is displayed
       expect(find.byType(GameScreen), findsOneWidget);
-      
+
       // Tap back button
       await tester.tap(find.byIcon(Icons.arrow_back));
       await tester.pumpAndSettle();
-      
+
       // After pop, GameScreen should no longer be in tree
       expect(find.byType(GameScreen), findsNothing);
     });
 
-    testWidgets('given GameScreen shown, when it is removed from the tree, then the game loop is stopped',
-      (WidgetTester tester) async {
+    testWidgets(
+        'given GameScreen shown, when it is removed from the tree, then the game loop is stopped',
+        (WidgetTester tester) async {
       // Given
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
       await tester.pump();
@@ -392,8 +414,9 @@ void main() {
       await tester.pump();
     }
 
-    testWidgets('given a ball in play, when the app goes to the background, then the game is paused once',
-      (WidgetTester tester) async {
+    testWidgets(
+        'given a ball in play, when the app goes to the background, then the game is paused once',
+        (WidgetTester tester) async {
       // Given
       when(mockGameState.phase).thenReturn(GamePhase.playing);
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
@@ -406,8 +429,9 @@ void main() {
       verify(mockGameManager.pauseGame()).called(1);
     });
 
-    testWidgets('given a game paused by going to the background, when the app returns, then it does not resume by itself',
-      (WidgetTester tester) async {
+    testWidgets(
+        'given a game paused by going to the background, when the app returns, then it does not resume by itself',
+        (WidgetTester tester) async {
       // Given
       when(mockGameState.phase).thenReturn(GamePhase.playing);
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
@@ -420,8 +444,9 @@ void main() {
       verifyNever(mockGameManager.resumeGame());
     });
 
-    testWidgets('given no ball in play, when the app goes to the background, then nothing is paused',
-      (WidgetTester tester) async {
+    testWidgets(
+        'given no ball in play, when the app goes to the background, then nothing is paused',
+        (WidgetTester tester) async {
       // Given: phase is ready (the default stub)
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
       addTearDown(() => bringBack(tester));
@@ -433,8 +458,9 @@ void main() {
       verifyNever(mockGameManager.pauseGame());
     });
 
-    testWidgets('given the game screen has been left, when the app goes to the background, then nothing is paused',
-      (WidgetTester tester) async {
+    testWidgets(
+        'given the game screen has been left, when the app goes to the background, then nothing is paused',
+        (WidgetTester tester) async {
       // Given
       when(mockGameState.phase).thenReturn(GamePhase.playing);
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
@@ -458,8 +484,9 @@ void main() {
     /// ChangeNotifier, not a mock. These tests verify Consumer accesses current state.
     /// The UI updating on state changes is tested implicitly through conditional rendering
     /// tests (pause/resume toggle, next level conditional display).
-    testWidgets('givenGameScreenRendered_whenConsumerAccesses State_thenCurrentStateDisplayed',
-      (WidgetTester tester) async {
+    testWidgets(
+        'givenGameScreenRendered_whenConsumerAccesses State_thenCurrentStateDisplayed',
+        (WidgetTester tester) async {
       // Render with different state values
       when(mockGameState.score).thenReturn(5000);
       when(mockGameState.ballsRemaining).thenReturn(5);

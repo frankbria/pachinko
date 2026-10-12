@@ -55,8 +55,10 @@ class RoundSummary {
   factory RoundSummary.of(GameState state, {bool? isNewBest}) {
     final level = state.currentLevel;
     final slots = level?.slots ?? const [];
-    final prizes = (level?.pegs ?? const <Peg>[]).where((peg) => peg.type == PegType.special);
-    final values = GameConstants.slotPointValues.values.toSet().toList()..sort((a, b) => b.compareTo(a));
+    final prizes = (level?.pegs ?? const <Peg>[])
+        .where((peg) => peg.type == PegType.special);
+    final values = GameConstants.slotPointValues.values.toSet().toList()
+      ..sort((a, b) => b.compareTo(a));
 
     return RoundSummary(
       levelNumber: state.currentLevelNumber,

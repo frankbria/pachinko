@@ -61,6 +61,7 @@ lib/
 - `flutter drive --driver=test_driver/integration_test.dart --target=integration_test/screenshots.dart -d emulator-5554` - Take screenshots of the game on a running emulator: the menu, levels 1, 2, 3 and 9, and one full round. They are written to `build/screenshots/`. `.github/workflows/screenshots.yml` runs this on a pull request that changes the drawing code, and on demand, and uploads the images as the `screenshots` artifact (`gh run download <run> -n screenshots`). The script is not one of the integration tests: its name does not end in `_test`
 - `flutter test tool/scoring_simulation_test.dart --dart-define=LEVELS=60 --dart-define=ROUNDS=20` - Measure the game's balance: plays whole rounds through the real generator, launcher and physics and prints, per peg pattern and per band of levels, where balls land, how often the bonus triggers, balls per round and scores (about fifteen seconds). It asserts nothing and is not part of the test suite. Run it before and after any change to level generation, scoring or the bonus
 - `dart run build_runner build --delete-conflicting-outputs` - Regenerate test mocks after changing the public API of a mocked class, and commit the result. CI regenerates them and fails if they differ from the committed ones
+- `dart format lib test integration_test tool test_driver` - Format the code (a CI gate, as `dart format --output=none --set-exit-if-changed` on the same directories: an unformatted file fails the job. The generated mocks are included; the generator already writes them this way). `dart fix --apply` afterwards if the wrapping left an `if` without braces. The commit that first formatted everything is listed in `.git-blame-ignore-revs`
 - `flutter analyze` - Check code quality (a CI gate: anything it reports fails the job, info-level lints included, so the count stays at zero; `dart fix --apply` clears most style lints, and its changes to `pubspec.yaml` are not wanted). `analysis_options.yaml` excludes `tools/flutter/**`, so the SDK checkout there is not analyzed
 - `flutter doctor` - Check Flutter installation
 
@@ -122,7 +123,7 @@ lib/
   # Coverage of the lines this branch changed, which is what CI gates at 85%
   uvx diff-cover coverage/lcov.info --compare-branch=origin/master --fail-under=85
   ```
-- **CI Gates** (`.github/workflows/ci.yml`, in order): analyzer, generated mocks up to date, tests, coverage of changed lines at least 85% (pull requests only), golden tests. `flutter test --coverage` only records libraries that a test loads, so `test/all_libraries_loaded_test.dart` imports every file under `lib/` and fails when one is missing from its list; add new files there, or an untested file would be skipped by the coverage check instead of failing it. A failed golden step uploads the difference images as the `golden-failures` artifact. The integration tests in `integration_test/` need a device, so they are not part of this job: `.github/workflows/integration.yml` runs them on an Android emulator when they, the drawing code in `lib/widgets/` or that file change, once a week, and on demand
+- **CI Gates** (`.github/workflows/ci.yml`, in order): analyzer, formatting, generated mocks up to date, tests, coverage of changed lines at least 85% (pull requests only), golden tests. `flutter test --coverage` only records libraries that a test loads, so `test/all_libraries_loaded_test.dart` imports every file under `lib/` and fails when one is missing from its list; add new files there, or an untested file would be skipped by the coverage check instead of failing it. A failed golden step uploads the difference images as the `golden-failures` artifact. The integration tests in `integration_test/` need a device, so they are not part of this job: `.github/workflows/integration.yml` runs them on an Android emulator when they, the drawing code in `lib/widgets/` or that file change, once a week, and on demand
 - **Test Quality**: Tests must validate behavior, not just achieve coverage metrics
 - **Test Documentation**: Complex test scenarios must include comments explaining the test strategy
 
@@ -186,7 +187,7 @@ Before marking ANY feature as complete, verify:
 - [ ] All tests pass (`flutter test --exclude-tags golden` and `flutter test --tags golden`)
 - [ ] Code coverage meets 85% minimum threshold
 - [ ] Coverage report reviewed for meaningful test quality
-- [ ] Code formatted and analyzed (`dart format`, `flutter analyze` with no issues)
+- [ ] Code formatted and analyzed (`dart format` leaves nothing changed, `flutter analyze` with no issues)
 - [ ] All changes committed with conventional commit messages
 - [ ] All commits pushed to remote repository
 - [ ] Implementation documentation updated

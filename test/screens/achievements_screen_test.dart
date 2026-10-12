@@ -87,8 +87,10 @@ void main() {
       await tester.pumpWidget(createTestWidget());
 
       // Then
-      expect(find.textContaining('50%'), findsOneWidget); // Completion percentage
-      expect(find.text('200'), findsWidgets); // Total points (also appears in chip)
+      expect(
+          find.textContaining('50%'), findsOneWidget); // Completion percentage
+      expect(find.text('200'),
+          findsWidgets); // Total points (also appears in chip)
       // Exact match: textContaining('1/2') also matches unlock dates such as 10/11/2026
       expect(find.text('1/2'), findsOneWidget); // Unlocked count
     });
@@ -150,7 +152,8 @@ void main() {
       await tester.pumpWidget(createTestWidget());
 
       // Then - Recent should appear before old
-      final listTiles = tester.widgetList<ListTile>(find.byType(ListTile)).toList();
+      final listTiles =
+          tester.widgetList<ListTile>(find.byType(ListTile)).toList();
       expect(listTiles.length, greaterThanOrEqualTo(2));
 
       // First unlocked achievement should be "Recent Achievement"
@@ -209,18 +212,22 @@ void main() {
         progress: 75,
       );
 
-      when(mockService.getAllAchievements()).thenReturn([lowProgress, highProgress]);
+      when(mockService.getAllAchievements())
+          .thenReturn([lowProgress, highProgress]);
       when(mockService.getUnlockedAchievements()).thenReturn([]);
-      when(mockService.getLockedAchievements()).thenReturn([lowProgress, highProgress]);
+      when(mockService.getLockedAchievements())
+          .thenReturn([lowProgress, highProgress]);
       when(mockService.getTotalPoints()).thenReturn(0);
 
       // When
       await tester.pumpWidget(createTestWidget());
 
       // Then - High progress should appear first
-      final progressIndicators = tester.widgetList<LinearProgressIndicator>(
-        find.byType(LinearProgressIndicator),
-      ).toList();
+      final progressIndicators = tester
+          .widgetList<LinearProgressIndicator>(
+            find.byType(LinearProgressIndicator),
+          )
+          .toList();
 
       expect(progressIndicators.length, equals(2));
       expect(progressIndicators[0].value, equals(0.75)); // High progress first
@@ -229,7 +236,8 @@ void main() {
   });
 
   group('AchievementsScreen - Mixed Display', () {
-    testWidgets('givenMixedAchievements_whenDisplayed_thenUnlockedFirstThenLocked',
+    testWidgets(
+        'givenMixedAchievements_whenDisplayed_thenUnlockedFirstThenLocked',
         (WidgetTester tester) async {
       // Given
       final unlocked = Achievement(
@@ -288,7 +296,8 @@ void main() {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => ChangeNotifierProvider<AchievementService>.value(
+                        builder: (_) =>
+                            ChangeNotifierProvider<AchievementService>.value(
                           value: mockService,
                           child: const AchievementsScreen(),
                         ),

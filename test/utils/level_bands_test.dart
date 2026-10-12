@@ -13,23 +13,29 @@ void main() {
   const perBand = GameConstants.levelsPerBand;
 
   group('The band of a level', () {
-    test('given the first and last level of each band, then each maps to its own band', () {
+    test(
+        'given the first and last level of each band, then each maps to its own band',
+        () {
       for (int band = 0; band < bands.length; band++) {
         final first = band * perBand + 1;
         final last = (band + 1) * perBand;
-        expect(GameConstants.bandForLevel(first), same(bands[band]), reason: 'level $first');
-        expect(GameConstants.bandForLevel(last), same(bands[band]), reason: 'level $last');
+        expect(GameConstants.bandForLevel(first), same(bands[band]),
+            reason: 'level $first');
+        expect(GameConstants.bandForLevel(last), same(bands[band]),
+            reason: 'level $last');
       }
     });
 
     test('given the level after a band\'s last, then the band changes', () {
       for (int band = 0; band < bands.length - 1; band++) {
         final last = (band + 1) * perBand;
-        expect(GameConstants.bandForLevel(last + 1), isNot(same(GameConstants.bandForLevel(last))));
+        expect(GameConstants.bandForLevel(last + 1),
+            isNot(same(GameConstants.bandForLevel(last))));
       }
     });
 
-    test('given levels beyond the last band, then the bands come round again', () {
+    test('given levels beyond the last band, then the bands come round again',
+        () {
       final beyond = bands.length * perBand;
 
       expect(GameConstants.bandForLevel(beyond + 1), same(bands.first));
@@ -69,11 +75,15 @@ void main() {
       'ink': GameConstants.inkColor,
     };
 
-    test('given any band, then every role colour stands out from its felt, lit or shaded', () {
+    test(
+        'given any band, then every role colour stands out from its felt, lit or shaded',
+        () {
       for (final band in bands) {
         roles.forEach((name, colour) {
-          expect(contrast(colour, band.felt), greaterThanOrEqualTo(3.0), reason: '$name on ${band.name} felt');
-          expect(contrast(colour, band.feltShade), greaterThanOrEqualTo(3.0), reason: '$name on ${band.name} shade');
+          expect(contrast(colour, band.felt), greaterThanOrEqualTo(3.0),
+              reason: '$name on ${band.name} felt');
+          expect(contrast(colour, band.feltShade), greaterThanOrEqualTo(3.0),
+              reason: '$name on ${band.name} shade');
         });
       }
     });
@@ -93,7 +103,8 @@ void main() {
   });
 
   group('The board in a band\'s colours', () {
-    Level level(int number) => Level.generate(number, GameConstants.boardWidth, GameConstants.boardHeight);
+    Level level(int number) => Level.generate(
+        number, GameConstants.boardWidth, GameConstants.boardHeight);
     int rgb(Color colour) => colour.toARGB32() & 0xFFFFFF;
 
     test('given a level, then the rail glows in its band\'s rim colour', () {
@@ -107,11 +118,14 @@ void main() {
             .map((call) => call.positionalArguments[1] as Paint)
             .where((paint) => paint.shader == null);
         expect(glows, isNotEmpty);
-        expect(glows.map((paint) => rgb(paint.color)).toSet(), {rgb(bands[band].rim)}, reason: bands[band].name);
+        expect(glows.map((paint) => rgb(paint.color)).toSet(),
+            {rgb(bands[band].rim)},
+            reason: bands[band].name);
       }
     });
 
-    testWidgets('given a level, then the felt is its band\'s colour', (tester) async {
+    testWidgets('given a level, then the felt is its band\'s colour',
+        (tester) async {
       /// The colour of the felt at a point with no peg, slot, rail or sign on it.
       Future<Color> feltAt(int levelNumber) async {
         final recorder = ui.PictureRecorder();
@@ -119,26 +133,33 @@ void main() {
         final picture = recorder.endRecording();
         final pixel = await tester.runAsync(() async {
           final image = await picture.toImage(400, 600);
-          final data = (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!;
+          final data =
+              (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!;
           image.dispose();
           const at = (455 * 400 + 200) * 4;
-          return Color.fromARGB(255, data.getUint8(at), data.getUint8(at + 1), data.getUint8(at + 2));
+          return Color.fromARGB(255, data.getUint8(at), data.getUint8(at + 1),
+              data.getUint8(at + 2));
         });
         picture.dispose();
         return pixel!;
       }
 
-      double distance(Color a, Color b) => math.sqrt(
-          math.pow(a.r - b.r, 2).toDouble() + math.pow(a.g - b.g, 2).toDouble() + math.pow(a.b - b.b, 2).toDouble());
+      double distance(Color a, Color b) =>
+          math.sqrt(math.pow(a.r - b.r, 2).toDouble() +
+              math.pow(a.g - b.g, 2).toDouble() +
+              math.pow(a.b - b.b, 2).toDouble());
 
       for (int band = 0; band < bands.length; band++) {
         final felt = await feltAt(band * perBand + 1);
         // Between the band's felt and its shade, and nearer to them than to any other band's
-        final own = math.min(distance(felt, bands[band].felt), distance(felt, bands[band].feltShade));
+        final own = math.min(distance(felt, bands[band].felt),
+            distance(felt, bands[band].feltShade));
         for (int other = 0; other < bands.length; other++) {
           if (other == band) continue;
-          final theirs = math.min(distance(felt, bands[other].felt), distance(felt, bands[other].feltShade));
-          expect(own, lessThan(theirs), reason: '${bands[band].name} against ${bands[other].name}');
+          final theirs = math.min(distance(felt, bands[other].felt),
+              distance(felt, bands[other].feltShade));
+          expect(own, lessThan(theirs),
+              reason: '${bands[band].name} against ${bands[other].name}');
         }
       }
     });

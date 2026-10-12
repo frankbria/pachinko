@@ -37,7 +37,8 @@ void main() {
       verify(mockPrefs.setString(key, any)).called(1);
     });
 
-    test('givenTenStoredScores_whenHigherScoreSaved_thenOnlyTopTenKept', () async {
+    test('givenTenStoredScores_whenHigherScoreSaved_thenOnlyTopTenKept',
+        () async {
       // Given: ten stored scores, 100..1000
       const level = 1;
       const key = 'highscores_level_$level';
@@ -50,8 +51,9 @@ void main() {
       await storageService.saveHighScore(level, 5000);
 
       // Then: still ten entries, new best first, lowest dropped
-      final saved = jsonDecode(
-          verify(mockPrefs.setString(key, captureAny)).captured.single as String) as List;
+      final saved = jsonDecode(verify(mockPrefs.setString(key, captureAny))
+          .captured
+          .single as String) as List;
       expect(saved, hasLength(10));
       expect(saved.first['score'], equals(5000));
       expect(saved.map((s) => s['score']), isNot(contains(100)));
@@ -66,7 +68,8 @@ void main() {
       final existingScores = [
         HighScore(level: level, score: 3000, timestamp: DateTime(2025, 11, 16)),
       ];
-      final existingJson = jsonEncode(existingScores.map((s) => s.toJson()).toList());
+      final existingJson =
+          jsonEncode(existingScores.map((s) => s.toJson()).toList());
 
       when(mockPrefs.getString(key)).thenReturn(existingJson);
       when(mockPrefs.setString(any, any)).thenAnswer((_) async => true);
@@ -75,7 +78,9 @@ void main() {
       await storageService.saveHighScore(level, 4000);
 
       // Then - Should save both scores
-      final captured = verify(mockPrefs.setString(key, captureAny)).captured.single as String;
+      final captured = verify(mockPrefs.setString(key, captureAny))
+          .captured
+          .single as String;
       final savedScores = (jsonDecode(captured) as List)
           .map((json) => HighScore.fromJson(json))
           .toList();
@@ -102,7 +107,8 @@ void main() {
   });
 
   group('StorageService - Get High Scores', () {
-    test('givenStoredScores_whenGetHighScoresCalled_thenReturnsSortedList', () async {
+    test('givenStoredScores_whenGetHighScoresCalled_thenReturnsSortedList',
+        () async {
       // Given
       const level = 1;
       const key = 'highscores_level_$level';
@@ -125,7 +131,8 @@ void main() {
       expect(result[2].score, equals(3000));
     });
 
-    test('givenNoScores_whenGetHighScoresCalled_thenReturnsEmptyList', () async {
+    test('givenNoScores_whenGetHighScoresCalled_thenReturnsEmptyList',
+        () async {
       // Given
       const level = 5;
       const key = 'highscores_level_$level';
@@ -140,7 +147,8 @@ void main() {
 
     /// Tests error recovery when stored data is corrupted or malformed.
     /// The service should return an empty list rather than crashing.
-    test('givenCorruptedData_whenGetHighScoresCalled_thenReturnsEmptyList', () async {
+    test('givenCorruptedData_whenGetHighScoresCalled_thenReturnsEmptyList',
+        () async {
       // Given
       const level = 1;
       const key = 'highscores_level_$level';
@@ -155,7 +163,9 @@ void main() {
   });
 
   group('StorageService - Get Total Score', () {
-    test('givenMultipleLevelScores_whenGetTotalScoreCalled_thenAggregatesCorrectly', () async {
+    test(
+        'givenMultipleLevelScores_whenGetTotalScoreCalled_thenAggregatesCorrectly',
+        () async {
       // Given - Mock scores for multiple levels
       final level1Scores = [
         HighScore(level: 1, score: 5000, timestamp: DateTime.now()),
@@ -219,7 +229,8 @@ void main() {
       verifyNever(mockPrefs.remove('other_app_key'));
     });
 
-    test('givenStorageError_whenClearDataCalled_thenTheFailureDoesNotEscape', () async {
+    test('givenStorageError_whenClearDataCalled_thenTheFailureDoesNotEscape',
+        () async {
       // Given
       when(mockPrefs.getKeys()).thenThrow(Exception('Storage error'));
 
@@ -241,13 +252,18 @@ void main() {
   });
 
   group('StorageService - Get Best Score for Level', () {
-    test('givenMultipleScoresForLevel_whenGetBestScoreCalled_thenReturnsHighest', () async {
+    test(
+        'givenMultipleScoresForLevel_whenGetBestScoreCalled_thenReturnsHighest',
+        () async {
       // Given
       const level = 3;
       const key = 'highscores_level_$level';
       final scores = [
         HighScore(level: level, score: 5000, timestamp: DateTime(2025, 11, 17)),
-        HighScore(level: level, score: 9000, timestamp: DateTime(2025, 11, 16)), // Highest
+        HighScore(
+            level: level,
+            score: 9000,
+            timestamp: DateTime(2025, 11, 16)), // Highest
         HighScore(level: level, score: 3000, timestamp: DateTime(2025, 11, 15)),
       ];
       final jsonString = jsonEncode(scores.map((s) => s.toJson()).toList());
@@ -262,7 +278,8 @@ void main() {
       expect(best!.score, equals(5000)); // Returns first from stored list
     });
 
-    test('givenNoScoresForLevel_whenGetBestScoreCalled_thenReturnsNull', () async {
+    test('givenNoScoresForLevel_whenGetBestScoreCalled_thenReturnsNull',
+        () async {
       // Given
       const level = 10;
       const key = 'highscores_level_$level';
