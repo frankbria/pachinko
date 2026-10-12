@@ -35,6 +35,10 @@ class Tally {
       pegs = 0;
   int over10k = 0, best = 0;
 
+  /// Rounds in which one ball collected every prize peg (Combo King), and
+  /// rounds whose first ball landed in a 2,000 slot (Lucky Shot).
+  int comboRounds = 0, luckyRounds = 0;
+
   /// Every round's score, for the percentiles.
   final scores = <int>[];
   final slots = <int, int>{50: 0, 200: 0, 1000: 0, 2000: 0};
@@ -49,6 +53,8 @@ class Tally {
     pegs += o.pegs;
     over10k += o.over10k;
     scores.addAll(o.scores);
+    comboRounds += o.comboRounds;
+    luckyRounds += o.luckyRounds;
     best = max(best, o.best);
     o.slots.forEach((k, v) => slots[k] = slots[k]! + v);
   }
@@ -58,7 +64,8 @@ class Tally {
       '$name | ${share(bonusRounds)} | ${(balls / rounds).toStringAsFixed(1)} | ${(score / rounds).round()} | '
       '${share(over10k)} | ${percentile(50)} | ${percentile(90)} | ${percentile(99)} | '
       '${share(reaching(AchievementService.highRollerScore))} | '
-      '${share(reaching(AchievementService.scoreMasterScore))} | $best';
+      '${share(reaching(AchievementService.scoreMasterScore))} | '
+      '${share(comboRounds)} | ${share(luckyRounds)} | $best';
 
   /// How many rounds scored at least [threshold].
   int reaching(int threshold) =>
@@ -126,12 +133,19 @@ void main() {
             !state.specialBonusTriggered) {
           state.triggerSpecialBonus();
           tally.bonusRounds = 1;
+          final prizes = level.specialPegs.length;
+          if (balls.any((ball) => ball.prizePegsCollected == prizes)) {
+            tally.comboRounds = 1;
+          }
           // The bonus balls have only just dropped: they get the full time
           // before anything is counted as stuck
           frames = 0;
         }
         final hitSlots = engine.checkSlotCollisions(balls, level.slots);
         for (final slot in hitSlots) {
+          if (tally.balls == 0 && slot.pointValue >= 2000) {
+            tally.luckyRounds = 1;
+          }
           state.addScore(slot.pointValue);
           tally.slots[slot.pointValue] = tally.slots[slot.pointValue]! + 1;
         }
@@ -189,7 +203,7 @@ void main() {
     print('SIM ${all.row('all')}');
     // ignore: avoid_print
     print(
-        'BAND levels | bonus rounds | balls/round | score/round | rounds over 10k | p50 | p90 | p99 | High Roller | Score Master | best round');
+        'BAND levels | bonus rounds | balls/round | score/round | rounds over 10k | p50 | p90 | p99 | High Roller | Score Master | Combo King | Lucky Shot | best round');
     bands.forEach((name, tally) {
       // ignore: avoid_print
       if (tally.rounds > 0) print('BAND ${tally.band(name)}');

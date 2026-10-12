@@ -264,3 +264,11 @@ Patterns learned the hard way on this repo. Add an entry after any correction.
 - **A stored copy of a definition outlives the definition.** Achievements were saved whole, text included, and loading replaced the definition with the saved object. Lowering a threshold would have left every existing player reading "Score 50,000+" beside a rule of 20,000. Loading now takes only what the player did (progress, the unlock date); the rest comes from the code.
 - **A threshold nobody can reach is found by measuring, not by reading.** 50,000 looked reasonable in the source. The simulation's best of 1,200 rounds was 38,650. The new values are its 90th and 99th percentiles, and the tool now prints the share of rounds that reach each, so the next retune shows at once if they have drifted.
 - **Write the text from the number.** The descriptions are built from the two constants, so the rule and what the player is told cannot part.
+
+## 2026-10-12 — the PR for issue #85 (Combo King and Lucky Shot can be won)
+
+- **A rule can be impossible twice over.** Combo King asked for five prize pegs where a level has four at most, and nothing called the method that would have unlocked it. Lucky Shot asked one ball for 5,000 where a slot pays 2,000, and nothing called its method either. Fixing the rule alone would have left both unwinnable. A test now reads the sources and fails if a `track*` method has no caller.
+- **Put a count where the fact is known.** Only the physics engine knows which ball hit which peg, so the ball's count of prize pegs is kept there, in one line, and the manager only compares it. Working it out afterwards from the list of pegs hit would have been a guess whenever two balls were in play.
+- **"All of none" is true.** `every` on an empty list is true, and a ball that collected nothing has collected all zero prize pegs. No generated level has none, but the comparison guards it, and a test removes the guard to see it fail.
+- **A mocked collaborator makes every new read a test change.** The engine now reads a peg's type and the manager a level's prize pegs; five tests built on `MockPeg` and `MockLevel` needed a stub each. The new tests here use the real objects.
+- **Measure a new rule before shipping it.** The simulation says Combo King comes in about one round in nine and Lucky Shot in about one in ten: neither impossible nor automatic.

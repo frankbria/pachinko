@@ -32,6 +32,10 @@ class GameManager extends ChangeNotifier {
   /// about one round must not be shown for a later one.
   int _round = 0;
 
+  /// Whether a ball has already left play this round. Lucky Shot is for the
+  /// first one only.
+  bool _firstBallOut = false;
+
   /// The player's choice of launch mode, made while there was no storage to
   /// save it to. Saved when storage is attached.
   bool? _unsavedSingleBallLaunch;
@@ -134,6 +138,7 @@ class GameManager extends ChangeNotifier {
     _levelResultSaved = false;
     _roundIsNewBest = null;
     _round++;
+    _firstBallOut = false;
     _gameState.startNewGame(level: level);
     _startGameLoop();
     notifyListeners();
@@ -156,6 +161,7 @@ class GameManager extends ChangeNotifier {
     _levelResultSaved = false;
     _roundIsNewBest = null;
     _round++;
+    _firstBallOut = false;
     _gameTimer?.cancel();
     _gameState.resetLevel();
     notifyListeners();
@@ -293,6 +299,7 @@ class GameManager extends ChangeNotifier {
     // Remove inactive balls
     for (final ball in List.from(balls)) {
       if (!ball.isActive) {
+        _firstBallOut = true;
         _gameState.removeBall(ball);
       }
     }
@@ -328,6 +335,7 @@ class GameManager extends ChangeNotifier {
       // Track edge slot achievement (edge slots are worth 2000 points)
       if (slot.pointValue >= 2000) {
         _achievementService?.trackEdgeSlot();
+        if (!_firstBallOut) _achievementService?.trackFirstBallInEdgeSlot();
       }
     }
   }
@@ -350,6 +358,14 @@ class GameManager extends ChangeNotifier {
       // Track achievements
       _achievementService?.trackAllSpecialPegsHit();
       _achievementService?.trackSpecialBonus();
+      // The ball that collected the last prize peg is still in play; if it
+      // collected them all, its count is the level's
+      final prizePegs = level.specialPegs.length;
+      if (prizePegs > 0 &&
+          _gameState.activeBalls
+              .any((ball) => ball.prizePegsCollected == prizePegs)) {
+        _achievementService?.trackAllPrizePegsWithOneBall();
+      }
     }
   }
 
@@ -405,6 +421,7 @@ class GameManager extends ChangeNotifier {
     _levelResultSaved = false;
     _roundIsNewBest = null;
     _round++;
+    _firstBallOut = false;
     _gameTimer?.cancel();
     _gameState.nextLevel();
     notifyListeners();
@@ -421,6 +438,7 @@ class GameManager extends ChangeNotifier {
     _levelResultSaved = false;
     _roundIsNewBest = null;
     _round++;
+    _firstBallOut = false;
     _gameTimer?.cancel();
     _gameState.loadLevel(levelNumber);
     notifyListeners();

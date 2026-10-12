@@ -180,6 +180,21 @@ class MockBall extends _i1.Mock implements _i4.Ball {
       );
 
   @override
+  int get prizePegsCollected => (super.noSuchMethod(
+        Invocation.getter(#prizePegsCollected),
+        returnValue: 0,
+      ) as int);
+
+  @override
+  set prizePegsCollected(int? _prizePegsCollected) => super.noSuchMethod(
+        Invocation.setter(
+          #prizePegsCollected,
+          _prizePegsCollected,
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
   List<_i2.Vector2> get trail => (super.noSuchMethod(
         Invocation.getter(#trail),
         returnValue: <_i2.Vector2>[],

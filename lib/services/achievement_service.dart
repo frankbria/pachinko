@@ -155,14 +155,14 @@ class AchievementService extends ChangeNotifier {
       Achievement(
         id: 'combo_king',
         name: 'Combo King',
-        description: 'Hit 5 special pegs with one ball',
+        description: 'Collect every prize peg on a level with one ball',
         icon: Icons.flash_on,
         pointValue: 1000,
       ),
       Achievement(
         id: 'lucky_shot',
         name: 'Lucky Shot',
-        description: 'Score 5,000+ with single ball',
+        description: 'Land the first ball of a round in a 2,000 slot',
         icon: Icons.casino,
         pointValue: 250,
       ),
@@ -374,14 +374,12 @@ class AchievementService extends ChangeNotifier {
     }
   }
 
-  /// Tracks the score from a single ball
-  void trackSingleBallScore(int score) {
-    if (score >= 5000) {
-      final achievement = _achievements.firstWhere((a) => a.id == 'lucky_shot');
-      if (!achievement.isUnlocked) {
-        achievement.unlock();
-        _checkUnlock(achievement);
-      }
+  /// The first ball of a round has landed in a 2,000 slot.
+  void trackFirstBallInEdgeSlot() {
+    final achievement = _achievements.firstWhere((a) => a.id == 'lucky_shot');
+    if (!achievement.isUnlocked) {
+      achievement.unlock();
+      _checkUnlock(achievement);
     }
   }
 
@@ -410,14 +408,12 @@ class AchievementService extends ChangeNotifier {
     }
   }
 
-  /// Tracks when multiple special pegs are hit with one ball
-  void trackSpecialPegCombo(int count) {
-    if (count >= 5) {
-      final achievement = _achievements.firstWhere((a) => a.id == 'combo_king');
-      if (!achievement.isUnlocked) {
-        achievement.unlock();
-        _checkUnlock(achievement);
-      }
+  /// One ball has collected every prize peg on the level.
+  void trackAllPrizePegsWithOneBall() {
+    final achievement = _achievements.firstWhere((a) => a.id == 'combo_king');
+    if (!achievement.isUnlocked) {
+      achievement.unlock();
+      _checkUnlock(achievement);
     }
   }
 

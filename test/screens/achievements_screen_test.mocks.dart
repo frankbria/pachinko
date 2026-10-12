@@ -83,10 +83,10 @@ class MockAchievementService extends _i1.Mock
       );
 
   @override
-  void trackSingleBallScore(int? score) => super.noSuchMethod(
+  void trackFirstBallInEdgeSlot() => super.noSuchMethod(
         Invocation.method(
-          #trackSingleBallScore,
-          [score],
+          #trackFirstBallInEdgeSlot,
+          [],
         ),
         returnValueForMissingStub: null,
       );
@@ -110,10 +110,10 @@ class MockAchievementService extends _i1.Mock
       );
 
   @override
-  void trackSpecialPegCombo(int? count) => super.noSuchMethod(
+  void trackAllPrizePegsWithOneBall() => super.noSuchMethod(
         Invocation.method(
-          #trackSpecialPegCombo,
-          [count],
+          #trackAllPrizePegsWithOneBall,
+          [],
         ),
         returnValueForMissingStub: null,
       );

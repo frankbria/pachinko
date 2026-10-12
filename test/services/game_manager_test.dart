@@ -11,6 +11,7 @@ import 'package:pachinko_game/models/high_score.dart';
 import 'package:pachinko_game/models/peg.dart';
 import 'package:pachinko_game/models/slot.dart';
 import 'package:pachinko_game/models/level.dart';
+import 'package:pachinko_game/services/achievement_service.dart';
 import 'package:pachinko_game/services/game_manager.dart';
 import 'package:pachinko_game/services/storage_service.dart';
 import 'package:pachinko_game/utils/constants.dart';
@@ -403,6 +404,7 @@ void main() {
       );
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([specialPeg]);
+      when(mockLevel.specialPegs).thenReturn([specialPeg]);
       when(mockLevel.slots).thenReturn([]);
       when(mockLevel.allSpecialPegsHit).thenReturn(true);
       when(mockGameState.activeBalls).thenReturn([ball]);
@@ -439,6 +441,7 @@ void main() {
       );
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([specialPeg]);
+      when(mockLevel.specialPegs).thenReturn([specialPeg]);
       when(mockLevel.slots).thenReturn([]);
       when(mockLevel.allSpecialPegsHit).thenReturn(true);
       when(mockGameState.activeBalls).thenReturn([ball]);
@@ -1366,6 +1369,127 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 1700));
       expect(manager.isRunning, isFalse);
       expect(state.phase, GamePhase.gameOver);
+    });
+  });
+  group('Achievements earned in play', () {
+    /// Combo King and Lucky Shot could not be won: their rules asked for the
+    /// impossible and the game never told the service about them (#85). These
+    /// run the real loop with a real service and read what it unlocked.
+    Future<void> ticks(int count) =>
+        Future<void>.delayed(Duration(milliseconds: 16 * count + 8));
+
+    Future<(GameManager, AchievementService)> game() async {
+      SharedPreferences.setMockInitialValues({});
+      final service = await AchievementService.create(
+          await SharedPreferences.getInstance());
+      final manager = GameManager(achievementService: service);
+      addTearDown(manager.dispose);
+      manager.startGame();
+      return (manager, service);
+    }
+
+    bool unlocked(AchievementService service, String id) =>
+        service.getAllAchievements().firstWhere((a) => a.id == id).isUnlocked;
+
+    /// Puts a ball on [peg] and lets the loop collide them.
+    Future<Ball> touch(GameManager manager, Peg peg, {Ball? ball}) async {
+      final toucher = ball ?? Ball(position: peg.position.clone());
+      toucher.position.setFrom(peg.position);
+      toucher.velocity.setZero();
+      if (ball == null) manager.gameState.launchBall(toucher);
+      manager.resumeGame();
+      await ticks(2);
+      return toucher;
+    }
+
+    Future<void> landIn(GameManager manager, int points) async {
+      final slot = manager.gameState.currentLevel!.slots
+          .firstWhere((slot) => slot.pointValue == points);
+      manager.gameState.launchBall(Ball(
+          position: Vector2(slot.position.x, slot.top - 4),
+          velocity: Vector2(0, 300)));
+      manager.resumeGame();
+      await ticks(3);
+    }
+
+    test(
+        'Given one ball When it collects every prize peg on the level Then Combo King unlocks',
+        () async {
+      final (manager, service) = await game();
+      final prizes = manager.gameState.currentLevel!.specialPegs;
+      expect(prizes.length, greaterThanOrEqualTo(2));
+
+      Ball? ball;
+      for (final peg in prizes) {
+        expect(unlocked(service, 'combo_king'), isFalse);
+        ball = await touch(manager, peg, ball: ball);
+      }
+
+      expect(ball!.prizePegsCollected, prizes.length);
+      expect(unlocked(service, 'combo_king'), isTrue);
+    });
+
+    test(
+        'Given two balls When they collect the prize pegs between them Then Combo King stays locked',
+        () async {
+      final (manager, service) = await game();
+      manager.gameState.singleBallLaunch = false;
+      final prizes = manager.gameState.currentLevel!.specialPegs;
+
+      final first = await touch(manager, prizes.first);
+      Ball? second;
+      for (final peg in prizes.skip(1)) {
+        second = await touch(manager, peg, ball: second);
+      }
+
+      expect(first.prizePegsCollected, 1);
+      expect(manager.gameState.currentLevel!.allSpecialPegsHit, isTrue);
+      expect(unlocked(service, 'perfect_shot'), isTrue,
+          reason: 'collecting them all still counts, however many balls');
+      expect(unlocked(service, 'combo_king'), isFalse);
+    });
+
+    test(
+        'Given a level with no prize pegs listed When the bonus triggers with another ball in play Then Combo King stays locked',
+        () async {
+      // No generated level is like this. If one ever were, "collected all
+      // none of them" must not count for a ball that collected nothing
+      final (manager, service) = await game();
+      manager.gameState.singleBallLaunch = false;
+      final level = manager.gameState.currentLevel!;
+      final prize = level.specialPegs.first;
+      level.specialPegs.clear();
+      manager.gameState.launchBall(Ball(position: Vector2(200, 40)));
+
+      await touch(manager, prize);
+
+      expect(manager.gameState.activeBalls.length, greaterThan(2),
+          reason: 'the bonus has dropped its balls');
+      expect(unlocked(service, 'combo_king'), isFalse);
+    });
+
+    test(
+        'Given a new round When its first ball lands in a 2,000 slot Then Lucky Shot unlocks',
+        () async {
+      final (manager, service) = await game();
+
+      await landIn(manager, 2000);
+
+      expect(unlocked(service, 'lucky_shot'), isTrue);
+    });
+
+    test(
+        'Given a round whose first ball landed elsewhere When a later ball lands in a 2,000 slot Then Lucky Shot stays locked, until the first ball of the next round',
+        () async {
+      final (manager, service) = await game();
+
+      await landIn(manager, 50);
+      await landIn(manager, 2000);
+      expect(unlocked(service, 'lucky_shot'), isFalse);
+
+      manager.resetGame();
+      await landIn(manager, 2000);
+      expect(unlocked(service, 'lucky_shot'), isTrue);
     });
   });
 }
