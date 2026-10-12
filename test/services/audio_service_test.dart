@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:mockito/annotations.dart';
@@ -178,6 +179,97 @@ void main() {
         // When / Then: dispose is not awaited by the app either
         await expectLater(audioService.dispose(), completes);
         verify(mockPlayers[4].dispose()).called(1);
+      });
+    });
+
+    group('Disposal While A Sound Is Loading', () {
+      /// The app disposes the service without waiting, and a sound may still
+      /// be loading. A player disposed in the middle of a load goes on
+      /// receiving platform events on streams that are closed, which the
+      /// plugin reports as an unhandled error (issue #66). These tests hold a
+      /// load open with a completer and watch the order of the calls.
+      test('givenSoundStillLoading_whenDisposed_thenThePlayerOutlivesTheLoadAndTheSoundIsNotStarted', () async {
+        // Given: a sound whose load has not finished
+        final loading = Completer<Duration?>();
+        when(mockPlayers[0].setAsset(any)).thenAnswer((_) => loading.future);
+        final sound = audioService.playLaunch();
+
+        // When
+        final disposed = audioService.dispose();
+        await Future<void>.delayed(Duration.zero);
+
+        // Then: nothing is disposed while the load is open
+        for (final player in mockPlayers) {
+          verifyNever(player.dispose());
+        }
+
+        // When the load ends
+        loading.complete(null);
+        await disposed;
+        await sound;
+
+        // Then: the players are disposed, and the sound was not started
+        for (final player in mockPlayers) {
+          verify(player.dispose()).called(1);
+        }
+        verifyNever(mockPlayers[0].play());
+      });
+
+      test('givenPreloadStillRunning_whenDisposed_thenThePlayersOutliveThePreload', () async {
+        // Given: initialize() is not awaited by the app either
+        final loading = Completer<Duration?>();
+        when(mockPlayers[0].setAsset(any)).thenAnswer((_) => loading.future);
+        final preload = audioService.initialize();
+
+        // When
+        final disposed = audioService.dispose();
+        await Future<void>.delayed(Duration.zero);
+
+        // Then
+        verifyNever(mockPlayers[0].dispose());
+        loading.complete(null);
+        await disposed;
+        await preload;
+        verify(mockPlayers[0].dispose()).called(1);
+      });
+
+      test('givenLoadThatFails_whenDisposed_thenThePlayersAreStillDisposed', () async {
+        // Given
+        final loading = Completer<Duration?>();
+        when(mockPlayers[0].setAsset(any)).thenAnswer((_) => loading.future);
+        final sound = audioService.playLaunch();
+        final disposed = audioService.dispose();
+
+        // When
+        loading.completeError(StateError('load interrupted'));
+
+        // Then
+        await expectLater(disposed, completes);
+        await sound;
+        verify(mockPlayers[4].dispose()).called(1);
+      });
+
+      test('givenDisposedService_whenSoundAskedFor_thenNoPlayerIsTouched', () async {
+        // Given
+        await audioService.dispose();
+
+        // When
+        await audioService.playPegHit();
+
+        // Then
+        for (final player in mockPlayers) {
+          verifyNever(player.setAsset(any));
+          verifyNever(player.play());
+        }
+      });
+
+      test('givenDisposedService_whenDisposedAgain_thenPlayersAreDisposedOnce', () async {
+        await audioService.dispose();
+        await audioService.dispose();
+
+        for (final player in mockPlayers) {
+          verify(player.dispose()).called(1);
+        }
       });
     });
 
