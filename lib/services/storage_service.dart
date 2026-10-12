@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/high_score.dart';
 
@@ -60,7 +61,7 @@ class StorageService {
       await _prefs.setString(key, jsonEncode(jsonList));
     } catch (e) {
       // Log error but don't throw (graceful degradation)
-      print('Error saving high score: $e');
+      debugPrint('Error saving high score: $e');
     }
   }
 
@@ -80,7 +81,7 @@ class StorageService {
       final jsonList = jsonDecode(jsonString) as List;
       return jsonList.map((json) => HighScore.fromJson(json)).toList();
     } catch (e) {
-      print('Error loading high scores: $e');
+      debugPrint('Error loading high scores: $e');
       return []; // Return empty list on error
     }
   }
@@ -125,7 +126,7 @@ class StorageService {
         }
       }
     } catch (e) {
-      print('Error clearing data: $e');
+      debugPrint('Error clearing data: $e');
     }
   }
 }

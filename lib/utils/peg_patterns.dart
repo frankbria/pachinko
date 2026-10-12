@@ -96,7 +96,7 @@ class PegPatterns {
     const rowOffset = 38.0;
     const hexSpacing = baseSpacing;
     
-    final startY = 140.0;
+    const startY = 140.0;
     final endY = boardHeight - 200;
     final rows = ((endY - startY) / rowOffset).floor();
     
@@ -129,7 +129,7 @@ class PegPatterns {
   static List<Peg> generateTrianglePattern(Random random, int levelNumber, double boardWidth, double boardHeight) {
     final pegs = <Peg>[];
     const spacing = 50.0;
-    final startY = 150.0;
+    const startY = 150.0;
     final endY = boardHeight - 220;
     final centerX = boardWidth / 2;
     

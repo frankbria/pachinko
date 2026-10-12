@@ -97,7 +97,7 @@ git push origin 003-feature-name
 - [ ] All tests passing (`flutter test --exclude-tags golden`, and `flutter test --tags golden` on Linux)
 - [ ] Code coverage ≥85% for new code
 - [ ] Code formatted (`dart format`)
-- [ ] Code analyzed (`flutter analyze --no-fatal-infos`)
+- [ ] Code analyzed (`flutter analyze` reports no issues)
 - [ ] Documentation updated (CLAUDE.md, README.md)
 - [ ] All changes committed with conventional commits
 - [ ] All commits pushed to remote
@@ -107,7 +107,7 @@ git push origin 003-feature-name
 # Final verification
 flutter test --exclude-tags golden
 flutter test --tags golden
-flutter analyze --no-fatal-infos
+flutter analyze
 dart format --set-exit-if-changed lib/ test/
 
 # Merge to master

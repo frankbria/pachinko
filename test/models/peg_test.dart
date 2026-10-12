@@ -428,7 +428,7 @@ void main() {
       final renderColor = peg.renderColor;
 
       // Then
-      expect(renderColor.opacity, equals(1.0)); // Full opacity
+      expect(renderColor.a, equals(1.0)); // Full opacity
       expect(renderColor, equals(GameConstants.normalPegColor));
     });
 
@@ -451,7 +451,7 @@ void main() {
       // Then
       // After animation completes, peg returns to normal color (not dimmed)
       expect(renderColor, equals(GameConstants.normalPegColor));
-      expect(renderColor.opacity, equals(1.0)); // Full opacity
+      expect(renderColor.a, equals(1.0)); // Full opacity
     });
 
     /// A prize peg is gold and nothing else is. Its shimmer shows in the halo
@@ -484,7 +484,7 @@ void main() {
 
       // Then
       expect(renderColor, equals(GameConstants.specialPegColor));
-      expect(renderColor.opacity, equals(1.0));
+      expect(renderColor.a, equals(1.0));
     });
 
     test('given a prize peg that has been hit, when its flash has finished, then it is dimmed to dark gold', () {

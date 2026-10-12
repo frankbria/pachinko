@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'package:flutter/foundation.dart';
 import 'package:vector_math/vector_math_64.dart';
 import 'package:flutter/material.dart';
 import 'ball.dart';
@@ -27,8 +26,8 @@ class GameState extends ChangeNotifier {
   int _score = 0;
   int _levelStartScore = 0;
   int _ballsRemaining = 20;
-  int _totalBalls = 20;
-  List<Ball> _activeBalls = [];
+  final int _totalBalls = 20;
+  final List<Ball> _activeBalls = [];
   GamePhase _phase = GamePhase.loading;
   bool _specialBonusTriggered = false;
   int _bonusBallsToAdd = 0;

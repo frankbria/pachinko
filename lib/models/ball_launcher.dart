@@ -14,9 +14,9 @@ enum LaunchPhase {
 class BallLauncher {
   LaunchPhase _phase = LaunchPhase.ready;
   double _launchPower = 0.0;
-  double _maxPower = 100.0;
+  final double _maxPower = 100.0;
   Ball? _currentBall;
-  List<Vector2> _launchPath = [];
+  final List<Vector2> _launchPath = [];
   double _pathProgress = 0.0;
   
   LaunchPhase get phase => _phase;
@@ -32,8 +32,8 @@ class BallLauncher {
     _launchPath.clear();
     
     // Start position (bottom right)
-    final startX = GameConstants.ballLaunchX;
-    final startY = GameConstants.ballLaunchY;
+    const startX = GameConstants.ballLaunchX;
+    const startY = GameConstants.ballLaunchY;
     
     // Path up the channel
     const pathSegments = 20;
@@ -46,8 +46,8 @@ class BallLauncher {
     // Curve at the top (quarter circle from right to left)
     const curveSegments = 15;
     const curveRadius = 40.0;
-    final curveStartX = startX;
-    final curveEndY = GameConstants.launchChannelEndY;
+    const curveStartX = startX;
+    const curveEndY = GameConstants.launchChannelEndY;
     
     for (int i = 1; i <= curveSegments; i++) {
       final angle = (i / curveSegments) * (3.14159 / 2); // 90 degrees
@@ -57,8 +57,8 @@ class BallLauncher {
     }
     
     // Entry point to peg field
-    final entryX = curveStartX - curveRadius;
-    final entryY = curveEndY - curveRadius;
+    const entryX = curveStartX - curveRadius;
+    const entryY = curveEndY - curveRadius;
     _launchPath.add(Vector2(entryX, entryY));
   }
   
@@ -193,7 +193,7 @@ class BallLauncher {
     final secondToLast = _launchPath[_launchPath.length - 2];
     final lastPoint = _launchPath[_launchPath.length - 1];
     final direction = (lastPoint - secondToLast).normalized();
-    final baseSpeed = 200.0;
+    const baseSpeed = 200.0;
 
     return direction * baseSpeed;
   }

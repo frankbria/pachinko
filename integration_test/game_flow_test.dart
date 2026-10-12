@@ -41,7 +41,7 @@ void main() {
 
   tearDownAll(() {
     totalStopwatch.stop();
-    print('Total integration test execution time: ${totalStopwatch.elapsed.inSeconds} seconds');
+    debugPrint('Total integration test execution time: ${totalStopwatch.elapsed.inSeconds} seconds');
     expect(totalStopwatch.elapsed.inSeconds, lessThan(300),
       reason: 'Integration tests should complete in < 5 minutes');
   });
@@ -68,8 +68,7 @@ void main() {
       expect(find.byType(GameScreen), findsOneWidget);
 
       // Get GameManager to check state
-      final BuildContext context = tester.element(find.byType(GameScreen));
-      final gameManager = Provider.of<GameManager>(context, listen: false);
+      final gameManager = Provider.of<GameManager>(tester.element(find.byType(GameScreen)), listen: false);
 
       // Verify initial state
       expect(gameManager.gameState.ballsRemaining, equals(20));

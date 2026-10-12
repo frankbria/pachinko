@@ -87,8 +87,8 @@ void main() {
       final endPoint = path.last;
 
       // Then
-      final expectedX = GameConstants.ballLaunchX - curveRadius;
-      final expectedY = GameConstants.launchChannelEndY - curveRadius;
+      const expectedX = GameConstants.ballLaunchX - curveRadius;
+      const expectedY = GameConstants.launchChannelEndY - curveRadius;
       expect(endPoint.x, closeTo(expectedX, 0.01));
       expect(endPoint.y, closeTo(expectedY, 0.01));
     });
@@ -151,10 +151,10 @@ void main() {
       // Given
       final launcher = BallLauncher();
       const curveRadius = 40.0;
-      final curveStartX = GameConstants.ballLaunchX;
-      final curveEndY = GameConstants.launchChannelEndY;
-      final centerX = curveStartX - curveRadius;
-      final centerY = curveEndY;
+      const curveStartX = GameConstants.ballLaunchX;
+      const curveEndY = GameConstants.launchChannelEndY;
+      const centerX = curveStartX - curveRadius;
+      const centerY = curveEndY;
 
       // When
       final path = launcher.getLaunchPath();
@@ -165,7 +165,7 @@ void main() {
         final dx = point.x - centerX;
         final dy = point.y - centerY;
         final distanceSquared = dx * dx + dy * dy;
-        final radiusSquared = curveRadius * curveRadius;
+        const radiusSquared = curveRadius * curveRadius;
 
         expect(distanceSquared, closeTo(radiusSquared, 1.0)); // ±1.0px tolerance
       }
@@ -179,10 +179,10 @@ void main() {
       // Given
       final launcher = BallLauncher();
       const curveRadius = 40.0;
-      final curveStartX = GameConstants.ballLaunchX;
-      final curveEndY = GameConstants.launchChannelEndY;
-      final centerX = curveStartX - curveRadius;
-      final centerY = curveEndY;
+      const curveStartX = GameConstants.ballLaunchX;
+      const curveEndY = GameConstants.launchChannelEndY;
+      const centerX = curveStartX - curveRadius;
+      const centerY = curveEndY;
 
       // When
       final path = launcher.getLaunchPath();
@@ -205,10 +205,10 @@ void main() {
       // Given
       final launcher = BallLauncher();
       const curveRadius = 40.0;
-      final curveStartX = GameConstants.ballLaunchX;
-      final curveEndY = GameConstants.launchChannelEndY;
-      final centerX = curveStartX - curveRadius;
-      final centerY = curveEndY;
+      const curveStartX = GameConstants.ballLaunchX;
+      const curveEndY = GameConstants.launchChannelEndY;
+      const centerX = curveStartX - curveRadius;
+      const centerY = curveEndY;
 
       // When
       final path = launcher.getLaunchPath();
