@@ -17,8 +17,8 @@ class GameManager extends ChangeNotifier {
   final PhysicsEngine _physicsEngine;
   final BallLauncher _ballLauncher;
   final AudioService? _audioService;
-  final StorageService? _storageService;
-  final AchievementService? _achievementService;
+  StorageService? _storageService;
+  AchievementService? _achievementService;
   Timer? _gameTimer;
   DateTime _lastFrameTime = DateTime.now();
   bool _levelResultSaved = false;
@@ -42,6 +42,20 @@ class GameManager extends ChangeNotifier {
        _ballLauncher = ballLauncher ?? BallLauncher() {
     // The player's saved choice, when there is storage to read it from
     if (storageService != null) {
+      _gameState.singleBallLaunch = storageService.singleBallLaunch;
+    }
+  }
+
+  /// Gives the manager the services that load after the app has started.
+  ///
+  /// The app creates the manager the first time something asks for it, and
+  /// storage loads after the first frame, so the manager can be the older of
+  /// the two. When storage arrives the saved settings are applied. A service
+  /// the manager already has is left alone, and so is one passed as null.
+  void attachServices({StorageService? storageService, AchievementService? achievementService}) {
+    if (achievementService != null) _achievementService = achievementService;
+    if (storageService != null && !identical(storageService, _storageService)) {
+      _storageService = storageService;
       _gameState.singleBallLaunch = storageService.singleBallLaunch;
     }
   }
