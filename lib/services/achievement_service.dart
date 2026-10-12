@@ -200,39 +200,39 @@ class AchievementService extends ChangeNotifier {
       final savedData = _prefs.getStringList(_storageKey);
       if (savedData == null || savedData.isEmpty) return;
 
-      // Create a map of saved achievements by id
-      final Map<String, Achievement> savedAchievements = {};
+      // The stored entries by id. What the player has done is the store's;
+      // the name, the description, the icon and the reward are the code's,
+      // so a rule that changes is read as it is now
+      final Map<String, Map<String, dynamic>> saved = {};
       for (final jsonStr in savedData) {
         try {
-          final achievement = Achievement.fromJson(jsonDecode(jsonStr));
-          savedAchievements[achievement.id] = achievement;
-
-          // Restore tracking counters from saved state
-          if (achievement.id == 'marathon_runner') {
-            _totalLevelsCompleted = achievement.progress * 50 ~/ 100;
-          } else if (achievement.id == 'millionaire') {
-            _totalScore = achievement.progress * 1000000 ~/ 100;
-          } else if (achievement.id == 'bonus_hunter') {
-            _specialBonusCount = achievement.progress * 20 ~/ 100;
-          } else if (achievement.id == 'edge_master') {
-            _edgeSlotCount = achievement.progress * 20 ~/ 100;
-          }
+          final entry = jsonDecode(jsonStr) as Map<String, dynamic>;
+          saved[entry['id'] as String] = entry;
         } catch (e) {
           // Skip corrupted individual entries
           continue;
         }
       }
 
-      // Update existing achievements with saved progress
-      for (int i = 0; i < _achievements.length; i++) {
-        final saved = savedAchievements[_achievements[i].id];
-        if (saved != null) {
-          // What the player has done is the store's; the name, the
-          // description and the reward are the code's, so a rule that
-          // changes is read as it is now
-          _achievements[i]
-            ..progress = saved.progress
-            ..unlockedDate = saved.unlockedDate;
+      for (final achievement in _achievements) {
+        final entry = saved[achievement.id];
+        if (entry == null) continue;
+        try {
+          achievement.restoreFrom(entry);
+        } catch (e) {
+          // Skip an entry whose values cannot be read
+          continue;
+        }
+
+        // Restore tracking counters from saved state
+        if (achievement.id == 'marathon_runner') {
+          _totalLevelsCompleted = achievement.progress * 50 ~/ 100;
+        } else if (achievement.id == 'millionaire') {
+          _totalScore = achievement.progress * 1000000 ~/ 100;
+        } else if (achievement.id == 'bonus_hunter') {
+          _specialBonusCount = achievement.progress * 20 ~/ 100;
+        } else if (achievement.id == 'edge_master') {
+          _edgeSlotCount = achievement.progress * 20 ~/ 100;
         }
       }
     } catch (e) {
