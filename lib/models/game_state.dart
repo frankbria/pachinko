@@ -5,6 +5,7 @@ import 'package:vector_math/vector_math_64.dart';
 import 'package:flutter/material.dart';
 import 'ball.dart';
 import 'level.dart';
+import 'slot.dart';
 import 'confetti_particle.dart';
 import '../utils/constants.dart';
 import '../widgets/floating_text.dart';
@@ -184,14 +185,33 @@ class GameState extends ChangeNotifier {
   }
 
   /// Add floating text for visual feedback
-  void addFloatingText(String text, Offset position, Color color) {
+  void addFloatingText(String text, Offset position, Color color, {double fontSize = 20.0}) {
     _floatingTexts.add(FloatingText(
       text: text,
       startPosition: position,
       color: color,
+      fontSize: fontSize,
     ));
     notifyListeners();
   }
+
+  /// Lights [slot] for the ball that has just landed in it.
+  void lightSlot(Slot slot) {
+    slot.glow = 1.0;
+    notifyListeners();
+  }
+
+  /// Fades the lit slots. Called by the game loop.
+  void updateSlotLights(double deltaTime) {
+    for (final slot in _currentLevel?.slots ?? const <Slot>[]) {
+      if (slot.glow > 0.0) {
+        slot.glow = math.max(0.0, slot.glow - deltaTime / slot.lightSeconds);
+      }
+    }
+  }
+
+  /// Whether any slot is still lit.
+  bool get slotsLit => _currentLevel?.slots.any((slot) => slot.glow > 0.0) ?? false;
 
   /// Update floating text animations
   void updateFloatingTexts(double deltaTime) {

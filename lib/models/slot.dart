@@ -9,6 +9,19 @@ class Slot {
   int pointValue;
   Color color;
   int ballCount;
+
+  /// How brightly the slot is lit: 1.0 when a ball has just landed, fading to
+  /// 0.0 at rest. `GameState` sets and fades it.
+  double glow = 0.0;
+
+  /// How long the slot stays lit after a ball lands. A higher value earns a
+  /// longer light.
+  double get lightSeconds {
+    if (pointValue >= 2000) return 1.1;
+    if (pointValue >= 1000) return 0.8;
+    if (pointValue >= 100) return 0.5;
+    return 0.35;
+  }
   
   Slot({
     required this.position,
@@ -17,9 +30,10 @@ class Slot {
     required this.pointValue,
     Color? color,
     this.ballCount = 0,
-  }) : color = color ?? _getColorForPoints(pointValue);
+  }) : color = color ?? colorFor(pointValue);
 
-  static Color _getColorForPoints(int points) {
+  /// The tier colour of a slot worth [points].
+  static Color colorFor(int points) {
     if (points >= 2000) {
       return GameConstants.slot2000Color;
     } else if (points >= 1000) {
@@ -44,6 +58,7 @@ class Slot {
 
   void reset() {
     ballCount = 0;
+    glow = 0.0;
   }
 
   Rect get bounds => Rect.fromCenter(

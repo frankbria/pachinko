@@ -921,6 +921,66 @@ void main() {
     });
   });
 
+  group('Slot Lighting -', () {
+    /// A slot lights when a ball lands in it and fades over a time that goes
+    /// by its value. The light is a transient effect: restart and level
+    /// change put it out.
+    late GameState state;
+
+    setUp(() {
+      state = GameState()..startNewGame();
+    });
+
+    tearDown(() => state.dispose());
+
+    test('given a slot at rest, when a ball lands, then it is fully lit', () {
+      final slot = state.currentLevel!.slots.first;
+      expect(state.slotsLit, isFalse);
+
+      state.lightSlot(slot);
+
+      expect(slot.glow, 1.0);
+      expect(state.slotsLit, isTrue);
+    });
+
+    test('given lit slots, when time passes, then a 2000 slot outlasts a 50 slot and both go out', () {
+      final high = state.currentLevel!.slots.firstWhere((slot) => slot.pointValue == 2000);
+      final low = state.currentLevel!.slots.firstWhere((slot) => slot.pointValue == 50);
+      state.lightSlot(high);
+      state.lightSlot(low);
+
+      state.updateSlotLights(0.2);
+      expect(low.glow, lessThan(high.glow));
+      expect(low.glow, greaterThan(0.0));
+
+      state.updateSlotLights(0.3);
+      expect(low.glow, 0.0);
+      expect(high.glow, greaterThan(0.0));
+
+      state.updateSlotLights(1.0);
+      expect(high.glow, 0.0);
+      expect(state.slotsLit, isFalse);
+    });
+
+    test('given a lit slot, when the level is restarted, then the light is out', () {
+      final slot = state.currentLevel!.slots.first;
+      state.lightSlot(slot);
+
+      state.resetLevel();
+
+      expect(slot.glow, 0.0);
+      expect(state.slotsLit, isFalse);
+    });
+
+    test('given a lit slot, when the level changes, then nothing is lit', () {
+      state.lightSlot(state.currentLevel!.slots.first);
+
+      state.loadLevel(2);
+
+      expect(state.slotsLit, isFalse);
+    });
+  });
+
   group('Launch Modes -', () {
     /// One ball at a time is the default. With the setting off the player may
     /// launch while balls are in play, but never while the game is paused or

@@ -182,3 +182,64 @@ void paintSlotCounts(Canvas canvas, List<Slot> slots, {required bool inTray}) {
     count.paint(canvas, Offset(slot.position.x - count.width / 2, top));
   }
 }
+
+/// Draws each lit slot over its unlit picture: the pocket filled with its
+/// tier colour, as strongly as the slot is lit, and its value in ink on top.
+void paintSlotLights(Canvas canvas, List<Slot> slots) {
+  for (final slot in slots) {
+    if (slot.glow <= 0.0) continue;
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(slot.bounds, const Radius.circular(4)),
+      Paint()..color = slot.color.withValues(alpha: 0.75 * slot.glow),
+    );
+    final value = TextPainter(
+      text: TextSpan(
+        text: slot.pointValue.toString(),
+        style: TextStyle(
+          color: GameConstants.inkColor.withValues(alpha: slot.glow),
+          fontFamily: displayFontFamily,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    value.paint(canvas, slot.bounds.center - Offset(value.width / 2, value.height / 2));
+  }
+}
+
+/// Draws a score popup at [centreTop], in its own colour and size, kept
+/// inside the board's width however near the edge its slot is.
+void paintScorePopup(
+  Canvas canvas, {
+  required String text,
+  required Offset centreTop,
+  required Color colour,
+  required double fontSize,
+  required double opacity,
+}) {
+  final popup = TextPainter(
+    text: TextSpan(
+      text: text,
+      style: TextStyle(
+        color: colour.withValues(alpha: opacity),
+        fontFamily: displayFontFamily,
+        fontSize: fontSize,
+        fontWeight: FontWeight.bold,
+        shadows: [
+          Shadow(
+            color: GameConstants.cabinetColor.withValues(alpha: opacity * 0.6),
+            blurRadius: 4,
+            offset: const Offset(1, 1),
+          ),
+        ],
+      ),
+    ),
+    textDirection: TextDirection.ltr,
+  )..layout();
+  const margin = 2.0;
+  final left = (centreTop.dx - popup.width / 2)
+      .clamp(margin, GameConstants.boardWidth - margin - popup.width);
+  popup.paint(canvas, Offset(left, centreTop.dy));
+}
