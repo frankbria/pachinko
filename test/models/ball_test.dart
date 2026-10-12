@@ -323,6 +323,16 @@ void main() {
     });
 
     test(
+        'given a ball that collected prize pegs, when reset is called, then it has collected none',
+        () {
+      final ball = Ball(position: Vector2(10, 10))..prizePegsCollected = 3;
+
+      ball.reset(Vector2(50, 50));
+
+      expect(ball.prizePegsCollected, 0);
+    });
+
+    test(
         'given a moving ball, when reset is called, then velocity resets to zero',
         () {
       // Given

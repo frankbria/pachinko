@@ -72,6 +72,7 @@ class Ball {
     acceleration = Vector2.zero();
     isActive = true;
     hasLanded = false;
+    prizePegsCollected = 0;
     _trail.clear();
   }
 }
