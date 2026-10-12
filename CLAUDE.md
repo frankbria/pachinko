@@ -10,7 +10,7 @@ A modern graphical Pachinko idle game for Android. Features authentic pachinko m
 - ✅ Complete UI with power meter and visual feedback
 - ✅ Level progression system with varying patterns
 - ✅ Special peg bonus mechanics
-- ✅ Cross-platform (Linux desktop, Android-ready)
+- ✅ Runs on Android, and in a browser for demos
 
 ## Technology Stack
 - **Framework:** Flutter 3.38.1
@@ -19,7 +19,7 @@ A modern graphical Pachinko idle game for Android. Features authentic pachinko m
 - **State Management:** Provider pattern
 - **Storage:** Shared Preferences (ready)
 - **Graphics:** Custom Canvas painting
-- **Platform:** Linux (current), Android (configured)
+- **Platform:** Android. `web/` is kept for the demo build (`flutter build web --no-tree-shake-icons`, served from `build/web`). The repository has no project files for iOS or the desktop platforms; `flutter create --platforms=<name> .` adds one
 
 ## Project Structure
 ```

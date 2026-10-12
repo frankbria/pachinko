@@ -23,7 +23,6 @@ migrate_working_dir/
 
 # Flutter/Dart/Pub related
 **/doc/api/
-**/ios/Flutter/.last_build_id
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
@@ -50,8 +49,6 @@ android/key.properties
 # Flutter SDK (local installation)
 /tools/flutter/
 
-# Linux build files
-/linux/flutter/ephemeral/
 .claude/settings.local.json
 *.tar*
 /tools/*.tar*
