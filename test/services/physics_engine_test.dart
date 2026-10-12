@@ -6,6 +6,7 @@ import 'package:vector_math/vector_math_64.dart';
 import 'package:pachinko_game/models/ball.dart';
 import 'package:pachinko_game/models/peg.dart';
 import 'package:pachinko_game/models/slot.dart';
+import 'package:pachinko_game/services/audio_service.dart';
 import 'package:pachinko_game/services/physics_engine.dart';
 import 'package:pachinko_game/utils/constants.dart';
 
@@ -281,6 +282,7 @@ void main() {
       when(mockPeg.position).thenReturn(Vector2(210, 210));
       when(mockPeg.radius).thenReturn(10.0);
       when(mockPeg.hasBeenHit).thenReturn(true); // Already hit
+      when(mockPeg.canFireAgain).thenReturn(false); // and still in its pause
       when(mockPeg.checkCollision(any, any)).thenReturn(true);
       when(mockPeg.getCollisionNormal(any))
           .thenReturn(Vector2(-1, -1).normalized());
@@ -318,6 +320,71 @@ void main() {
       ball.position.setFrom(brass.position);
       physicsEngine.checkPegCollisions([ball], [prize, brass]);
       expect(ball.prizePegsCollected, 1);
+    });
+
+    /// Every bounce sounds and flashes (#90). The first hit of a pin is still
+    /// the only one reported to the game, which is what collects a prize.
+    test(
+        'Given a pin already hit and its pause over When a ball bounces off it Then it sounds and flashes again, and is not reported as newly hit',
+        () {
+      final audio = _CountingAudio();
+      final engine = PhysicsEngine(audioService: audio);
+      final pin = Peg(position: Vector2(200, 200));
+      Ball onPin() => Ball(
+          position: pin.position.clone(),
+          velocity: Vector2(0, 50),
+          radius: GameConstants.ballRadius);
+
+      expect(engine.checkPegCollisions([onPin()], [pin]), [pin]);
+      expect(audio.pegHits, 1);
+      pin.updateAnimation(1.0);
+      expect(pin.isAnimating, isFalse);
+
+      expect(engine.checkPegCollisions([onPin()], [pin]), isEmpty);
+      expect(audio.pegHits, 2);
+      expect(pin.isAnimating, isTrue);
+    });
+
+    test(
+        'Given a ball lying on a pin When frames pass Then the pin answers once per pause, not once per frame',
+        () {
+      final audio = _CountingAudio();
+      final engine = PhysicsEngine(audioService: audio);
+      final pin = Peg(position: Vector2(200, 200));
+      final ball = Ball(
+          position: pin.position.clone(), radius: GameConstants.ballRadius);
+      const frame = 1 / 60;
+
+      // 0.3 seconds: the pin may answer at 0, 0.15 and 0.30
+      for (int i = 0; i <= 18; i++) {
+        ball.position.setFrom(pin.position);
+        engine.checkPegCollisions([ball], [pin]);
+        pin.updateAnimation(frame);
+      }
+
+      expect(audio.pegHits, inInclusiveRange(2, 3));
+    });
+
+    test(
+        'Given a collected prize peg When another ball bounces off it Then it sounds, and neither ball collects it again',
+        () {
+      final audio = _CountingAudio();
+      final engine = PhysicsEngine(audioService: audio);
+      final prize = Peg(position: Vector2(200, 200), type: PegType.special);
+      Ball onPrize() => Ball(
+          position: prize.position.clone(), radius: GameConstants.ballRadius);
+      final first = onPrize();
+      final second = onPrize();
+
+      engine.checkPegCollisions([first], [prize]);
+      prize.updateAnimation(1.0);
+      final newlyHit = engine.checkPegCollisions([second], [prize]);
+
+      expect(newlyHit, isEmpty);
+      expect(audio.pegHits, 2);
+      expect(first.prizePegsCollected, 1);
+      expect(second.prizePegsCollected, 0);
+      expect(prize.isCollected, isTrue);
     });
 
     /// Tests that inactive balls do not trigger peg collisions
@@ -771,4 +838,16 @@ void main() {
       expect(ball.position.x, greaterThanOrEqualTo(0));
     });
   });
+}
+
+/// An audio service that plays nothing and counts the peg sounds asked for.
+class _CountingAudio extends AudioService {
+  _CountingAudio() : super(audioPlayers: []);
+
+  int pegHits = 0;
+
+  @override
+  Future<void> playPegHit() async {
+    pegHits++;
+  }
 }
