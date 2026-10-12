@@ -264,6 +264,7 @@ class MenuScreen extends StatelessWidget {
               _heading(Icons.touch_app, 'Controls'),
               _body(
                   '• Drag from the launcher: the longer the drag, the more power\n'
+                  '• A soft launch drops the ball near the launcher; a full one sends it over the top to the far side\n'
                   '• Release to launch\n'
                   '• Pegs change the ball\'s direction'),
               _heading(Icons.auto_awesome, 'Special Features'),
