@@ -232,6 +232,13 @@ Patterns learned the hard way on this repo. Add an entry after any correction.
 - **A ramp through three colours is two gradients stacked.** The channel's light is cyan to violet in its lower half and violet to magenta in its upper half, each a two-colour gradient, which also keeps to the rule the CI emulator imposes.
 - **A held drag is how to screenshot a state that only exists mid-gesture.** `tester.startGesture`, `moveTo`, capture, then `up()`; the power meter is only drawn while the board thinks a drag is in progress.
 
+## 2026-10-12 — the PR for issue #52 (info-level lints to zero)
+
+- **`dart fix --apply` edits more than Dart.** Its summary listed `pubspec.yaml: missing_dependency - 1 fix`: it had added two packages with `any` under the wrong heading, one of them already declared. Read the tool's summary before the diff, and put back what was not asked for.
+- **A line that only logs is still a changed line to the coverage gate.** Turning five `print` calls into `debugPrint` changed three lines inside `catch` blocks that no test reached, and the gate read 50%. Each needed a test of the failure it reports. That is the gate working: the handlers had never been run.
+- **Some failures cannot be raised from where you stand; find one that can.** A real `AudioPlayer` does not throw from its constructor in a unit test: its failure arrives later, on a future. A pool size of -1 makes the same `try` throw at once, and the test says in a comment what it stands in for.
+- **When a count reaches zero, make it a gate the same day.** With no info-level lints left, CI's analyzer step dropped `--no-fatal-infos`. A `print` added on purpose fails the new command and passed the old one.
+
 ## 2026-10-11 — the PR for issue #33 (level bands)
 
 - **Put the constraint on a palette in a test before choosing the colours.** Every role colour has to keep a 3 to 1 contrast on every band's felt, lit and shaded. The slate of the 50 slot is the weakest, which caps a felt's luminance at about 0.05; the four felts were chosen under that line and the test passed first time.

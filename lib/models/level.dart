@@ -88,7 +88,7 @@ class Level {
     }
     
     // Generate slots with inverse probability distribution
-    final slotCount = 7;
+    const slotCount = 7;
     final slotWidth = boardWidth / slotCount;
     
     for (int i = 0; i < slotCount; i++) {

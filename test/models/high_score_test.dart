@@ -39,7 +39,7 @@ void main() {
       expect(highScore.score, equals(score));
       expect(highScore.timestamp.isAfter(beforeCreation) ||
           highScore.timestamp.isAtSameMomentAs(beforeCreation), isTrue);
-      expect(highScore.timestamp.isBefore(DateTime.now().add(Duration(seconds: 1))), isTrue);
+      expect(highScore.timestamp.isBefore(DateTime.now().add(const Duration(seconds: 1))), isTrue);
     });
   });
 

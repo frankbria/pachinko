@@ -9,7 +9,7 @@ import 'package:pachinko_game/widgets/board_static_layer.dart';
 /// Levels are grouped into bands, each with its own felt and rim colour, so
 /// that the player can see how far they have come.
 void main() {
-  final bands = GameConstants.levelBands;
+  const bands = GameConstants.levelBands;
   const perBand = GameConstants.levelsPerBand;
 
   group('The band of a level', () {
@@ -121,7 +121,7 @@ void main() {
           final image = await picture.toImage(400, 600);
           final data = (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!;
           image.dispose();
-          final at = (455 * 400 + 200) * 4;
+          const at = (455 * 400 + 200) * 4;
           return Color.fromARGB(255, data.getUint8(at), data.getUint8(at + 1), data.getUint8(at + 2));
         });
         picture.dispose();

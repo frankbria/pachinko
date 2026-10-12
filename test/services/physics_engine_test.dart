@@ -30,7 +30,7 @@ void main() {
         velocity: Vector2(0, 0),
         radius: GameConstants.ballRadius,
       );
-      final deltaTime = GameConstants.physicsTimeStep; // 1/60 = 0.016667s
+      const deltaTime = GameConstants.physicsTimeStep; // 1/60 = 0.016667s
 
       // When: Update balls with physics
       physicsEngine.updateBalls([ball], deltaTime);
@@ -49,14 +49,14 @@ void main() {
         velocity: Vector2(0, 0),
         radius: GameConstants.ballRadius,
       );
-      final deltaTime = GameConstants.physicsTimeStep; // 0.016667s
+      const deltaTime = GameConstants.physicsTimeStep; // 0.016667s
 
       // When: Update physics
       physicsEngine.updateBalls([ball], deltaTime);
 
       // Then: Velocity should increase by gravity * deltaTime
       // vy = 0 + 980.0 * 0.016667 ≈ 16.33 px/s
-      final expectedVelocityY = GameConstants.gravity * deltaTime * GameConstants.airResistance;
+      const expectedVelocityY = GameConstants.gravity * deltaTime * GameConstants.airResistance;
       expect(ball.velocity.x, closeTo(0.0, 0.01));
       expect(ball.velocity.y, closeTo(expectedVelocityY, 0.1));
     });
@@ -70,7 +70,7 @@ void main() {
         velocity: Vector2(50, 100),
         radius: GameConstants.ballRadius,
       );
-      final deltaTime = GameConstants.physicsTimeStep;
+      const deltaTime = GameConstants.physicsTimeStep;
       final initialX = ball.position.x;
       final initialY = ball.position.y;
 
@@ -94,7 +94,7 @@ void main() {
         velocity: Vector2(100, 100),
         radius: GameConstants.ballRadius,
       );
-      final deltaTime = GameConstants.physicsTimeStep;
+      const deltaTime = GameConstants.physicsTimeStep;
 
       // When: Update physics
       physicsEngine.updateBalls([ball], deltaTime);
@@ -492,7 +492,7 @@ void main() {
       // Given: Launch parameters
       final startPosition = Vector2(100, 500);
       final targetPosition = Vector2(200, 400);
-      final force = 500.0;
+      const force = 500.0;
 
       // When: Calculate launch velocity
       final velocity = physicsEngine.calculateLaunchVelocity(startPosition, targetPosition, force);
@@ -559,8 +559,8 @@ void main() {
       // Given: Launch parameters
       final startPosition = Vector2(200, 100);
       final launchVelocity = Vector2(100, 200);
-      final numPoints = 20;
-      final timeStep = 0.1;
+      const numPoints = 20;
+      const timeStep = 0.1;
 
       // When: Calculate trajectory
       final points = physicsEngine.calculateTrajectoryPoints(
@@ -587,8 +587,8 @@ void main() {
       // Given: Launch parameters that will go off screen
       final startPosition = Vector2(200, GameConstants.boardHeight - 50);
       final launchVelocity = Vector2(0, 500); // Fast downward
-      final numPoints = 100;
-      final timeStep = 0.05;
+      const numPoints = 100;
+      const timeStep = 0.05;
 
       // When: Calculate trajectory
       final points = physicsEngine.calculateTrajectoryPoints(

@@ -23,7 +23,7 @@ void main() {
     return MaterialApp(
       home: Provider<StorageService?>.value(
         value: mockStorageService,
-        child: HighScoresScreen(),
+        child: const HighScoresScreen(),
       ),
     );
   }
@@ -247,7 +247,7 @@ void main() {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => HighScoresScreen()),
+                        MaterialPageRoute(builder: (_) => const HighScoresScreen()),
                       );
                     },
                     child: const Text('Open High Scores'),

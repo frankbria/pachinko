@@ -61,7 +61,7 @@ lib/
 - `flutter drive --driver=test_driver/integration_test.dart --target=integration_test/screenshots.dart -d emulator-5554` - Take screenshots of the game on a running emulator: the menu, levels 1, 2, 3 and 9, and one full round. They are written to `build/screenshots/`. `.github/workflows/screenshots.yml` runs this on a pull request that changes the drawing code, and on demand, and uploads the images as the `screenshots` artifact (`gh run download <run> -n screenshots`). The script is not one of the integration tests: its name does not end in `_test`
 - `flutter test tool/scoring_simulation_test.dart --dart-define=LEVELS=60 --dart-define=ROUNDS=20` - Measure the game's balance: plays whole rounds through the real generator, launcher and physics and prints, per peg pattern and per band of levels, where balls land, how often the bonus triggers, balls per round and scores (about fifteen seconds). It asserts nothing and is not part of the test suite. Run it before and after any change to level generation, scoring or the bonus
 - `dart run build_runner build --delete-conflicting-outputs` - Regenerate test mocks after changing the public API of a mocked class, and commit the result. CI regenerates them and fails if they differ from the committed ones
-- `flutter analyze --no-fatal-infos` - Check code quality (a CI gate: warnings and errors fail it, info-level lints are only reported). `analysis_options.yaml` excludes `tools/flutter/**`, so the SDK checkout there is not analyzed
+- `flutter analyze` - Check code quality (a CI gate: anything it reports fails the job, info-level lints included, so the count stays at zero; `dart fix --apply` clears most style lints, and its changes to `pubspec.yaml` are not wanted). `analysis_options.yaml` excludes `tools/flutter/**`, so the SDK checkout there is not analyzed
 - `flutter doctor` - Check Flutter installation
 
 ## Current Implementation Status
@@ -186,7 +186,7 @@ Before marking ANY feature as complete, verify:
 - [ ] All tests pass (`flutter test --exclude-tags golden` and `flutter test --tags golden`)
 - [ ] Code coverage meets 85% minimum threshold
 - [ ] Coverage report reviewed for meaningful test quality
-- [ ] Code formatted and analyzed (`dart format`, `flutter analyze --no-fatal-infos`)
+- [ ] Code formatted and analyzed (`dart format`, `flutter analyze` with no issues)
 - [ ] All changes committed with conventional commit messages
 - [ ] All commits pushed to remote repository
 - [ ] Implementation documentation updated
