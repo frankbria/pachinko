@@ -11,6 +11,9 @@ class StorageService {
   /// Maximum number of scores kept per level.
   static const int maxScoresPerLevel = 10;
 
+  /// What every stored key of a level's score table starts with.
+  static const String _levelKeyPrefix = 'highscores_level_';
+
   final SharedPreferences _prefs;
 
   /// Creates a StorageService with dependency injection for testability.
@@ -45,7 +48,7 @@ class StorageService {
   /// top [maxScoresPerLevel].
   /// Handles storage errors gracefully by logging without throwing exceptions.
   ///
-  /// [level]: The level number (1-20)
+  /// [level]: The level number, 1 or more
   /// [score]: The score achieved
   Future<void> saveHighScore(int level, int score) async {
     try {
@@ -56,7 +59,7 @@ class StorageService {
         scores.removeRange(maxScoresPerLevel, scores.length);
       }
 
-      final key = 'highscores_level_$level';
+      final key = '$_levelKeyPrefix$level';
       final jsonList = scores.map((s) => s.toJson()).toList();
       await _prefs.setString(key, jsonEncode(jsonList));
     } catch (e) {
@@ -70,11 +73,11 @@ class StorageService {
   /// Returns an empty list if no scores exist or if data is corrupted.
   /// Handles errors gracefully to prevent app crashes.
   ///
-  /// [level]: The level number (1-20)
+  /// [level]: The level number, 1 or more
   /// Returns: List of HighScore objects, sorted as stored
   Future<List<HighScore>> getHighScores(int level) async {
     try {
-      final key = 'highscores_level_$level';
+      final key = '$_levelKeyPrefix$level';
       final jsonString = _prefs.getString(key);
       if (jsonString == null) return [];
 
@@ -86,15 +89,34 @@ class StorageService {
     }
   }
 
+  /// The levels that have a stored table of scores, lowest first.
+  ///
+  /// Next Level has no upper limit, so this is read from what is stored
+  /// and not assumed to be 1 to 20. Empty if storage cannot be read.
+  Future<List<int>> levelsWithScores() async {
+    try {
+      final levels = <int>[];
+      for (final key in _prefs.getKeys()) {
+        if (!key.startsWith(_levelKeyPrefix)) continue;
+        final level = int.tryParse(key.substring(_levelKeyPrefix.length));
+        if (level != null) levels.add(level);
+      }
+      return levels..sort();
+    } catch (e) {
+      debugPrint('Error listing levels with scores: $e');
+      return [];
+    }
+  }
+
   /// Calculates the total score across all levels.
   ///
-  /// Aggregates the best (highest) score from each level (1-20).
+  /// Aggregates the best (highest) score from each level that has scores.
   /// Returns 0 if no scores exist.
   ///
   /// Returns: Sum of best scores from all levels
   Future<int> getTotalScore() async {
     int total = 0;
-    for (int level = 1; level <= 20; level++) {
+    for (final level in await levelsWithScores()) {
       final scores = await getHighScores(level);
       if (scores.isNotEmpty) {
         total += scores.first.score; // Best score for each level
@@ -105,7 +127,7 @@ class StorageService {
 
   /// Gets the best (highest) score for a specific level.
   ///
-  /// [level]: The level number (1-20)
+  /// [level]: The level number, 1 or more
   /// Returns: The highest HighScore for this level, or null if no scores exist
   Future<HighScore?> getBestScore(int level) async {
     final scores = await getHighScores(level);
@@ -121,7 +143,7 @@ class StorageService {
     try {
       final keys = _prefs.getKeys();
       for (final key in keys) {
-        if (key.startsWith('highscores_level_')) {
+        if (key.startsWith(_levelKeyPrefix)) {
           await _prefs.remove(key);
         }
       }

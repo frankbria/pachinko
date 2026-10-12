@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pachinko_game/models/high_score.dart';
 import 'package:pachinko_game/screens/high_scores_screen.dart';
 import 'package:pachinko_game/services/storage_service.dart';
@@ -17,6 +18,10 @@ void main() {
 
   setUp(() {
     mockStorageService = MockStorageService();
+    // The screen asks which levels have scores, then for each one's table.
+    // These tests stub the tables of levels 1 to 20
+    when(mockStorageService.levelsWithScores())
+        .thenAnswer((_) async => [for (int i = 1; i <= 20; i++) i]);
   });
 
   Widget createTestWidget() {
@@ -288,6 +293,34 @@ void main() {
       // Then - Screen should pop (back to home)
       expect(find.byType(HighScoresScreen), findsNothing);
       expect(find.text('Open High Scores'), findsOneWidget);
+    });
+  });
+
+  group('HighScoresScreen - Levels above 20', () {
+    testWidgets(
+        'givenScoresOnLevels2And27_whenRendered_thenBothAreListedHighestFirst',
+        (WidgetTester tester) async {
+      // A real store: level 27 has a table, as it does after Next Level has
+      // been pressed often enough (#37)
+      SharedPreferences.setMockInitialValues({});
+      final storage =
+          StorageService(prefs: await SharedPreferences.getInstance());
+      await storage.saveHighScore(2, 7000);
+      await storage.saveHighScore(27, 12500);
+
+      await tester.pumpWidget(MaterialApp(
+        home: Provider<StorageService?>.value(
+          value: storage,
+          child: const HighScoresScreen(),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('12,500 points'), findsOneWidget);
+      expect(find.textContaining('Level 27'), findsOneWidget);
+      expect(find.textContaining('Level 2 '), findsOneWidget);
+      expect(tester.getTopLeft(find.text('12,500 points')).dy,
+          lessThan(tester.getTopLeft(find.text('7,000 points')).dy));
     });
   });
 }

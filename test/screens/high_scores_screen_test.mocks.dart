@@ -74,6 +74,15 @@ class MockStorageService extends _i1.Mock implements _i2.StorageService {
       ) as _i3.Future<List<_i4.HighScore>>);
 
   @override
+  _i3.Future<List<int>> levelsWithScores() => (super.noSuchMethod(
+        Invocation.method(
+          #levelsWithScores,
+          [],
+        ),
+        returnValue: _i3.Future<List<int>>.value(<int>[]),
+      ) as _i3.Future<List<int>>);
+
+  @override
   _i3.Future<int> getTotalScore() => (super.noSuchMethod(
         Invocation.method(
           #getTotalScore,

@@ -180,10 +180,8 @@ void main() {
       when(mockPrefs.getString('highscores_level_2'))
           .thenReturn(jsonEncode(level2Scores.map((s) => s.toJson()).toList()));
 
-      // All other levels return null
-      for (int i = 3; i <= 20; i++) {
-        when(mockPrefs.getString('highscores_level_$i')).thenReturn(null);
-      }
+      when(mockPrefs.getKeys())
+          .thenReturn({'highscores_level_1', 'highscores_level_2'});
 
       // When
       final total = await storageService.getTotalScore();
@@ -194,9 +192,7 @@ void main() {
 
     test('givenNoScores_whenGetTotalScoreCalled_thenReturnsZero', () async {
       // Given - No scores for any level
-      for (int i = 1; i <= 20; i++) {
-        when(mockPrefs.getString('highscores_level_$i')).thenReturn(null);
-      }
+      when(mockPrefs.getKeys()).thenReturn(<String>{});
 
       // When
       final total = await storageService.getTotalScore();
@@ -290,6 +286,52 @@ void main() {
 
       // Then
       expect(best, isNull);
+    });
+  });
+
+  group('StorageService - Levels with scores', () {
+    /// Next Level has no upper limit, so scores are stored for levels above
+    /// 20 too. The screen and the total used to loop 1 to 20 and never saw
+    /// them (#37). These use a real in-memory store.
+    Future<StorageService> emptyStore() async {
+      SharedPreferences.setMockInitialValues({});
+      return StorageService(prefs: await SharedPreferences.getInstance());
+    }
+
+    test(
+        'givenScoresOnLevels3And27BesideOtherKeys_whenLevelsAsked_thenThoseTwoInOrder',
+        () async {
+      final service = await emptyStore();
+      await service.saveHighScore(27, 9000);
+      await service.saveHighScore(3, 500);
+      await service.saveSingleBallLaunch(false);
+      // As long as the score keys' prefix, and ending in a number: read by
+      // position alone it would pass for level 5
+      const lookalike = 'other_setting_xy_5';
+      expect(lookalike.length, 'highscores_level_5'.length);
+      await (await SharedPreferences.getInstance()).setInt(lookalike, 1);
+
+      expect(await service.levelsWithScores(), [3, 27]);
+    });
+
+    test('givenNothingStored_whenLevelsAsked_thenNone', () async {
+      expect(await (await emptyStore()).levelsWithScores(), isEmpty);
+    });
+
+    test('givenScoreOnLevel27_whenTotalAsked_thenItIsCounted', () async {
+      final service = await emptyStore();
+      await service.saveHighScore(1, 4000);
+      await service.saveHighScore(1, 6000);
+      await service.saveHighScore(27, 9000);
+
+      expect(await service.getTotalScore(), 15000);
+    });
+
+    test('givenStorageError_whenLevelsAsked_thenNoneAndTheFailureDoesNotEscape',
+        () async {
+      when(mockPrefs.getKeys()).thenThrow(Exception('Storage error'));
+
+      expect(await storageService.levelsWithScores(), isEmpty);
     });
   });
 }

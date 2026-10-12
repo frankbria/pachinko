@@ -274,3 +274,9 @@ Patterns learned the hard way on this repo. Add an entry after any correction.
 - **"The first ball" is a ball, not a moment.** The first version of Lucky Shot asked whether any ball had left play yet. The reviewer's case: the first ball sets off the bonus before it lands, and a bonus ball lands first, winning the achievement or taking it away. The manager now keeps the ball itself and waits for that one.
 - **A lesson written down is not yet a habit.** Two days of this file say that state on an object is cleared by that object's reset (`Slot.glow`, issue #30). The new counter on `Ball` was left out of `Ball.reset()` all the same, and the reviewer found it. When adding a field to a model, read its `reset` in the same edit.
 - **Measure a new rule before shipping it.** The simulation says Combo King comes in about one round in nine and Lucky Shot in about one in ten: neither impossible nor automatic.
+
+## 2026-10-12 — the PR for issue #37 (high scores above level 20)
+
+- **Ask the store what it holds; do not assume a range.** Scores for level 21 and up were saved and never shown, because the screen and the total looped from 1 to 20 while Next Level has no upper limit. `levelsWithScores()` reads the stored keys, so a level that exists is a level that is listed.
+- **A shared setup line can carry a whole file of mocked tests across an API change.** The screen now asks one more question of the storage service. One stub in `setUp`, answering "levels 1 to 20", kept all of the existing mocked tests as they were. The new behaviour is tested with a real in-memory store.
+- **A deferral is a decision that can be revisited by the person who made it.** This issue was marked for v2 by the owner. It was built when the owner said so, not before, and the two questions it had left open were asked at the same time.
