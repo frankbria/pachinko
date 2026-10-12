@@ -51,8 +51,12 @@ void main() {
         final body = circles.indexWhere((circle) =>
             circle.positionalArguments[0] == centre && circle.positionalArguments[1] == pin.radius);
         expect(body, isNot(-1), reason: 'pin at $centre is drawn');
-        expect((circles[body].positionalArguments[2] as Paint).shader, isNotNull,
-            reason: 'pin at $centre is shaded');
+        // Two passes over the same circle: highlight to brass, then the shade
+        final passes = circles.where((circle) =>
+            circle.positionalArguments[0] == centre && circle.positionalArguments[1] == pin.radius);
+        expect(passes, hasLength(2), reason: 'pin at $centre is lit and shaded');
+        expect(passes.every((circle) => (circle.positionalArguments[2] as Paint).shader != null), isTrue,
+            reason: 'pin at $centre is shaded with gradients');
 
         final shadow = circles.sublist(0, body).any((circle) {
           final at = circle.positionalArguments[0] as Offset;
