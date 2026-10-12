@@ -66,6 +66,7 @@ void main() {
     // Stub Level properties
     when(mockLevel.pegs).thenReturn([]);
     when(mockLevel.slots).thenReturn([]);
+    when(mockLevel.levelNumber).thenReturn(1);
     when(mockLevel.launchX).thenReturn(GameConstants.launchChannelStartX);
     when(mockLevel.launchY).thenReturn(GameConstants.launchChannelStartY);
   });
