@@ -154,11 +154,14 @@ class GameManager extends ChangeNotifier {
 
   /// Runs the game loop on the frames of [vsync], the screen that hosts the
   /// board. The screen calls [detachVsync] before it is disposed. The clock
-  /// of an earlier screen is let go: the newest host drives the loop.
+  /// of an earlier screen is let go: the newest host drives the loop, and a
+  /// loop that was running goes on running on it.
   void attachVsync(TickerProvider vsync) {
+    final wasRunning = isRunning;
     _ticker?.dispose();
     _vsync = vsync;
     _ticker = vsync.createTicker(_onFrame);
+    if (wasRunning) _startGameLoop();
   }
 
   /// Stops the game loop and lets go of [vsync]'s clock, if it is the one

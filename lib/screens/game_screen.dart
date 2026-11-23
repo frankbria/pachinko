@@ -54,9 +54,9 @@ class _GameScreenState extends State<GameScreen>
   @override
   void dispose() {
     _lifecycleListener.dispose();
-    // Leaving the screen abandons the game in progress; stop it playing on in
-    // the background. The loop runs on this screen's clock, so it lets go too
-    _gameManager.stopLoop();
+    // Leaving the screen abandons the game in progress: letting go of this
+    // screen's clock stops it playing on in the background. A newer game
+    // screen that has already taken the loop over keeps it
     _gameManager.detachVsync(this);
     // The overlay is an ancestor, and an ancestor cannot be rebuilt while this
     // subtree is being torn down, so the release waits for the frame to end

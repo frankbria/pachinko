@@ -1,10 +1,15 @@
 import 'dart:math' as math;
+import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vector_math/vector_math_64.dart';
 import 'package:pachinko_game/models/ball.dart';
+import 'package:pachinko_game/screens/game_screen.dart';
 import 'package:pachinko_game/services/game_manager.dart';
 import 'package:pachinko_game/utils/constants.dart';
+import 'package:pachinko_game/utils/game_theme.dart';
 
 /// The game loop advances the physics in fixed steps on the display's clock,
 /// and seeds the bounces from the level and the round (#108). These tests
@@ -150,6 +155,67 @@ void main() {
     manager.startLaunchCharging();
     manager.launchBall();
     expect(manager.isRunning, isFalse, reason: 'no screen hosts the loop');
+  });
+
+  testWidgets(
+      'Given a ball in play When another screen attaches Then the loop goes on running on its clock',
+      (tester) async {
+    final manager = GameManager();
+    addTearDown(manager.dispose);
+    final firstScreen = _Vsync(tester);
+    manager.attachVsync(firstScreen);
+    manager.startGame();
+    launch(manager, 50);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    final ball = manager.gameState.activeBalls.single;
+    final before = ball.position.clone();
+
+    manager.attachVsync(_Vsync(tester));
+    manager.detachVsync(firstScreen);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(manager.isRunning, isTrue);
+    expect(ball.position, isNot(before), reason: 'the ball still moves');
+    manager.stopLoop();
+  });
+
+  testWidgets(
+      'Given a game screen replaced by another When the old one is disposed after a launch on the new one Then the ball plays on',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final manager = GameManager()..startGame();
+    addTearDown(manager.dispose);
+    late NavigatorState navigator;
+    await tester.pumpWidget(ChangeNotifierProvider<GameManager>.value(
+      value: manager,
+      child: MaterialApp(
+        theme: buildGameTheme(),
+        home: Builder(builder: (context) {
+          navigator = Navigator.of(context);
+          return const SizedBox();
+        }),
+      ),
+    ));
+    navigator.push(MaterialPageRoute<void>(builder: (_) => const GameScreen()));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    // The new screen is built, and takes the loop, while the old one is
+    // still on its way out; a ball is launched before the old one goes
+    navigator.pushReplacement(
+        MaterialPageRoute<void>(builder: (_) => const GameScreen()));
+    await tester.pump();
+    launch(manager, 50);
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.byType(GameScreen), findsOneWidget,
+        reason: 'the old screen is gone');
+    expect(manager.isRunning, isTrue);
+    expect(manager.gameState.activeBalls, isNotEmpty);
+    manager.stopLoop();
   });
 
   testWidgets(

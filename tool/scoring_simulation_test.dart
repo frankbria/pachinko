@@ -9,8 +9,10 @@
 //       --dart-define=LEVELS=60 --dart-define=ROUNDS=20
 //
 // and read the lines that start with SIM and BAND. To compare two commits,
-// copy this file into a checkout of each: it only uses what GameState,
-// BallLauncher, PhysicsEngine and Level have offered since #6.
+// copy this file into a checkout of each: it uses what GameState,
+// BallLauncher, PhysicsEngine and Level have offered since #6, and the fixed
+// step and seeding added in #108. For a commit older than #108, run that
+// commit's own copy of the tool.
 //
 // The round is stepped the way GameManager._updatePhysics steps it, in the
 // game's fixed steps, and each round's bounces are seeded as the game seeds
