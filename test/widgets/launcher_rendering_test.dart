@@ -261,7 +261,9 @@ void main() {
     expect(
         marker.center.dx,
         closeTo(
-            PhysicsEngine.entryXFor(manager.ballLauncher.launchPower), 0.01),
+            PhysicsEngine.entryXFor(manager.ballLauncher.launchPower,
+                pegs: manager.gameState.currentLevel!.pegs),
+            0.01),
         reason: 'the marker is where a launch at this power enters');
     await gesture.up();
     // The release launches a ball; stop the loop it started before the test ends

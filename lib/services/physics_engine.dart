@@ -35,11 +35,12 @@ class PhysicsEngine {
   static const double maxEntryStep = 6;
 
   /// Where a ball launched at [power] enters the pin field: its x where it
-  /// first comes down past [GameConstants.fieldEntryY], flown from the
-  /// launcher's release by these physics in the game's fixed steps, with no
-  /// pegs: a launched ball that meets none on the way gets there exactly.
-  /// The board marks it while the player charges.
-  static double entryXFor(double power) {
+  /// first comes down past [GameConstants.fieldEntryY] or first touches one
+  /// of [pegs], whichever is sooner, flown from the launcher's release by
+  /// these physics in the game's fixed steps. Nothing random acts on a ball
+  /// before its first touch, so a launched ball is exactly there. The board
+  /// marks it while the player charges.
+  static double entryXFor(double power, {Iterable<Peg> pegs = const []}) {
     final ball = BallLauncher.releasedBall(power);
     final engine = PhysicsEngine();
     const step = GameConstants.physicsTimeStep;
@@ -47,6 +48,9 @@ class PhysicsEngine {
       final above = ball.position.y < GameConstants.fieldEntryY;
       engine.updateBalls([ball], step);
       if (above && ball.position.y >= GameConstants.fieldEntryY) break;
+      if (pegs.any((peg) => peg.checkCollision(ball.position, ball.radius))) {
+        break;
+      }
     }
     return ball.position.x;
   }
@@ -205,11 +209,13 @@ class PhysicsEngine {
     // Do not resolve if velocities are separating
     if (velocityAlongNormal > 0) return 0;
 
-    // The pins in the entry rows catch a ball coming in off the dome: they
-    // return little of its speed and hold back its slide along them, so it
-    // falls on from about where the launch put it (#112). Below them the
+    // The pins in the entry rows catch a fast ball coming in off the dome:
+    // they return little of its speed and hold back its slide along them, so
+    // it falls on from about where the launch put it (#112). A slow ball is
+    // not caught, or a caught one would balance on the pin. Below them the
     // pins are lively, and the fall is luck
-    final inEntryRows = peg.position.y < GameConstants.entryRowsBottomY;
+    final inEntryRows = ball.position.y < GameConstants.entryRowsBottomY &&
+        ball.velocity.length >= GameConstants.entryCatchMinSpeed;
     final restitution = inEntryRows
         ? GameConstants.entryPinRestitution
         : GameConstants.pinRestitution;

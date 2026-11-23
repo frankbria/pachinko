@@ -472,8 +472,12 @@ class _PachinkoBoardPainter extends CustomPainter {
     final launcher = gameManager.ballLauncher;
     final ratio = launcher.launchPower / launcher.maxPower;
     paintLaunchPower(canvas, ratio, mirrored: mirrored);
+    final level = gameManager.gameState.currentLevel;
     paintEntryMarker(
-        canvas, PhysicsEngine.entryXFor(launcher.launchPower), ratio);
+        canvas,
+        PhysicsEngine.entryXFor(launcher.launchPower,
+            pegs: level?.pegs ?? const []),
+        ratio);
   }
 
   void _drawFloatingText(Canvas canvas, FloatingText floatingText,

@@ -27,14 +27,17 @@ class GameConstants {
   /// The share of a ball's speed into a pin that a pin gives back.
   static const double pinRestitution = 0.8;
 
-  /// The pins whose centres are above this height are the entry rows. They
-  /// catch a ball coming in off the dome: they give back
-  /// [entryPinRestitution] of its speed into them and keep
-  /// [entryPinGrip] of its speed along them, so the ball falls on from
-  /// about where the launch put it and launch power is aim (#112)
+  /// A pin met by a ball whose centre is above this height is in the entry
+  /// rows. A pin there catches a ball moving at [entryCatchMinSpeed] or
+  /// more, as one coming in off the dome does: it gives back
+  /// [entryPinRestitution] of its speed into the pin and keeps
+  /// [entryPinGrip] of its speed along it, so the ball falls on from about
+  /// where the launch put it and launch power is aim (#112). A slower ball
+  /// bounces as off any pin, so none comes to balance on one
   static const double entryRowsBottomY = 230.0;
   static const double entryPinRestitution = 0.1;
   static const double entryPinGrip = 0.2;
+  static const double entryCatchMinSpeed = 250.0;
   static const double minVelocity = 10.0;
 
   // Ball constants

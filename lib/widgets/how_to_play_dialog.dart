@@ -17,7 +17,7 @@ Future<void> showHowToPlay(BuildContext context) => showDialog<void>(
               _heading(Icons.touch_app, 'Controls'),
               _body(
                   '• Drag from the launcher: the longer the drag, the more power\n'
-                  '• A soft launch drops the ball near the launcher; a full one sends it over the top to the far side\n'
+                  '• Power sets where the ball comes down: a soft launch near the launcher, a full one at the far side. A mark on the dome shows where\n'
                   '• Release to launch\n'
                   '• Pegs change the ball\'s direction'),
               _heading(Icons.auto_awesome, 'Special Features'),
