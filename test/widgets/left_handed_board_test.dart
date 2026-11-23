@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vector_math/vector_math_64.dart' show Matrix4, Vector2, Vector3;
 import 'package:pachinko_game/models/ball.dart';
 import 'package:pachinko_game/models/ball_launcher.dart';
@@ -9,6 +10,7 @@ import 'package:pachinko_game/models/game_settings.dart';
 import 'package:pachinko_game/models/level.dart';
 import 'package:pachinko_game/models/peg.dart';
 import 'package:pachinko_game/services/game_manager.dart';
+import 'package:pachinko_game/services/storage_service.dart';
 import 'package:pachinko_game/utils/constants.dart';
 import 'package:pachinko_game/widgets/board_static_layer.dart';
 import 'package:pachinko_game/widgets/first_round_hints.dart';
@@ -113,7 +115,7 @@ void main() {
     });
 
     testWidgets(
-        'no text is drawn reversed: the hint, the slot counts, a popup, the bonus and the launch power',
+        'no text is drawn reversed: a slot count and value, a popup, the bonus and the launch power',
         (tester) async {
       final manager = await leftHandedGame(tester);
       final state = manager.gameState;
@@ -334,16 +336,22 @@ void main() {
 
     testWidgets('the hints layer passes the side on from the settings',
         (tester) async {
-      final manager = GameManager();
+      // A fresh install, so the ghost hand is due
+      SharedPreferences.setMockInitialValues({});
+      final manager = GameManager(
+          storageService:
+              StorageService(prefs: await SharedPreferences.getInstance()));
       addTearDown(manager.dispose);
       await manager
           .updateSettings((current) => current.copyWith(leftHanded: true));
-      // Without storage no hint is due; the layer is built all the same
       await tester.pumpWidget(ChangeNotifierProvider<GameManager>.value(
         value: manager,
-        child: const MaterialApp(home: FirstRoundHints(scale: 1)),
+        child: const MaterialApp(
+            home: Stack(children: [FirstRoundHints(scale: 1)])),
       ));
-      expect(find.byType(GhostHand), findsNothing);
+
+      expect(tester.widget<GhostHand>(find.byType(GhostHand)).mirrored, isTrue);
+      await tester.pumpWidget(const SizedBox());
     });
   });
 
