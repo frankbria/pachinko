@@ -18,8 +18,9 @@ import 'package:pachinko_game/utils/constants.dart';
 /// repeats. The tulips, windmills and centre gates of those levels move and
 /// collide as in the game (#114); a ball a tulip catches leaves play.
 void main() {
-  const dt = 1.0 / 60.0;
-  const maxFrames = 30 * 60;
+  // The game's own step: a feature's thin bar is only solid at it
+  const dt = GameConstants.physicsTimeStep;
+  const maxFrames = 30 * GameConstants.physicsStepsPerSecond;
 
   /// Steps one free ball until it leaves play. False if it is still in play at the end.
   bool leavesPlay(PhysicsEngine engine, Level level, Ball ball) {

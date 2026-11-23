@@ -35,7 +35,8 @@ const double _petalLeanOpen = 0.95;
 final Color _petalColour =
     Color.lerp(GameConstants.goldColor, GameConstants.cabinetColor, 0.25)!;
 
-/// A tulip: a gold body with two petals, upright while it is closed and
+/// A tulip: a gold body with two small petals, which reach only a few
+/// pixels past the body that balls meet, upright while it is closed and
 /// spread wide, over a gold glow, while it is open. A thin gold ring marks
 /// the pin that opens it, brighter while it is open.
 void paintTulip(Canvas canvas, Tulip tulip, {bool mirrored = false}) {
@@ -61,9 +62,9 @@ void paintTulip(Canvas canvas, Tulip tulip, {bool mirrored = false}) {
     canvas.rotate(side * lean);
     canvas.drawOval(
         Rect.fromCenter(
-            center: const Offset(0, -radius * 0.55),
-            width: radius * 0.75,
-            height: radius * 1.4),
+            center: const Offset(0, -radius * 0.35),
+            width: radius * 0.5,
+            height: radius * 0.9),
         petal);
     canvas.restore();
   }
