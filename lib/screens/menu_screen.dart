@@ -272,6 +272,9 @@ class _LevelTile extends StatelessWidget {
       value:
           isOpen ? GameStrings.starsWon(stars, null) : GameStrings.levelLocked,
       hint: isOpen ? null : GameStrings.levelLockedHint,
+      // The tile's own tap is hidden with its children, so a screen reader
+      // gets it here
+      onTap: isOpen ? onOpen : null,
       excludeSemantics: true,
       child: GestureDetector(
         onTap: isOpen ? onOpen : null,

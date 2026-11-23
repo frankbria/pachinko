@@ -363,7 +363,8 @@ void main() {
               .value,
           GameStrings.levelLocked);
 
-      await tester.tap(find.text('1'));
+      // A screen reader's double tap is the node's tap action
+      tester.semantics.tap(find.semantics.byLabel('Level 1'));
       await tester.pump();
       verify(mockGameManager.startGame(level: 1)).called(1);
     });
