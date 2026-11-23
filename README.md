@@ -53,7 +53,7 @@ The board changes colour every five levels. These are levels 1, 6, 11 and 16:
 - **One ball at a time, or not.** By default the next ball waits for the one in play to land. A setting turns that off, and then you can launch as many as you like. The recording above was made with it off.
 - **Sound** for the launch, the pins, the prize pegs, the slots and the bonus: a pin sounds louder and higher the harder it is hit, and a slot by its value.
 - **Vibration** on a phone: a light tick for a pin, stronger for a prize peg, a 1,000 or 2,000 slot and the bonus.
-- **Settings for comfort.** Sound can be turned off or made quieter, vibration turned off, and motion reduced: no confetti, prize pegs that glow without shimmering, and a short trail behind the ball. Reduced motion follows the phone's own setting until you change it.
+- **Settings for comfort.** Sound can be turned off or made quieter, vibration turned off, the launcher moved to the left for a left-handed player (the board is drawn reflected and plays the same), and motion reduced: no confetti, prize pegs that glow without shimmering, and a short trail behind the ball. Reduced motion follows the phone's own setting until you change it.
 - **A screen reader** hears the score, the balls left and the level, and where each ball lands ("1,000 points, centre slot").
 - **Pause.** The game also pauses itself when the app goes to the background, and waits for you to resume.
 - **A first round that teaches.** On your first round a ghost hand pulls the plunger to show the drag, until your first launch. The first time you hit a prize peg, a callout under the lamps says how many there are to hit for the bonus. Each shows once on a device. The game screen's help button pauses the game and opens How to Play.

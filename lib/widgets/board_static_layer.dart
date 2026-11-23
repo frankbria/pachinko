@@ -23,6 +23,10 @@ import '../utils/game_theme.dart';
 /// with three colours draws the same thing, but it makes the software
 /// rendered emulator that the integration tests run on abort, and so does a
 /// gradient whose last stop is below 1.0 (found on PR #65).
+///
+/// On a [mirrored] board the sphere is reflected about its own centre as it
+/// is drawn, so that, with the board's reflection, it is still lit from the
+/// upper left.
 void paintSphere(
   Canvas canvas,
   Offset centre,
@@ -30,6 +34,21 @@ void paintSphere(
   Color colour, {
   bool castsShadow = true,
   Color? glowColour,
+  bool mirrored = false,
+}) =>
+    paintUnreflected(canvas,
+        aboutX: centre.dx,
+        mirrored: mirrored,
+        paint: () => _paintSphere(canvas, centre, radius, colour,
+            castsShadow: castsShadow, glowColour: glowColour));
+
+void _paintSphere(
+  Canvas canvas,
+  Offset centre,
+  double radius,
+  Color colour, {
+  required bool castsShadow,
+  required Color? glowColour,
 }) {
   if (castsShadow) {
     final shadowCentre = centre + Offset(radius * 0.3, radius * 0.4);
@@ -95,27 +114,65 @@ void paintSphere(
   );
 }
 
+/// Reflects the board about its middle, for a left-handed player: the
+/// launch channel and the plunger are then on the left. Only the drawing is
+/// reflected; the physics, the level and the scores are the same on either
+/// side, so the same launches give the same results.
+void mirrorBoard(Canvas canvas) {
+  canvas.translate(GameConstants.boardWidth, 0);
+  canvas.scale(-1, 1);
+}
+
+/// Where [x], in board coordinates, is drawn on a [mirrored] board, and
+/// where a touch drawn at [x] lands on the board: the reflection is its own
+/// inverse.
+double boardXOnScreen(double x, {required bool mirrored}) =>
+    mirrored ? GameConstants.boardWidth - x : x;
+
+/// Runs [paint] reflected about the vertical line at [aboutX] when
+/// [mirrored], and as it is otherwise.
+///
+/// On a board reflected by [mirrorBoard], whatever must not read reversed
+/// (text, and the light and shadow of a sphere) is drawn through this:
+/// reflected twice, it reads as on the right-handed board, in the reflected
+/// place.
+void paintUnreflected(Canvas canvas,
+    {required double aboutX,
+    required bool mirrored,
+    required void Function() paint}) {
+  if (!mirrored) return paint();
+  canvas.save();
+  canvas.translate(2 * aboutX, 0);
+  canvas.scale(-1, 1);
+  paint();
+  canvas.restore();
+}
+
 /// Draws the parts of the board that do not change while a level is played:
 /// the felt, the chrome rail, the brass pins and the unlit slots.
 ///
 /// Prize pegs, ball counts and everything that moves are drawn by the board's
-/// painter on top of this.
-void paintBoardStaticLayer(Canvas canvas, Level level) {
+/// painter on top of this. On a [mirrored] board (see [mirrorBoard]) the
+/// text and the pins' light are drawn so that they read the right way round.
+void paintBoardStaticLayer(Canvas canvas, Level level,
+    {bool mirrored = false}) {
   final band = GameConstants.bandForLevel(level.levelNumber);
   _paintFelt(canvas, band);
   _paintRail(canvas, band);
-  _paintLevelSign(canvas, level.levelNumber, band);
+  _paintLevelSign(canvas, level.levelNumber, band, mirrored: mirrored);
   // Every glow before any slot, so that no slot is washed by its neighbour's
   for (final slot in level.slots) {
     _paintLightSpill(canvas, slot.bounds, slot.color);
   }
   for (final slot in level.slots) {
-    _paintSlot(canvas, slot.bounds, slot.color, slot.pointValue);
+    _paintSlot(canvas, slot.bounds, slot.color, slot.pointValue,
+        mirrored: mirrored);
   }
   for (final peg in level.pegs) {
     if (peg.type == PegType.special) continue;
     paintSphere(
-        canvas, Offset(peg.position.x, peg.position.y), peg.radius, peg.color);
+        canvas, Offset(peg.position.x, peg.position.y), peg.radius, peg.color,
+        mirrored: mirrored);
   }
 }
 
@@ -181,7 +238,8 @@ void _paintRail(Canvas canvas, LevelBand band) {
 }
 
 /// The level's sign, under the top of the dome. Balls pass over it.
-void _paintLevelSign(Canvas canvas, int levelNumber, LevelBand band) {
+void _paintLevelSign(Canvas canvas, int levelNumber, LevelBand band,
+    {required bool mirrored}) {
   final sign = TextPainter(
     text: TextSpan(
       text: 'LEVEL $levelNumber',
@@ -197,7 +255,11 @@ void _paintLevelSign(Canvas canvas, int levelNumber, LevelBand band) {
   )..layout();
   const domeCentreX =
       (GameConstants.topCurveStartX + GameConstants.topCurveEndX) / 2;
-  sign.paint(canvas, Offset(domeCentreX - sign.width / 2, 46));
+  paintUnreflected(canvas,
+      aboutX: domeCentreX,
+      mirrored: mirrored,
+      paint: () =>
+          sign.paint(canvas, Offset(domeCentreX - sign.width / 2, 46)));
 }
 
 /// Light in the slot's tier [colour] rising from its mouth. Round and soft
@@ -218,7 +280,8 @@ void _paintLightSpill(Canvas canvas, Rect bounds, Color colour) {
 }
 
 /// A dark glass pocket with a neon rim and its value in the tier [colour].
-void _paintSlot(Canvas canvas, Rect bounds, Color colour, int pointValue) {
+void _paintSlot(Canvas canvas, Rect bounds, Color colour, int pointValue,
+    {required bool mirrored}) {
   final pocket = RRect.fromRectAndRadius(bounds, const Radius.circular(4));
   canvas.drawRRect(
     pocket,
@@ -247,7 +310,8 @@ void _paintSlot(Canvas canvas, Rect bounds, Color colour, int pointValue) {
       ..color = colour,
   );
 
-  paintSlotValue(canvas, bounds, pointValue, colour, dispose: true);
+  paintSlotValue(canvas, bounds, pointValue, colour,
+      dispose: true, mirrored: mirrored);
 }
 
 /// Writes a slot's [pointValue] in the middle of its [bounds]: across, or
@@ -255,9 +319,10 @@ void _paintSlot(Canvas canvas, Rect bounds, Color colour, int pointValue) {
 /// long, as the two edge slots are.
 ///
 /// With [dispose] the text is released once drawn; a caller whose drawing is
-/// read back by a test leaves it.
+/// read back by a test leaves it. On a [mirrored] board it is drawn to read
+/// the right way round.
 void paintSlotValue(Canvas canvas, Rect bounds, int pointValue, Color colour,
-    {bool dispose = false}) {
+    {bool dispose = false, bool mirrored = false}) {
   final value = TextPainter(
     text: TextSpan(
       text: pointValue.toString(),
@@ -271,15 +336,18 @@ void paintSlotValue(Canvas canvas, Rect bounds, int pointValue, Color colour,
     textDirection: TextDirection.ltr,
   )..layout();
   final middle = -Offset(value.width / 2, value.height / 2);
-  if (value.width <= bounds.width) {
-    value.paint(canvas, bounds.center + middle);
-  } else {
-    canvas.save();
-    canvas.translate(bounds.center.dx, bounds.center.dy);
-    canvas.rotate(-math.pi / 2);
-    value.paint(canvas, middle);
-    canvas.restore();
-  }
+  paintUnreflected(canvas, aboutX: bounds.center.dx, mirrored: mirrored,
+      paint: () {
+    if (value.width <= bounds.width) {
+      value.paint(canvas, bounds.center + middle);
+    } else {
+      canvas.save();
+      canvas.translate(bounds.center.dx, bounds.center.dy);
+      canvas.rotate(-math.pi / 2);
+      value.paint(canvas, middle);
+      canvas.restore();
+    }
+  });
   if (dispose) value.dispose();
 }
 
@@ -287,6 +355,7 @@ void paintSlotValue(Canvas canvas, Rect bounds, int pointValue, Color colour,
 /// per level and replayed on every repaint.
 class BoardStaticLayer {
   Level? _level;
+  bool _mirrored = false;
   ui.Picture? _picture;
 
   /// How many pictures have been recorded. Tests read it to see that a
@@ -294,19 +363,24 @@ class BoardStaticLayer {
   @visibleForTesting
   static int debugBuildCount = 0;
 
-  /// The picture of [level]'s static layer, in board coordinates.
+  /// The picture of [level]'s static layer, in board coordinates, for a
+  /// board drawn [mirrored] or not.
   ///
-  /// The same picture comes back until another level object is passed: a
-  /// level's pegs and slots do not move once it has been generated.
-  ui.Picture pictureFor(Level level) {
+  /// The same picture comes back until another level object, or the other
+  /// side, is asked for: a level's pegs and slots do not move once it has
+  /// been generated.
+  ui.Picture pictureFor(Level level, {bool mirrored = false}) {
     final cached = _picture;
-    if (cached != null && identical(level, _level)) return cached;
+    if (cached != null && identical(level, _level) && mirrored == _mirrored) {
+      return cached;
+    }
 
     cached?.dispose();
     final recorder = ui.PictureRecorder();
-    paintBoardStaticLayer(Canvas(recorder), level);
+    paintBoardStaticLayer(Canvas(recorder), level, mirrored: mirrored);
     debugBuildCount++;
     _level = level;
+    _mirrored = mirrored;
     return _picture = recorder.endRecording();
   }
 

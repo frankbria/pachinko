@@ -246,6 +246,10 @@ class GameStrings {
   static const String reducedMotionHint =
       'No confetti or shimmer, and a short trail behind the ball. Follows the system until changed.';
 
+  static const String leftHanded = 'Left-handed launcher';
+  static const String leftHandedHint =
+      'The launcher on the left, so your hand does not cover the board';
+
   /// What a screen reader hears when a ball lands: "1,000 points, centre
   /// slot". [points] is already written with its thousands grouped.
   static String ballLanded(String points, String slotName) =>

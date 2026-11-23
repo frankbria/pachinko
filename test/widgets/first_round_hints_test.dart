@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:pachinko_game/models/game_settings.dart';
 import 'package:pachinko_game/models/ball_launcher.dart';
 import 'package:pachinko_game/models/game_state.dart';
 import 'package:pachinko_game/screens/game_screen.dart';
@@ -138,6 +139,7 @@ void main() {
       manager = MockGameManager();
       when(manager.showsLaunchHint).thenReturn(false);
       when(manager.prizePegHint).thenReturn(4);
+      when(manager.settings).thenReturn(const GameSettings());
     });
 
     Future<void> showHints(WidgetTester tester, {double scale = 1.0}) =>

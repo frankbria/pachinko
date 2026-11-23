@@ -378,7 +378,8 @@ void main() {
           soundOn: false,
           soundVolume: 0.3,
           vibrationOn: false,
-          reducedMotion: true);
+          reducedMotion: true,
+          leftHanded: true);
 
       await storage.saveSettings(chosen);
 

@@ -38,8 +38,9 @@ class StorageService {
   static const String _soundVolumeKey = 'setting_sound_volume';
   static const String _vibrationOnKey = 'setting_vibration_on';
   static const String _reducedMotionKey = 'setting_reduced_motion';
+  static const String _leftHandedKey = 'setting_left_handed';
 
-  /// The player's sound, vibration and motion settings, or the defaults of a
+  /// The player's sound, vibration, motion and launcher settings, or the defaults of a
   /// new install for any not chosen yet.
   GameSettings get settings {
     const defaults = GameSettings();
@@ -48,6 +49,7 @@ class StorageService {
       soundVolume: _prefs.getDouble(_soundVolumeKey) ?? defaults.soundVolume,
       vibrationOn: _prefs.getBool(_vibrationOnKey) ?? defaults.vibrationOn,
       reducedMotion: _prefs.getBool(_reducedMotionKey),
+      leftHanded: _prefs.getBool(_leftHandedKey) ?? defaults.leftHanded,
     );
   }
 
@@ -57,6 +59,7 @@ class StorageService {
     await _prefs.setBool(_soundOnKey, settings.soundOn);
     await _prefs.setDouble(_soundVolumeKey, settings.soundVolume);
     await _prefs.setBool(_vibrationOnKey, settings.vibrationOn);
+    await _prefs.setBool(_leftHandedKey, settings.leftHanded);
     final reducedMotion = settings.reducedMotion;
     if (reducedMotion != null) {
       await _prefs.setBool(_reducedMotionKey, reducedMotion);

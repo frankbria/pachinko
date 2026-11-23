@@ -82,6 +82,7 @@ void main() {
       expect(tester.widget<Slider>(find.byType(Slider)).value, 1.0);
       expect(switchValue(tester, GameStrings.vibration), isTrue);
       expect(switchValue(tester, GameStrings.reducedMotion), isFalse);
+      expect(switchValue(tester, GameStrings.leftHanded), isFalse);
 
       tester.platformDispatcher.accessibilityFeaturesTestValue =
           const FakeAccessibilityFeatures(disableAnimations: true);
@@ -106,13 +107,16 @@ void main() {
       await tester.tap(find.text(GameStrings.soundEffects));
       await tester.tap(find.text(GameStrings.vibration));
       await tester.tap(find.text(GameStrings.reducedMotion));
+      await tester.ensureVisible(find.text(GameStrings.leftHanded));
+      await tester.tap(find.text(GameStrings.leftHanded));
       await tester.pumpAndSettle();
 
       const chosen = GameSettings(
           soundOn: false,
           soundVolume: 0.0,
           vibrationOn: false,
-          reducedMotion: true);
+          reducedMotion: true,
+          leftHanded: true);
       expect(manager.settings, chosen);
       expect(tester.widget<Slider>(find.byType(Slider)).onChanged, isNull,
           reason: 'the volume is for sound, which is off');
@@ -124,6 +128,7 @@ void main() {
       expect(switchValue(tester, GameStrings.soundEffects), isFalse);
       expect(switchValue(tester, GameStrings.vibration), isFalse);
       expect(switchValue(tester, GameStrings.reducedMotion), isTrue);
+      expect(switchValue(tester, GameStrings.leftHanded), isTrue);
     });
   });
 
