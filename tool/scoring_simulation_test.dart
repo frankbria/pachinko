@@ -122,12 +122,17 @@ void main() {
   // PegPatterns.getPatternForLevel picks the pattern from the level number
   const names = {1: 'triangle', 2: 'random', 0: 'hexagonal'};
 
-  Ball launchedBall(double power) {
+  /// Carries a ball launched at [power] up the channel, calling
+  /// [onTravelStep] for each step it spends there: the game counts those
+  /// steps as play, so the fever runs down during them.
+  Ball launchedBall(double power, void Function() onTravelStep) {
     final launcher = BallLauncher();
     launcher.startCharging();
     launcher.updateCharging(power);
     final ball = launcher.launch()!;
-    while (!launcher.updateBallPath(dt)) {}
+    while (!launcher.updateBallPath(dt)) {
+      onTravelStep();
+    }
     return ball;
   }
 
@@ -144,7 +149,8 @@ void main() {
 
     Ball? firstOfRound;
     while (state.ballsRemaining > 0) {
-      final launched = launchedBall(powers.nextDouble() * 100);
+      final launched =
+          launchedBall(powers.nextDouble() * 100, () => state.updateFever(dt));
       final firstBall = firstOfRound ??= launched;
       state.launchBall(launched);
       int frames = 0;
