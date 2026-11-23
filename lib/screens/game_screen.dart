@@ -4,6 +4,7 @@ import '../services/game_manager.dart';
 import '../models/game_state.dart';
 import '../utils/constants.dart';
 import '../widgets/achievement_toast_overlay.dart';
+import '../widgets/how_to_play_dialog.dart';
 import '../models/round_summary.dart';
 import '../widgets/pachinko_board.dart';
 import '../widgets/round_summary_panel.dart';
@@ -352,6 +353,23 @@ class _GameControls extends StatelessWidget {
               IconButton(
                 onPressed: gameManager.resetGame,
                 icon: const Icon(Icons.restart_alt),
+                style: IconButton.styleFrom(
+                  backgroundColor: GameConstants.surfaceColor,
+                  foregroundColor: GameConstants.inkColor,
+                ),
+              ),
+
+              // How to Play. A ball in play is paused first, and stays paused
+              // once the dialog is closed, as after the pause button
+              IconButton(
+                tooltip: GameStrings.howToPlay,
+                onPressed: () {
+                  if (gameState.phase == GamePhase.playing) {
+                    gameManager.pauseGame();
+                  }
+                  showHowToPlay(context);
+                },
+                icon: const Icon(Icons.help_outline),
                 style: IconButton.styleFrom(
                   backgroundColor: GameConstants.surfaceColor,
                   foregroundColor: GameConstants.inkColor,

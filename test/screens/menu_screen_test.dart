@@ -29,6 +29,9 @@ void main() {
     when(mockGameManager.bestScoresByLevel())
         .thenAnswer((_) async => const <int, int>{});
     when(mockGameManager.ballLauncher).thenReturn(mockBallLauncher);
+    // No first-round hint: those are tested in first_round_hints_test.dart
+    when(mockGameManager.showsLaunchHint).thenReturn(false);
+    when(mockGameManager.prizePegHint).thenReturn(null);
 
     // Stub GameState properties
     when(mockGameState.score).thenReturn(0);

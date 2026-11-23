@@ -350,6 +350,8 @@ void main() {
       'lib/widgets/round_summary_panel.dart',
       'lib/widgets/achievement_toast.dart',
       'lib/widgets/game_card.dart',
+      'lib/widgets/how_to_play_dialog.dart',
+      'lib/widgets/first_round_hints.dart',
     ]) {
       final source = File(path).readAsStringSync();
       expect(source, isNot(contains(RegExp(r'Colors\.(?!transparent)'))),

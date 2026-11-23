@@ -33,6 +33,28 @@ class StorageService {
     await _prefs.setBool(_singleBallLaunchKey, value);
   }
 
+  static const String _launchHintShownKey = 'hint_launch_shown';
+  static const String _prizePegHintShownKey = 'hint_prize_peg_shown';
+
+  /// Whether the ghost hand that shows the drag on the plunger is still to be
+  /// shown: true until the player's first launch on this install.
+  bool get launchHintDue => !(_prefs.getBool(_launchHintShownKey) ?? false);
+
+  /// Records that the player has launched a ball, so the ghost hand is not
+  /// shown again.
+  Future<void> saveLaunchHintShown() async {
+    await _prefs.setBool(_launchHintShownKey, true);
+  }
+
+  /// Whether the callout that says what the prize pegs are for is still to be
+  /// shown: true until the first prize peg hit on this install.
+  bool get prizePegHintDue => !(_prefs.getBool(_prizePegHintShownKey) ?? false);
+
+  /// Records that the prize peg callout has been shown.
+  Future<void> savePrizePegHintShown() async {
+    await _prefs.setBool(_prizePegHintShownKey, true);
+  }
+
   /// Initializes StorageService with production SharedPreferences.
   ///
   /// This is the recommended way to create a StorageService in production code.

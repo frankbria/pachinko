@@ -10,6 +10,7 @@ import '../utils/constants.dart';
 import 'board_effects.dart';
 import 'floating_text.dart';
 import 'board_static_layer.dart';
+import 'first_round_hints.dart';
 
 class PachinkoBoard extends StatefulWidget {
   const PachinkoBoard({super.key});
@@ -102,16 +103,22 @@ class _PachinkoBoardState extends State<PachinkoBoard>
           final scaleY = constraints.maxHeight / GameConstants.boardHeight;
           _currentScale = scaleX < scaleY ? scaleX : scaleY;
 
-          return CustomPaint(
-            painter: _PachinkoBoardPainter(
-              gameManager: gameManager,
-              staticLayer: _staticLayer,
-              repaint: _repaint,
-              dragStart: _dragStart,
-              dragEnd: _dragEnd,
-              isDragging: _isDragging,
-            ),
-            size: Size.infinite,
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              CustomPaint(
+                painter: _PachinkoBoardPainter(
+                  gameManager: gameManager,
+                  staticLayer: _staticLayer,
+                  repaint: _repaint,
+                  dragStart: _dragStart,
+                  dragEnd: _dragEnd,
+                  isDragging: _isDragging,
+                ),
+                size: Size.infinite,
+              ),
+              FirstRoundHints(scale: _currentScale),
+            ],
           );
         },
       ),
@@ -379,7 +386,8 @@ class _PachinkoBoardPainter extends CustomPainter {
     );
     // Two short lines under the launch box, clear of the slots below. That
     // is where a popup rises from the right-hand slots, so the hint steps
-    // aside for as long as one is over it
+    // aside for as long as one is over it, and it is also where the ghost
+    // hand pulls the plunger down on a first round: the hand is the hint then
     textPainter.layout(maxWidth: 120);
     final hintAt = Offset(
         right - textPainter.width, GameConstants.launchChannelStartY + 25);
@@ -390,7 +398,9 @@ class _PachinkoBoardPainter extends CustomPainter {
               centreTop: popup.currentPosition,
               fontSize: popup.fontSize,
             ).overlaps(hint));
-    if (!underPopup) textPainter.paint(canvas, hintAt);
+    if (!underPopup && !gameManager.showsLaunchHint) {
+      textPainter.paint(canvas, hintAt);
+    }
   }
 
   /// The launch channel as the power meter, while the player drags.

@@ -37,10 +37,42 @@ class MockStorageService extends _i1.Mock implements _i2.StorageService {
       ) as bool);
 
   @override
+  bool get launchHintDue => (super.noSuchMethod(
+        Invocation.getter(#launchHintDue),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  bool get prizePegHintDue => (super.noSuchMethod(
+        Invocation.getter(#prizePegHintDue),
+        returnValue: false,
+      ) as bool);
+
+  @override
   _i3.Future<void> saveSingleBallLaunch(bool? value) => (super.noSuchMethod(
         Invocation.method(
           #saveSingleBallLaunch,
           [value],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
+
+  @override
+  _i3.Future<void> saveLaunchHintShown() => (super.noSuchMethod(
+        Invocation.method(
+          #saveLaunchHintShown,
+          [],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
+
+  @override
+  _i3.Future<void> savePrizePegHintShown() => (super.noSuchMethod(
+        Invocation.method(
+          #savePrizePegHintShown,
+          [],
         ),
         returnValue: _i3.Future<void>.value(),
         returnValueForMissingStub: _i3.Future<void>.value(),

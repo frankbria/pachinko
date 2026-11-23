@@ -832,6 +832,8 @@ void main() {
       final mockAchievements = MockAchievementService();
       when(mockStorage.saveHighScore(any, any)).thenAnswer((_) async {});
       when(mockStorage.singleBallLaunch).thenReturn(true);
+      when(mockStorage.launchHintDue).thenReturn(false);
+      when(mockStorage.prizePegHintDue).thenReturn(false);
 
       when(mockStorage.getBestScore(any)).thenAnswer((_) async => null);
       final mockLevel = MockLevel();
@@ -1690,6 +1692,138 @@ void main() {
       manager.resetGame();
       await landIn(manager, 2000);
       expect(unlocked(service, 'lucky_shot'), isTrue);
+    });
+  });
+
+  group('First-round hints', () {
+    /// The manager decides when the ghost hand and the prize peg callout
+    /// show; storage remembers, per install, that each has been shown. The
+    /// loop is mocked as in 'Sound and haptics': the physics reports the hits.
+    late SharedPreferences prefs;
+    late GameManager hinted;
+    late List<Peg> prizes;
+
+    Future<void> useStorage(Map<String, Object> stored) async {
+      SharedPreferences.setMockInitialValues(stored);
+      prefs = await SharedPreferences.getInstance();
+      hinted = GameManager(
+        gameState: mockGameState,
+        physicsEngine: mockPhysicsEngine,
+        ballLauncher: mockBallLauncher,
+        storageService: StorageService(prefs: prefs),
+      );
+      addTearDown(hinted.dispose);
+      host(hinted);
+      prizes = [
+        for (final x in [80.0, 160.0, 240.0, 320.0])
+          Peg(position: Vector2(x, 300), radius: 10.0, type: PegType.special)
+      ];
+      final mockLevel = MockLevel();
+      when(mockLevel.pegs).thenReturn(prizes);
+      when(mockLevel.specialPegs).thenReturn(prizes);
+      when(mockLevel.slots).thenReturn([]);
+      when(mockLevel.allSpecialPegsHit).thenReturn(false);
+      when(mockGameState.currentLevel).thenReturn(mockLevel);
+      when(mockPhysicsEngine.checkSlotCollisions(any, any)).thenReturn([]);
+    }
+
+    /// Plays a few frames in which the physics reports [hit].
+    Future<void> hitPegs(List<Peg> hit) async {
+      final ball = Ball(position: Vector2(200, 200), radius: 8.0);
+      when(mockGameState.activeBalls).thenReturn([ball]);
+      when(mockPhysicsEngine.checkPegCollisions(any, any)).thenReturn(hit);
+      when(mockBallLauncher.launch()).thenReturn(ball);
+      hinted.launchBall();
+      await play(const Duration(milliseconds: 20));
+      when(mockPhysicsEngine.checkPegCollisions(any, any)).thenReturn([]);
+    }
+
+    testLoop(
+        'Given a manager without storage Then no hint shows, even at a prize peg hit',
+        () async {
+      expect(gameManager.showsLaunchHint, isFalse);
+      final prize =
+          Peg(position: Vector2(210, 210), radius: 10.0, type: PegType.special);
+      final mockLevel = MockLevel();
+      when(mockLevel.pegs).thenReturn([prize]);
+      when(mockLevel.specialPegs).thenReturn([prize, prize]);
+      when(mockLevel.slots).thenReturn([]);
+      when(mockLevel.allSpecialPegsHit).thenReturn(false);
+      when(mockGameState.currentLevel).thenReturn(mockLevel);
+      when(mockGameState.activeBalls)
+          .thenReturn([Ball(position: Vector2.zero())]);
+      when(mockPhysicsEngine.checkPegCollisions(any, any)).thenReturn([prize]);
+      when(mockPhysicsEngine.checkSlotCollisions(any, any)).thenReturn([]);
+      when(mockBallLauncher.launch())
+          .thenReturn(Ball(position: Vector2.zero()));
+
+      gameManager.launchBall();
+      await play(const Duration(milliseconds: 20));
+
+      expect(gameManager.prizePegHint, isNull);
+    });
+
+    testLoop(
+        'Given a first install Then the hand shows until the plunger is touched, and after the first launch never again',
+        () async {
+      await useStorage({});
+      expect(hinted.showsLaunchHint, isTrue);
+
+      when(mockBallLauncher.phase).thenReturn(LaunchPhase.charging);
+      expect(hinted.showsLaunchHint, isFalse, reason: 'the player has it');
+      when(mockBallLauncher.phase).thenReturn(LaunchPhase.ready);
+      expect(hinted.showsLaunchHint, isTrue, reason: 'let go without a launch');
+
+      await hitPegs([]);
+
+      expect(hinted.showsLaunchHint, isFalse);
+      expect(StorageService(prefs: prefs).launchHintDue, isFalse,
+          reason: 'remembered for the next start');
+    });
+
+    testLoop(
+        'Given an install that has launched before Then the hand does not show',
+        () async {
+      await useStorage({'hint_launch_shown': true});
+
+      expect(hinted.showsLaunchHint, isFalse);
+    });
+
+    testLoop(
+        'Given the first prize peg hit on an install Then the callout gives the level\'s count, once',
+        () async {
+      await useStorage({});
+
+      await hitPegs([prizes.first]);
+      expect(hinted.prizePegHint, 4);
+      expect(StorageService(prefs: prefs).prizePegHintDue, isFalse);
+
+      hinted.dismissPrizePegHint();
+      expect(hinted.prizePegHint, isNull);
+      await hitPegs([prizes[1]]);
+      expect(hinted.prizePegHint, isNull, reason: 'shown once already');
+    });
+
+    testLoop(
+        'Given the callout showing When the player restarts the level Then it is taken down',
+        () async {
+      await useStorage({});
+      await hitPegs([prizes.first]);
+      expect(hinted.prizePegHint, 4);
+
+      hinted.resetGame();
+
+      expect(hinted.prizePegHint, isNull);
+    });
+
+    testLoop(
+        'Given an install that has seen the callout Then a prize peg hit shows nothing',
+        () async {
+      await useStorage({'hint_prize_peg_shown': true});
+
+      await hitPegs([prizes.first]);
+
+      expect(hinted.prizePegHint, isNull);
     });
   });
 }

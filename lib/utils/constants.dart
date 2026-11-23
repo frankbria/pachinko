@@ -239,6 +239,12 @@ class GameStrings {
   static const String appName = 'Pachinko Game';
   static const String launchHintReady = 'Drag the plunger to launch';
   static const String launchHintCharging = 'Release to launch';
+  static const String howToPlay = 'How to Play';
+
+  /// The callout shown at the first prize peg hit, for a level with
+  /// [prizePegs] of them.
+  static String prizePegHint(int prizePegs) =>
+      'Hit all $prizePegs for bonus balls';
 
   static const String settings = 'Settings';
   static const String singleBallLaunch = 'One ball at a time';

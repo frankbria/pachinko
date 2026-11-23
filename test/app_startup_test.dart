@@ -141,9 +141,11 @@ void main() {
       expect(told, 1);
     });
 
-    test('given late storage that agrees with the setting, then nobody is told',
+    test(
+        'given late storage that agrees with the setting and has no hint to show, then nobody is told',
         () async {
-      SharedPreferences.setMockInitialValues({});
+      SharedPreferences.setMockInitialValues(
+          {'hint_launch_shown': true, 'hint_prize_peg_shown': true});
       final manager = GameManager();
       addTearDown(manager.dispose);
       int told = 0;
@@ -178,6 +180,26 @@ void main() {
       manager.attachServices();
 
       expect(manager.gameState.singleBallLaunch, isFalse);
+    });
+
+    test(
+        'given a first install, when storage arrives late, then the ghost hand is due and listeners are told',
+        () async {
+      SharedPreferences.setMockInitialValues({});
+      final manager = GameManager();
+      addTearDown(manager.dispose);
+      int told = 0;
+      manager.addListener(() => told++);
+      expect(manager.showsLaunchHint, isFalse,
+          reason: 'nothing is shown before storage answers');
+
+      manager.attachServices(
+          storageService:
+              StorageService(prefs: await SharedPreferences.getInstance()));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(manager.showsLaunchHint, isTrue);
+      expect(told, 1);
     });
   });
 }
