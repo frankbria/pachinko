@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'services/game_manager.dart';
 import 'services/audio_service.dart';
+import 'services/music_service.dart';
 import 'services/haptics_service.dart';
 import 'services/storage_service.dart';
 import 'services/achievement_service.dart';
@@ -26,6 +27,8 @@ class PachinkoApp extends StatefulWidget {
 
 class _PachinkoAppState extends State<PachinkoApp> {
   late final AudioService _audioService;
+  final MusicService _music = MusicService();
+  late final AppLifecycleListener _lifecycleListener;
   final HapticsService _haptics = HapticsService();
   StorageService? _storageService;
   AchievementService? _achievementService;
@@ -37,6 +40,13 @@ class _PachinkoAppState extends State<PachinkoApp> {
     // Create and initialize AudioService (non-blocking for Linux compatibility)
     _audioService = AudioService();
     _audioService.initialize(); // No await - UI renders immediately
+    _music.initialize();
+    // The music pauses whatever screen is showing when the app is hidden,
+    // and carries on when it returns; the game itself stays paused
+    _lifecycleListener = AppLifecycleListener(
+      onHide: () => _music.setAppHidden(true),
+      onShow: () => _music.setAppHidden(false),
+    );
 
     // Initialize StorageService and AchievementService asynchronously
     _initializeServices();
@@ -70,6 +80,8 @@ class _PachinkoAppState extends State<PachinkoApp> {
   void dispose() {
     // Dispose AudioService to free resources
     _audioService.dispose();
+    _music.dispose();
+    _lifecycleListener.dispose();
     super.dispose();
   }
 
@@ -92,6 +104,7 @@ class _PachinkoAppState extends State<PachinkoApp> {
             GameManager>(
           create: (context) => GameManager(
             audioService: _audioService,
+            music: _music,
             haptics: _haptics,
             storageService: _storageService,
             achievementService: _achievementService,

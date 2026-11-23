@@ -2,11 +2,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pachinko_game/models/game_settings.dart';
 
 void main() {
-  test('a new install has sound and vibration on at full volume', () {
+  test(
+      'a new install has sound and vibration on, effects at full volume and music at 70%',
+      () {
     const settings = GameSettings();
 
     expect(settings.soundOn, isTrue);
     expect(settings.soundVolume, 1.0);
+    expect(settings.musicVolume, 0.7);
     expect(settings.vibrationOn, isTrue);
     expect(settings.reducedMotion, isNull);
     expect(settings.leftHanded, isFalse);
@@ -39,6 +42,10 @@ void main() {
         settings.copyWith(soundOn: false), const GameSettings(soundOn: false));
     expect(settings.copyWith(soundVolume: 0.4),
         const GameSettings(soundVolume: 0.4));
+    expect(settings.copyWith(musicVolume: 0.2),
+        const GameSettings(musicVolume: 0.2));
+    expect(
+        settings.copyWith(musicVolume: 0.2).soundVolume, settings.soundVolume);
     expect(settings.copyWith(vibrationOn: false),
         const GameSettings(vibrationOn: false));
     expect(settings.copyWith(reducedMotion: true),
@@ -54,12 +61,15 @@ void main() {
         const GameSettings(soundVolume: 0.5).hashCode);
     expect(const GameSettings(soundVolume: 0.5),
         isNot(const GameSettings(soundVolume: 0.6)));
+    expect(const GameSettings(musicVolume: 0.5),
+        isNot(const GameSettings(musicVolume: 0.6)));
   });
 
   test('settings say what they are, for a failing expectation to show', () {
     expect(
         const GameSettings(soundOn: false, reducedMotion: true).toString(),
-        'GameSettings(soundOn: false, soundVolume: 1.0, vibrationOn: true, '
+        'GameSettings(soundOn: false, soundVolume: 1.0, musicVolume: 0.7, '
+        'vibrationOn: true, '
         'reducedMotion: true, leftHanded: false)');
   });
 }

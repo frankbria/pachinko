@@ -378,6 +378,7 @@ void main() {
       const chosen = GameSettings(
           soundOn: false,
           soundVolume: 0.3,
+          musicVolume: 0.45,
           vibrationOn: false,
           reducedMotion: true,
           leftHanded: true);

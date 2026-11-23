@@ -18,6 +18,7 @@ import '../widgets/floating_text.dart';
 import '../utils/constants.dart';
 import 'physics_engine.dart';
 import 'audio_service.dart';
+import 'music_service.dart';
 import 'haptics_service.dart';
 import 'storage_service.dart';
 import 'achievement_service.dart';
@@ -28,6 +29,7 @@ class GameManager extends ChangeNotifier {
   final PhysicsEngine _physicsEngine;
   final BallLauncher _ballLauncher;
   final AudioService? _audioService;
+  final MusicService? _music;
   final HapticsService? _haptics;
   StorageService? _storageService;
   AchievementService? _achievementService;
@@ -116,12 +118,14 @@ class GameManager extends ChangeNotifier {
     PhysicsEngine? physicsEngine,
     BallLauncher? ballLauncher,
     AudioService? audioService,
+    MusicService? music,
     HapticsService? haptics,
     StorageService? storageService,
     AchievementService? achievementService,
     DailyLeaderboard? leaderboard,
     DateTime Function() clock = DateTime.now,
   })  : _audioService = audioService,
+        _music = music,
         _leaderboard = leaderboard,
         _clock = clock,
         _haptics = haptics,
@@ -138,6 +142,7 @@ class GameManager extends ChangeNotifier {
       _readHints(storageService);
       unawaited(postPendingDailyScore());
     }
+    _updateMusic();
   }
 
   /// Reads which first-round hints this install has still to show.
@@ -316,6 +321,9 @@ class GameManager extends ChangeNotifier {
     _audioService
       ?..enabled = settings.soundOn
       ..setVolume(settings.soundVolume);
+    _music
+      ?..enabled = settings.soundOn
+      ..setVolume(settings.musicVolume);
     _haptics?.enabled = settings.vibrationOn;
   }
 
@@ -341,6 +349,7 @@ class GameManager extends ChangeNotifier {
     _vsync = vsync;
     _ticker = vsync.createTicker(_onFrame);
     if (wasRunning) _startGameLoop();
+    _updateMusic();
   }
 
   /// Stops the game loop and lets go of [vsync]'s clock, if it is the one
@@ -351,6 +360,41 @@ class GameManager extends ChangeNotifier {
     _ticker?.dispose();
     _ticker = null;
     _vsync = null;
+    _updateMusic();
+  }
+
+  /// What the music is for: a round while a screen hosts the board (from
+  /// [attachVsync] to [detachVsync]), the fever while it runs, and otherwise
+  /// the menu.
+  MusicScene get _musicScene {
+    if (_vsync == null) return MusicScene.menu;
+    return _gameState.feverActive ? MusicScene.fever : MusicScene.round;
+  }
+
+  /// How far the music drops: low while the game is paused, a little under
+  /// the round summary.
+  MusicDuck get _musicDuck {
+    if (_vsync == null) return MusicDuck.none;
+    if (_gameState.isPaused) return MusicDuck.paused;
+    if (_gameState.phase == GamePhase.gameOver) return MusicDuck.summary;
+    return MusicDuck.none;
+  }
+
+  /// Tells the music what is going on now. The service changes nothing when
+  /// asked for what it is already playing, so this runs on every change.
+  void _updateMusic() {
+    _music
+      ?..playScene(_musicScene)
+      ..setDuck(_musicDuck);
+  }
+
+  /// Notifies listeners, after bringing the music up to date: every change
+  /// of play that the music follows (a transition, pause, the bonus, the
+  /// fever ending in the loop, the last ball landing) notifies.
+  @override
+  void notifyListeners() {
+    _updateMusic();
+    super.notifyListeners();
   }
 
   /// The seed for the bounces of the round [round] of [level], so that the
@@ -664,7 +708,10 @@ class GameManager extends ChangeNotifier {
 
     if (level.allSpecialPegsHit) {
       _gameState.triggerSpecialBonus();
-      _audioService?.playBonusTrigger();
+      // With music playing, the fever stinger is the fanfare
+      if (!(_music?.playsFeverStinger ?? false)) {
+        _audioService?.playBonusTrigger();
+      }
       _haptics?.bonus();
 
       // Spawn confetti at center of board

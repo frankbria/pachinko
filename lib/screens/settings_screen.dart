@@ -5,8 +5,8 @@ import '../utils/constants.dart';
 import '../widgets/achievement_toast_overlay.dart';
 
 /// The game's settings: whether a ball may only be launched once no ball is
-/// in play, sound and its volume, vibration, reduced motion and the side the
-/// launcher is on.
+/// in play, sound and its volume, the music's volume, vibration, reduced
+/// motion and the side the launcher is on, and the game's credits.
 ///
 /// Each choice goes through the manager ([GameManager.setSingleBallLaunch],
 /// [GameManager.updateSettings]), which applies it to the game at once and
@@ -58,6 +58,20 @@ class SettingsScreen extends StatelessWidget {
                   : null,
             ),
           ),
+          ListTile(
+            title: const Text(GameStrings.musicVolume),
+            subtitle: Slider(
+              value: settings.musicVolume,
+              divisions: 10,
+              label: '${(settings.musicVolume * 100).round()}%',
+              semanticFormatterCallback: (volume) =>
+                  '${(volume * 100).round()}%',
+              onChanged: settings.soundOn
+                  ? (volume) =>
+                      change((current) => current.copyWith(musicVolume: volume))
+                  : null,
+            ),
+          ),
           SwitchListTile(
             title: const Text(GameStrings.vibration),
             subtitle: const Text(GameStrings.vibrationHint),
@@ -78,6 +92,10 @@ class SettingsScreen extends StatelessWidget {
             value: settings.leftHanded,
             onChanged: (left) =>
                 change((current) => current.copyWith(leftHanded: left)),
+          ),
+          const ListTile(
+            title: Text(GameStrings.credits),
+            subtitle: Text(GameStrings.creditLines),
           ),
         ],
       ),

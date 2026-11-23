@@ -95,9 +95,11 @@ flutter:
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 
-  # Sound effects for game audio and app icon
+  # Sound effects for game audio and app icon, and the music (#118): the
+  # game plays whichever of the four files in assets/music/ it finds
   assets:
     - assets/sounds/
+    - assets/music/
     - assets/icon/
 
   # Display face for the title, numerals and labels (SIL Open Font License,

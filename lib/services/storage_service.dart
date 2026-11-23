@@ -38,17 +38,19 @@ class StorageService {
 
   static const String _soundOnKey = 'setting_sound_on';
   static const String _soundVolumeKey = 'setting_sound_volume';
+  static const String _musicVolumeKey = 'setting_music_volume';
   static const String _vibrationOnKey = 'setting_vibration_on';
   static const String _reducedMotionKey = 'setting_reduced_motion';
   static const String _leftHandedKey = 'setting_left_handed';
 
-  /// The player's sound, vibration, motion and launcher settings, or the defaults of a
+  /// The player's sound, music, vibration, motion and launcher settings, or the defaults of a
   /// new install for any not chosen yet.
   GameSettings get settings {
     const defaults = GameSettings();
     return GameSettings(
       soundOn: _prefs.getBool(_soundOnKey) ?? defaults.soundOn,
       soundVolume: _prefs.getDouble(_soundVolumeKey) ?? defaults.soundVolume,
+      musicVolume: _prefs.getDouble(_musicVolumeKey) ?? defaults.musicVolume,
       vibrationOn: _prefs.getBool(_vibrationOnKey) ?? defaults.vibrationOn,
       reducedMotion: _prefs.getBool(_reducedMotionKey),
       leftHanded: _prefs.getBool(_leftHandedKey) ?? defaults.leftHanded,
@@ -60,6 +62,7 @@ class StorageService {
   Future<void> saveSettings(GameSettings settings) async {
     await _prefs.setBool(_soundOnKey, settings.soundOn);
     await _prefs.setDouble(_soundVolumeKey, settings.soundVolume);
+    await _prefs.setDouble(_musicVolumeKey, settings.musicVolume);
     await _prefs.setBool(_vibrationOnKey, settings.vibrationOn);
     await _prefs.setBool(_leftHandedKey, settings.leftHanded);
     final reducedMotion = settings.reducedMotion;
