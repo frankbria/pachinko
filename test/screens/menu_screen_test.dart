@@ -3,12 +3,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
+import 'package:pachinko_game/models/daily_board.dart';
 import 'package:pachinko_game/models/game_settings.dart';
 import 'package:pachinko_game/screens/menu_screen.dart';
 import 'package:pachinko_game/services/game_manager.dart';
 import 'package:pachinko_game/models/game_state.dart';
 import 'package:pachinko_game/models/ball_launcher.dart';
 import 'package:pachinko_game/utils/constants.dart';
+import 'package:pachinko_game/utils/game_theme.dart';
 
 // Generate mocks for GameManager, GameState, and BallLauncher
 @GenerateMocks([GameManager, GameState, BallLauncher])
@@ -38,12 +40,15 @@ void main() {
     when(mockGameManager.settings).thenReturn(const GameSettings());
     when(mockGameManager.lastLanding).thenReturn(ValueNotifier(null));
     when(mockGameManager.prizePegHint).thenReturn(null);
+    when(mockGameManager.dailyBestToday).thenReturn(null);
+    when(mockGameManager.dailyStreak).thenReturn(0);
 
     // Stub GameState properties
     when(mockGameState.score).thenReturn(0);
     when(mockGameState.ballsRemaining).thenReturn(20);
     when(mockGameState.currentLevel).thenReturn(null);
     when(mockGameState.currentLevelNumber).thenReturn(1);
+    when(mockGameState.daily).thenReturn(null);
     when(mockGameState.activeBalls).thenReturn([]);
     when(mockGameState.canLaunchBall).thenReturn(true);
     when(mockGameState.phase).thenReturn(GamePhase.ready);
@@ -476,5 +481,67 @@ void main() {
       // Verify correct level parameter passed via Provider
       verify(mockGameManager.startGame(level: 2)).called(1);
     });
+  });
+
+  group('Daily board', () {
+    testWidgets(
+        'given no daily round today and no streak, then the menu says today\'s board is still to play',
+        (tester) async {
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+
+      expect(find.text(GameStrings.dailyBoard), findsOneWidget);
+      expect(find.text('Not played today'), findsOneWidget);
+    });
+
+    testWidgets(
+        'given today\'s best and a streak, then the menu shows both, in the score\'s gold',
+        (tester) async {
+      when(mockGameManager.dailyBestToday).thenReturn(12500);
+      when(mockGameManager.dailyStreak).thenReturn(3);
+
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+
+      final status = find.text("Today's best 12,500 · Streak 3 days");
+      expect(status, findsOneWidget);
+      expect(tester.widget<Text>(status).style?.color,
+          GameConstants.secondaryColor);
+    });
+
+    test('the status says one day, and leaves out a broken streak', () {
+      expect(
+          GameStrings.dailyStatus(null, 1), 'Not played today · Streak 1 day');
+      expect(GameStrings.dailyStatus('900', 0), "Today's best 900");
+    });
+
+    testWidgets(
+        'given the menu, when Daily Board is tapped, then today\'s board is started',
+        (tester) async {
+      final today = DailyBoard.on(DateTime.utc(2026, 11, 23));
+      when(mockGameManager.today).thenReturn(today);
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+
+      await tester.ensureVisible(find.text(GameStrings.dailyBoard));
+      await tester.tap(find.text(GameStrings.dailyBoard));
+      await tester.pump();
+
+      verify(mockGameManager.startGame(daily: today)).called(1);
+    });
+
+    testWidgets('the menu with today\'s best and a streak matches its golden',
+        (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.625;
+      addTearDown(tester.view.reset);
+      when(mockGameManager.dailyBestToday).thenReturn(12500);
+      when(mockGameManager.dailyStreak).thenReturn(3);
+
+      await tester.pumpWidget(ChangeNotifierProvider<GameManager>.value(
+        value: mockGameManager,
+        child: MaterialApp(theme: buildGameTheme(), home: const MenuScreen()),
+      ));
+
+      await expectLater(find.byType(MenuScreen),
+          matchesGoldenFile('../widgets/goldens/menu_daily.png'));
+    }, tags: ['golden']);
   });
 }

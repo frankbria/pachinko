@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/daily_board.dart';
 import '../models/game_settings.dart';
 import '../models/high_score.dart';
 import '../models/star_targets.dart';
@@ -118,6 +119,76 @@ class StorageService {
       if (stars > (_prefs.getInt(key) ?? 0)) await _prefs.setInt(key, stars);
     } catch (e) {
       debugPrint('Error saving stars: $e');
+    }
+  }
+
+  static const String _dailyBestDayKey = 'daily_best_day';
+  static const String _dailyBestScoreKey = 'daily_best_score';
+  static const String _dailyStreakDayKey = 'daily_streak_last_day';
+  static const String _dailyStreakLengthKey = 'daily_streak_length';
+  static const String _dailyPendingDayKey = 'daily_pending_day';
+  static const String _dailyPendingScoreKey = 'daily_pending_score';
+
+  /// The best score of a daily round finished on [day], or null when none
+  /// was. Only the latest day's best is kept.
+  int? dailyBest(int day) => _prefs.getInt(_dailyBestDayKey) == day
+      ? _prefs.getInt(_dailyBestScoreKey)
+      : null;
+
+  /// The player's streak of days with a daily round finished.
+  DailyStreak get dailyStreak => DailyStreak(
+        lastDay: _prefs.getInt(_dailyStreakDayKey) ?? DailyStreak.none.lastDay,
+        length: _prefs.getInt(_dailyStreakLengthKey) ?? DailyStreak.none.length,
+      );
+
+  /// Records a daily round of [score] finished on the board of [day]: the
+  /// day's best when it beats it, unless a later day's best is stored, and
+  /// the streak. A failure is logged, not thrown: nothing waits on the save.
+  Future<void> recordDailyRound(int day, int score) async {
+    try {
+      final bestDay = _prefs.getInt(_dailyBestDayKey);
+      if (bestDay == null ||
+          day > bestDay ||
+          day == bestDay && score > (dailyBest(day) ?? 0)) {
+        await _prefs.setInt(_dailyBestDayKey, day);
+        await _prefs.setInt(_dailyBestScoreKey, score);
+      }
+      final streak = dailyStreak.playedOn(day);
+      await _prefs.setInt(_dailyStreakDayKey, streak.lastDay);
+      await _prefs.setInt(_dailyStreakLengthKey, streak.length);
+    } catch (e) {
+      debugPrint('Error saving the daily round: $e');
+    }
+  }
+
+  /// The daily score still to post to the leaderboard, with the day it was
+  /// won on, or null when there is none.
+  ({int day, int score})? get pendingDailyScore {
+    final day = _prefs.getInt(_dailyPendingDayKey);
+    final score = _prefs.getInt(_dailyPendingScoreKey);
+    return day == null || score == null ? null : (day: day, score: score);
+  }
+
+  /// Keeps [score], won on [day], to post to the leaderboard once it can be,
+  /// in place of any score kept before.
+  /// A failure is logged, not thrown.
+  Future<void> savePendingDailyScore(int day, int score) async {
+    try {
+      await _prefs.setInt(_dailyPendingDayKey, day);
+      await _prefs.setInt(_dailyPendingScoreKey, score);
+    } catch (e) {
+      debugPrint('Error keeping the daily score: $e');
+    }
+  }
+
+  /// Forgets the score kept for the leaderboard, once posted or too late.
+  /// A failure is logged, not thrown.
+  Future<void> clearPendingDailyScore() async {
+    try {
+      await _prefs.remove(_dailyPendingDayKey);
+      await _prefs.remove(_dailyPendingScoreKey);
+    } catch (e) {
+      debugPrint('Error clearing the daily score: $e');
     }
   }
 

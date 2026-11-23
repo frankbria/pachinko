@@ -53,6 +53,7 @@ void main() {
     when(mockGameState.score).thenReturn(0);
     when(mockGameState.ballsRemaining).thenReturn(20);
     when(mockGameState.currentLevelNumber).thenReturn(1);
+    when(mockGameState.daily).thenReturn(null);
     when(mockGameState.floatingTexts).thenReturn([]);
     when(mockGameState.confettiParticles).thenReturn([]);
     when(mockGameState.ballCountHighlighted).thenReturn(false);
@@ -76,6 +77,7 @@ void main() {
     when(mockLevel.pegs).thenReturn([]);
     when(mockLevel.slots).thenReturn([]);
     when(mockLevel.levelNumber).thenReturn(1);
+    when(mockLevel.name).thenReturn('Level 1');
     when(mockLevel.launchX).thenReturn(GameConstants.launchChannelStartX);
     when(mockLevel.launchY).thenReturn(GameConstants.launchChannelStartY);
   });
@@ -1102,6 +1104,7 @@ void main() {
     testWidgets('givenNewLevel_whenLoaded_thenFadeInAnimationSmooth',
         (WidgetTester tester) async {
       when(mockGameState.currentLevelNumber).thenReturn(2);
+      when(mockGameState.daily).thenReturn(null);
 
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 

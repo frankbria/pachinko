@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../models/round_summary.dart';
 import '../models/slot.dart';
 import '../utils/constants.dart';
 import 'game_card.dart';
 
 /// The panel shown over the board when the last ball lands: what the round
-/// scored and how, and where to go next.
+/// scored and how, and where to go next. A daily round is headed with its
+/// board's date and has no stars, which belong to levels.
 class RoundSummaryPanel extends StatelessWidget {
   final RoundSummary summary;
   final VoidCallback onMenu;
@@ -27,6 +29,7 @@ class RoundSummaryPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final daily = summary.daily;
 
     return Container(
       constraints: const BoxConstraints(maxWidth: 340),
@@ -44,7 +47,10 @@ class RoundSummaryPanel extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '${GameStrings.level} ${summary.levelNumber}',
+              daily == null
+                  ? '${GameStrings.level} ${summary.levelNumber}'
+                  : '${GameStrings.dailyBoard}, '
+                      '${DateFormat('d MMM y').format(daily.date)}',
               style:
                   text.titleMedium?.copyWith(color: GameConstants.mutedColor),
             ),
@@ -60,21 +66,23 @@ class RoundSummaryPanel extends StatelessWidget {
             ),
             if (summary.isNewBest == true)
               Text(
-                GameStrings.newBest,
+                daily == null ? GameStrings.newBest : GameStrings.newDailyBest,
                 style: text.labelLarge
                     ?.copyWith(color: GameConstants.secondaryColor),
               ),
-            const SizedBox(height: 8),
-            StarRow(stars: summary.stars, size: 28),
-            Text(
-              GameStrings.starsWon(
-                  summary.stars,
-                  switch (summary.pointsShortOfNextStar) {
-                    final short? => groupedThousands(short),
-                    null => null,
-                  }),
-              style: text.bodyMedium?.copyWith(color: GameConstants.inkColor),
-            ),
+            if (daily == null) ...[
+              const SizedBox(height: 8),
+              StarRow(stars: summary.stars, size: 28),
+              Text(
+                GameStrings.starsWon(
+                    summary.stars,
+                    switch (summary.pointsShortOfNextStar) {
+                      final short? => groupedThousands(short),
+                      null => null,
+                    }),
+                style: text.bodyMedium?.copyWith(color: GameConstants.inkColor),
+              ),
+            ],
             const SizedBox(height: 12),
             for (final tier in summary.tiers) _row(text, tier),
             const Divider(height: 20),

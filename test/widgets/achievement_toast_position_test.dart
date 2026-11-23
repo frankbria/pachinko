@@ -63,11 +63,14 @@ void main() {
     when(mockGameManager.settings).thenReturn(const GameSettings());
     when(mockGameManager.lastLanding).thenReturn(ValueNotifier(null));
     when(mockGameManager.prizePegHint).thenReturn(null);
+    when(mockGameManager.dailyBestToday).thenReturn(null);
+    when(mockGameManager.dailyStreak).thenReturn(0);
 
     when(mockGameState.score).thenReturn(12345);
     when(mockGameState.ballsRemaining).thenReturn(20);
     when(mockGameState.currentLevel).thenReturn(null);
     when(mockGameState.currentLevelNumber).thenReturn(1);
+    when(mockGameState.daily).thenReturn(null);
     when(mockGameState.activeBalls).thenReturn([]);
     when(mockGameState.canLaunchBall).thenReturn(true);
     when(mockGameState.phase).thenReturn(GamePhase.ready);

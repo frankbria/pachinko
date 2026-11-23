@@ -133,6 +133,18 @@ class GameConstants {
   /// gets richer.
   static const int hardestLayoutLevel = 20;
 
+  /// The daily board (#117) plays with the layout, features, colours and
+  /// bonus of one of these levels, picked by the date: never the first two,
+  /// which have no features, and the hardest layouts at most.
+  static const int dailyFirstLevel = 3;
+  static const int dailyLastLevel = hardestLayoutLevel;
+
+  /// The Google Play Games leaderboard that daily scores are posted to. The
+  /// leaderboard is off while this is empty, which it is until the game and
+  /// its leaderboard are set up in Play Console (see the owner's steps on
+  /// #117): no score leaves the phone and nothing signs in to Play Games.
+  static const String dailyLeaderboardId = '';
+
   /// How far [levelNumber] is along the difficulty curve: 0 on level 1,
   /// rising evenly to 1 at [hardestLayoutLevel], and 1 on every level after.
   static double difficultyFor(int levelNumber) =>
@@ -411,6 +423,23 @@ class GameStrings {
   static const String replay = 'Replay';
   static const String menu = 'Menu';
   static const String newBest = 'New best for this level';
+  static const String newDailyBest = 'New best for today';
+
+  /// The daily board's name, on its sign and in the header's level tile.
+  static const String daily = 'Daily';
+  static const String dailyBoard = 'Daily Board';
+
+  /// What the menu says under the Daily Board button: today's best, or that
+  /// today's board is still to play, and the streak of days. [best] is
+  /// already written with its thousands grouped.
+  static String dailyStatus(String? best, int streak) {
+    final today = best == null ? 'Not played today' : "Today's best $best";
+    return switch (streak) {
+      0 => today,
+      1 => '$today · Streak 1 day',
+      _ => '$today · Streak $streak days',
+    };
+  }
 
   /// The stars a round won and how far it was from the next: "2 stars, 1,800
   /// short of 3", or "3 stars". [pointsShort] is already written with its

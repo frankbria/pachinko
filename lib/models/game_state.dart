@@ -4,6 +4,7 @@ import 'package:vector_math/vector_math_64.dart';
 import 'package:flutter/material.dart';
 import 'ball.dart';
 import 'board_feature.dart';
+import 'daily_board.dart';
 import 'level.dart';
 import 'slot.dart';
 import 'confetti_particle.dart';
@@ -107,10 +108,20 @@ class GameState extends ChangeNotifier {
       List.unmodifiable(_confettiParticles);
   bool get ballCountHighlighted => _ballCountHighlighted;
 
-  void loadLevel(int levelNumber) {
+  DailyBoard? _daily;
+
+  /// The daily board being played, or null on an ordinary level.
+  DailyBoard? get daily => _daily;
+
+  /// Loads level [levelNumber], or the [daily] board, which plays with the
+  /// level its date picks (see [DailyBoard.levelNumber]).
+  void loadLevel(int levelNumber, {DailyBoard? daily}) {
     _levelStartScore = _score;
-    _currentLevelNumber = levelNumber;
-    _currentLevel = Level.generate(levelNumber, 400, 600);
+    _daily = daily;
+    _currentLevelNumber = daily?.levelNumber ?? levelNumber;
+    _currentLevel = daily?.generate() ??
+        Level.generate(
+            levelNumber, GameConstants.boardWidth, GameConstants.boardHeight);
     // A ball still in play belongs to the level being left
     _activeBalls.clear();
     _phase = GamePhase.ready;
@@ -124,10 +135,12 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void startNewGame({int level = 1}) {
+  /// Starts a new run on [level], or on the [daily] board, with a full set
+  /// of balls and no score.
+  void startNewGame({int level = 1, DailyBoard? daily}) {
     _score = 0;
     _ballsRemaining = _totalBalls;
-    loadLevel(level);
+    loadLevel(level, daily: daily);
   }
 
   void launchBall(Ball ball) {

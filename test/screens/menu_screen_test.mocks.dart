@@ -3,26 +3,27 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i11;
-import 'dart:ui' as _i13;
+import 'dart:async' as _i12;
+import 'dart:ui' as _i14;
 
-import 'package:flutter/foundation.dart' as _i3;
-import 'package:flutter/material.dart' as _i12;
+import 'package:flutter/foundation.dart' as _i4;
+import 'package:flutter/material.dart' as _i13;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:pachinko_game/models/ball.dart' as _i14;
-import 'package:pachinko_game/models/ball_landing.dart' as _i8;
-import 'package:pachinko_game/models/ball_launcher.dart' as _i6;
-import 'package:pachinko_game/models/board_feature.dart' as _i18;
-import 'package:pachinko_game/models/confetti_particle.dart' as _i16;
-import 'package:pachinko_game/models/game_settings.dart' as _i2;
-import 'package:pachinko_game/models/game_state.dart' as _i4;
-import 'package:pachinko_game/models/slot.dart' as _i17;
-import 'package:pachinko_game/services/achievement_service.dart' as _i10;
-import 'package:pachinko_game/services/game_manager.dart' as _i7;
-import 'package:pachinko_game/services/physics_engine.dart' as _i5;
-import 'package:pachinko_game/services/storage_service.dart' as _i9;
-import 'package:pachinko_game/widgets/floating_text.dart' as _i15;
-import 'package:vector_math/vector_math_64.dart' as _i19;
+import 'package:pachinko_game/models/ball.dart' as _i15;
+import 'package:pachinko_game/models/ball_landing.dart' as _i9;
+import 'package:pachinko_game/models/ball_launcher.dart' as _i7;
+import 'package:pachinko_game/models/board_feature.dart' as _i19;
+import 'package:pachinko_game/models/confetti_particle.dart' as _i17;
+import 'package:pachinko_game/models/daily_board.dart' as _i2;
+import 'package:pachinko_game/models/game_settings.dart' as _i3;
+import 'package:pachinko_game/models/game_state.dart' as _i5;
+import 'package:pachinko_game/models/slot.dart' as _i18;
+import 'package:pachinko_game/services/achievement_service.dart' as _i11;
+import 'package:pachinko_game/services/game_manager.dart' as _i8;
+import 'package:pachinko_game/services/physics_engine.dart' as _i6;
+import 'package:pachinko_game/services/storage_service.dart' as _i10;
+import 'package:pachinko_game/widgets/floating_text.dart' as _i16;
+import 'package:vector_math/vector_math_64.dart' as _i20;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -37,8 +38,8 @@ import 'package:vector_math/vector_math_64.dart' as _i19;
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
 
-class _FakeGameSettings_0 extends _i1.SmartFake implements _i2.GameSettings {
-  _FakeGameSettings_0(
+class _FakeDailyBoard_0 extends _i1.SmartFake implements _i2.DailyBoard {
+  _FakeDailyBoard_0(
     Object parent,
     Invocation parentInvocation,
   ) : super(
@@ -47,9 +48,8 @@ class _FakeGameSettings_0 extends _i1.SmartFake implements _i2.GameSettings {
         );
 }
 
-class _FakeValueListenable_1<T> extends _i1.SmartFake
-    implements _i3.ValueListenable<T> {
-  _FakeValueListenable_1(
+class _FakeGameSettings_1 extends _i1.SmartFake implements _i3.GameSettings {
+  _FakeGameSettings_1(
     Object parent,
     Invocation parentInvocation,
   ) : super(
@@ -58,8 +58,9 @@ class _FakeValueListenable_1<T> extends _i1.SmartFake
         );
 }
 
-class _FakeGameState_2 extends _i1.SmartFake implements _i4.GameState {
-  _FakeGameState_2(
+class _FakeValueListenable_2<T> extends _i1.SmartFake
+    implements _i4.ValueListenable<T> {
+  _FakeValueListenable_2(
     Object parent,
     Invocation parentInvocation,
   ) : super(
@@ -68,8 +69,8 @@ class _FakeGameState_2 extends _i1.SmartFake implements _i4.GameState {
         );
 }
 
-class _FakePhysicsEngine_3 extends _i1.SmartFake implements _i5.PhysicsEngine {
-  _FakePhysicsEngine_3(
+class _FakeGameState_3 extends _i1.SmartFake implements _i5.GameState {
+  _FakeGameState_3(
     Object parent,
     Invocation parentInvocation,
   ) : super(
@@ -78,8 +79,18 @@ class _FakePhysicsEngine_3 extends _i1.SmartFake implements _i5.PhysicsEngine {
         );
 }
 
-class _FakeBallLauncher_4 extends _i1.SmartFake implements _i6.BallLauncher {
-  _FakeBallLauncher_4(
+class _FakePhysicsEngine_4 extends _i1.SmartFake implements _i6.PhysicsEngine {
+  _FakePhysicsEngine_4(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakeBallLauncher_5 extends _i1.SmartFake implements _i7.BallLauncher {
+  _FakeBallLauncher_5(
     Object parent,
     Invocation parentInvocation,
   ) : super(
@@ -91,7 +102,7 @@ class _FakeBallLauncher_4 extends _i1.SmartFake implements _i6.BallLauncher {
 /// A class which mocks [GameManager].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockGameManager extends _i1.Mock implements _i7.GameManager {
+class MockGameManager extends _i1.Mock implements _i8.GameManager {
   MockGameManager() {
     _i1.throwOnMissingStub(this);
   }
@@ -103,55 +114,70 @@ class MockGameManager extends _i1.Mock implements _i7.GameManager {
       ) as bool);
 
   @override
+  _i2.DailyBoard get today => (super.noSuchMethod(
+        Invocation.getter(#today),
+        returnValue: _FakeDailyBoard_0(
+          this,
+          Invocation.getter(#today),
+        ),
+      ) as _i2.DailyBoard);
+
+  @override
+  int get dailyStreak => (super.noSuchMethod(
+        Invocation.getter(#dailyStreak),
+        returnValue: 0,
+      ) as int);
+
+  @override
   bool get nextLevelOpen => (super.noSuchMethod(
         Invocation.getter(#nextLevelOpen),
         returnValue: false,
       ) as bool);
 
   @override
-  _i2.GameSettings get settings => (super.noSuchMethod(
+  _i3.GameSettings get settings => (super.noSuchMethod(
         Invocation.getter(#settings),
-        returnValue: _FakeGameSettings_0(
+        returnValue: _FakeGameSettings_1(
           this,
           Invocation.getter(#settings),
         ),
-      ) as _i2.GameSettings);
+      ) as _i3.GameSettings);
 
   @override
-  _i3.ValueListenable<_i8.BallLanding?> get lastLanding => (super.noSuchMethod(
+  _i4.ValueListenable<_i9.BallLanding?> get lastLanding => (super.noSuchMethod(
         Invocation.getter(#lastLanding),
-        returnValue: _FakeValueListenable_1<_i8.BallLanding?>(
+        returnValue: _FakeValueListenable_2<_i9.BallLanding?>(
           this,
           Invocation.getter(#lastLanding),
         ),
-      ) as _i3.ValueListenable<_i8.BallLanding?>);
+      ) as _i4.ValueListenable<_i9.BallLanding?>);
 
   @override
-  _i4.GameState get gameState => (super.noSuchMethod(
+  _i5.GameState get gameState => (super.noSuchMethod(
         Invocation.getter(#gameState),
-        returnValue: _FakeGameState_2(
+        returnValue: _FakeGameState_3(
           this,
           Invocation.getter(#gameState),
         ),
-      ) as _i4.GameState);
+      ) as _i5.GameState);
 
   @override
-  _i5.PhysicsEngine get physicsEngine => (super.noSuchMethod(
+  _i6.PhysicsEngine get physicsEngine => (super.noSuchMethod(
         Invocation.getter(#physicsEngine),
-        returnValue: _FakePhysicsEngine_3(
+        returnValue: _FakePhysicsEngine_4(
           this,
           Invocation.getter(#physicsEngine),
         ),
-      ) as _i5.PhysicsEngine);
+      ) as _i6.PhysicsEngine);
 
   @override
-  _i6.BallLauncher get ballLauncher => (super.noSuchMethod(
+  _i7.BallLauncher get ballLauncher => (super.noSuchMethod(
         Invocation.getter(#ballLauncher),
-        returnValue: _FakeBallLauncher_4(
+        returnValue: _FakeBallLauncher_5(
           this,
           Invocation.getter(#ballLauncher),
         ),
-      ) as _i6.BallLauncher);
+      ) as _i7.BallLauncher);
 
   @override
   bool get isRunning => (super.noSuchMethod(
@@ -167,8 +193,8 @@ class MockGameManager extends _i1.Mock implements _i7.GameManager {
 
   @override
   void attachServices({
-    _i9.StorageService? storageService,
-    _i10.AchievementService? achievementService,
+    _i10.StorageService? storageService,
+    _i11.AchievementService? achievementService,
   }) =>
       super.noSuchMethod(
         Invocation.method(
@@ -192,49 +218,49 @@ class MockGameManager extends _i1.Mock implements _i7.GameManager {
       );
 
   @override
-  _i11.Future<Map<int, int>> bestScoresByLevel({int? levels = 20}) =>
+  _i12.Future<Map<int, int>> bestScoresByLevel({int? levels = 20}) =>
       (super.noSuchMethod(
         Invocation.method(
           #bestScoresByLevel,
           [],
           {#levels: levels},
         ),
-        returnValue: _i11.Future<Map<int, int>>.value(<int, int>{}),
-      ) as _i11.Future<Map<int, int>>);
+        returnValue: _i12.Future<Map<int, int>>.value(<int, int>{}),
+      ) as _i12.Future<Map<int, int>>);
 
   @override
-  _i11.Future<Map<int, int>> starsByLevel() => (super.noSuchMethod(
+  _i12.Future<Map<int, int>> starsByLevel() => (super.noSuchMethod(
         Invocation.method(
           #starsByLevel,
           [],
         ),
-        returnValue: _i11.Future<Map<int, int>>.value(<int, int>{}),
-      ) as _i11.Future<Map<int, int>>);
+        returnValue: _i12.Future<Map<int, int>>.value(<int, int>{}),
+      ) as _i12.Future<Map<int, int>>);
 
   @override
-  _i11.Future<void> setSingleBallLaunch(bool? value) => (super.noSuchMethod(
+  _i12.Future<void> setSingleBallLaunch(bool? value) => (super.noSuchMethod(
         Invocation.method(
           #setSingleBallLaunch,
           [value],
         ),
-        returnValue: _i11.Future<void>.value(),
-        returnValueForMissingStub: _i11.Future<void>.value(),
-      ) as _i11.Future<void>);
+        returnValue: _i12.Future<void>.value(),
+        returnValueForMissingStub: _i12.Future<void>.value(),
+      ) as _i12.Future<void>);
 
   @override
-  _i11.Future<void> updateSettings(
-          _i2.GameSettings Function(_i2.GameSettings)? change) =>
+  _i12.Future<void> updateSettings(
+          _i3.GameSettings Function(_i3.GameSettings)? change) =>
       (super.noSuchMethod(
         Invocation.method(
           #updateSettings,
           [change],
         ),
-        returnValue: _i11.Future<void>.value(),
-        returnValueForMissingStub: _i11.Future<void>.value(),
-      ) as _i11.Future<void>);
+        returnValue: _i12.Future<void>.value(),
+        returnValueForMissingStub: _i12.Future<void>.value(),
+      ) as _i12.Future<void>);
 
   @override
-  void attachVsync(_i12.TickerProvider? vsync) => super.noSuchMethod(
+  void attachVsync(_i13.TickerProvider? vsync) => super.noSuchMethod(
         Invocation.method(
           #attachVsync,
           [vsync],
@@ -243,7 +269,7 @@ class MockGameManager extends _i1.Mock implements _i7.GameManager {
       );
 
   @override
-  void detachVsync(_i12.TickerProvider? vsync) => super.noSuchMethod(
+  void detachVsync(_i13.TickerProvider? vsync) => super.noSuchMethod(
         Invocation.method(
           #detachVsync,
           [vsync],
@@ -252,11 +278,18 @@ class MockGameManager extends _i1.Mock implements _i7.GameManager {
       );
 
   @override
-  void startGame({int? level = 1}) => super.noSuchMethod(
+  void startGame({
+    int? level = 1,
+    _i2.DailyBoard? daily,
+  }) =>
+      super.noSuchMethod(
         Invocation.method(
           #startGame,
           [],
-          {#level: level},
+          {
+            #level: level,
+            #daily: daily,
+          },
         ),
         returnValueForMissingStub: null,
       );
@@ -325,6 +358,16 @@ class MockGameManager extends _i1.Mock implements _i7.GameManager {
       );
 
   @override
+  _i12.Future<void> postPendingDailyScore() => (super.noSuchMethod(
+        Invocation.method(
+          #postPendingDailyScore,
+          [],
+        ),
+        returnValue: _i12.Future<void>.value(),
+        returnValueForMissingStub: _i12.Future<void>.value(),
+      ) as _i12.Future<void>);
+
+  @override
   void nextLevel() => super.noSuchMethod(
         Invocation.method(
           #nextLevel,
@@ -352,7 +395,7 @@ class MockGameManager extends _i1.Mock implements _i7.GameManager {
       );
 
   @override
-  void addListener(_i13.VoidCallback? listener) => super.noSuchMethod(
+  void addListener(_i14.VoidCallback? listener) => super.noSuchMethod(
         Invocation.method(
           #addListener,
           [listener],
@@ -361,7 +404,7 @@ class MockGameManager extends _i1.Mock implements _i7.GameManager {
       );
 
   @override
-  void removeListener(_i13.VoidCallback? listener) => super.noSuchMethod(
+  void removeListener(_i14.VoidCallback? listener) => super.noSuchMethod(
         Invocation.method(
           #removeListener,
           [listener],
@@ -382,7 +425,7 @@ class MockGameManager extends _i1.Mock implements _i7.GameManager {
 /// A class which mocks [GameState].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockGameState extends _i1.Mock implements _i4.GameState {
+class MockGameState extends _i1.Mock implements _i5.GameState {
   MockGameState() {
     _i1.throwOnMissingStub(this);
   }
@@ -454,16 +497,16 @@ class MockGameState extends _i1.Mock implements _i4.GameState {
       ) as int);
 
   @override
-  List<_i14.Ball> get activeBalls => (super.noSuchMethod(
+  List<_i15.Ball> get activeBalls => (super.noSuchMethod(
         Invocation.getter(#activeBalls),
-        returnValue: <_i14.Ball>[],
-      ) as List<_i14.Ball>);
+        returnValue: <_i15.Ball>[],
+      ) as List<_i15.Ball>);
 
   @override
-  _i4.GamePhase get phase => (super.noSuchMethod(
+  _i5.GamePhase get phase => (super.noSuchMethod(
         Invocation.getter(#phase),
-        returnValue: _i4.GamePhase.loading,
-      ) as _i4.GamePhase);
+        returnValue: _i5.GamePhase.loading,
+      ) as _i5.GamePhase);
 
   @override
   bool get specialBonusTriggered => (super.noSuchMethod(
@@ -508,16 +551,16 @@ class MockGameState extends _i1.Mock implements _i4.GameState {
       ) as bool);
 
   @override
-  List<_i15.FloatingText> get floatingTexts => (super.noSuchMethod(
+  List<_i16.FloatingText> get floatingTexts => (super.noSuchMethod(
         Invocation.getter(#floatingTexts),
-        returnValue: <_i15.FloatingText>[],
-      ) as List<_i15.FloatingText>);
+        returnValue: <_i16.FloatingText>[],
+      ) as List<_i16.FloatingText>);
 
   @override
-  List<_i16.ConfettiParticle> get confettiParticles => (super.noSuchMethod(
+  List<_i17.ConfettiParticle> get confettiParticles => (super.noSuchMethod(
         Invocation.getter(#confettiParticles),
-        returnValue: <_i16.ConfettiParticle>[],
-      ) as List<_i16.ConfettiParticle>);
+        returnValue: <_i17.ConfettiParticle>[],
+      ) as List<_i17.ConfettiParticle>);
 
   @override
   bool get ballCountHighlighted => (super.noSuchMethod(
@@ -544,26 +587,38 @@ class MockGameState extends _i1.Mock implements _i4.GameState {
       ) as bool);
 
   @override
-  void loadLevel(int? levelNumber) => super.noSuchMethod(
+  void loadLevel(
+    int? levelNumber, {
+    _i2.DailyBoard? daily,
+  }) =>
+      super.noSuchMethod(
         Invocation.method(
           #loadLevel,
           [levelNumber],
+          {#daily: daily},
         ),
         returnValueForMissingStub: null,
       );
 
   @override
-  void startNewGame({int? level = 1}) => super.noSuchMethod(
+  void startNewGame({
+    int? level = 1,
+    _i2.DailyBoard? daily,
+  }) =>
+      super.noSuchMethod(
         Invocation.method(
           #startNewGame,
           [],
-          {#level: level},
+          {
+            #level: level,
+            #daily: daily,
+          },
         ),
         returnValueForMissingStub: null,
       );
 
   @override
-  void launchBall(_i14.Ball? ball) => super.noSuchMethod(
+  void launchBall(_i15.Ball? ball) => super.noSuchMethod(
         Invocation.method(
           #launchBall,
           [ball],
@@ -581,7 +636,7 @@ class MockGameState extends _i1.Mock implements _i4.GameState {
       );
 
   @override
-  int scoreLanding(_i17.Slot? slot) => (super.noSuchMethod(
+  int scoreLanding(_i18.Slot? slot) => (super.noSuchMethod(
         Invocation.method(
           #scoreLanding,
           [slot],
@@ -590,7 +645,7 @@ class MockGameState extends _i1.Mock implements _i4.GameState {
       ) as int);
 
   @override
-  void payTulip(_i18.Tulip? tulip) => super.noSuchMethod(
+  void payTulip(_i19.Tulip? tulip) => super.noSuchMethod(
         Invocation.method(
           #payTulip,
           [tulip],
@@ -608,7 +663,7 @@ class MockGameState extends _i1.Mock implements _i4.GameState {
       );
 
   @override
-  void removeBall(_i14.Ball? ball) => super.noSuchMethod(
+  void removeBall(_i15.Ball? ball) => super.noSuchMethod(
         Invocation.method(
           #removeBall,
           [ball],
@@ -628,8 +683,8 @@ class MockGameState extends _i1.Mock implements _i4.GameState {
   @override
   void addFloatingText(
     String? text,
-    _i13.Offset? position,
-    _i13.Color? color, {
+    _i14.Offset? position,
+    _i14.Color? color, {
     double? fontSize = 20.0,
   }) =>
       super.noSuchMethod(
@@ -646,7 +701,7 @@ class MockGameState extends _i1.Mock implements _i4.GameState {
       );
 
   @override
-  void lightSlot(_i17.Slot? slot) => super.noSuchMethod(
+  void lightSlot(_i18.Slot? slot) => super.noSuchMethod(
         Invocation.method(
           #lightSlot,
           [slot],
@@ -674,7 +729,7 @@ class MockGameState extends _i1.Mock implements _i4.GameState {
 
   @override
   void spawnConfetti(
-    _i19.Vector2? position,
+    _i20.Vector2? position,
     int? count,
   ) =>
       super.noSuchMethod(
@@ -743,7 +798,7 @@ class MockGameState extends _i1.Mock implements _i4.GameState {
       );
 
   @override
-  void updatePhase(_i4.GamePhase? newPhase) => super.noSuchMethod(
+  void updatePhase(_i5.GamePhase? newPhase) => super.noSuchMethod(
         Invocation.method(
           #updatePhase,
           [newPhase],
@@ -761,7 +816,7 @@ class MockGameState extends _i1.Mock implements _i4.GameState {
       );
 
   @override
-  void addListener(_i13.VoidCallback? listener) => super.noSuchMethod(
+  void addListener(_i14.VoidCallback? listener) => super.noSuchMethod(
         Invocation.method(
           #addListener,
           [listener],
@@ -770,7 +825,7 @@ class MockGameState extends _i1.Mock implements _i4.GameState {
       );
 
   @override
-  void removeListener(_i13.VoidCallback? listener) => super.noSuchMethod(
+  void removeListener(_i14.VoidCallback? listener) => super.noSuchMethod(
         Invocation.method(
           #removeListener,
           [listener],
@@ -791,16 +846,16 @@ class MockGameState extends _i1.Mock implements _i4.GameState {
 /// A class which mocks [BallLauncher].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockBallLauncher extends _i1.Mock implements _i6.BallLauncher {
+class MockBallLauncher extends _i1.Mock implements _i7.BallLauncher {
   MockBallLauncher() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i6.LaunchPhase get phase => (super.noSuchMethod(
+  _i7.LaunchPhase get phase => (super.noSuchMethod(
         Invocation.getter(#phase),
-        returnValue: _i6.LaunchPhase.ready,
-      ) as _i6.LaunchPhase);
+        returnValue: _i7.LaunchPhase.ready,
+      ) as _i7.LaunchPhase);
 
   @override
   double get launchPower => (super.noSuchMethod(
@@ -851,11 +906,11 @@ class MockBallLauncher extends _i1.Mock implements _i6.BallLauncher {
       );
 
   @override
-  List<_i19.Vector2> getLaunchPath() => (super.noSuchMethod(
+  List<_i20.Vector2> getLaunchPath() => (super.noSuchMethod(
         Invocation.method(
           #getLaunchPath,
           [],
         ),
-        returnValue: <_i19.Vector2>[],
-      ) as List<_i19.Vector2>);
+        returnValue: <_i20.Vector2>[],
+      ) as List<_i20.Vector2>);
 }

@@ -19,7 +19,7 @@ class MenuScreen extends StatelessWidget {
       body: SizedBox.expand(
         child: SafeArea(
           child: Center(
-            // Six buttons are taller than a small phone held sideways
+            // Seven buttons are taller than a small phone held sideways
             child: SingleChildScrollView(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -63,7 +63,7 @@ class MenuScreen extends StatelessWidget {
                         ),
                   ),
 
-                  const SizedBox(height: 60),
+                  const SizedBox(height: 30),
 
                   // Play Button
                   _MenuButton(
@@ -73,7 +73,17 @@ class MenuScreen extends StatelessWidget {
                     isPrimary: true,
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 14),
+
+                  _MenuButton(
+                    title: GameStrings.dailyBoard,
+                    icon: Icons.today,
+                    onPressed: () => _startDaily(context),
+                  ),
+                  const SizedBox(height: 6),
+                  const _DailyStatus(),
+
+                  const SizedBox(height: 14),
 
                   // Level Select Button
                   _MenuButton(
@@ -82,7 +92,7 @@ class MenuScreen extends StatelessWidget {
                     onPressed: () => _showLevelSelect(context),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 14),
 
                   // Instructions Button
                   _MenuButton(
@@ -91,7 +101,7 @@ class MenuScreen extends StatelessWidget {
                     onPressed: () => showHowToPlay(context),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 14),
 
                   // High Scores Button
                   _MenuButton(
@@ -100,7 +110,7 @@ class MenuScreen extends StatelessWidget {
                     onPressed: () => _showHighScores(context),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 14),
 
                   // Achievements Button
                   _MenuButton(
@@ -109,7 +119,7 @@ class MenuScreen extends StatelessWidget {
                     onPressed: () => _showAchievements(context),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 14),
 
                   // Settings Button
                   _MenuButton(
@@ -118,7 +128,7 @@ class MenuScreen extends StatelessWidget {
                     onPressed: () => _showSettings(context),
                   ),
 
-                  const SizedBox(height: 60),
+                  const SizedBox(height: 30),
 
                   // Game Info
                   Text(
@@ -140,6 +150,18 @@ class MenuScreen extends StatelessWidget {
   void _startGame(BuildContext context) {
     final gameManager = context.read<GameManager>();
     gameManager.startGame();
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const GameScreen(),
+      ),
+    );
+  }
+
+  /// Starts a round on today's daily board.
+  void _startDaily(BuildContext context) {
+    final gameManager = context.read<GameManager>();
+    gameManager.startGame(daily: gameManager.today);
 
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -239,6 +261,32 @@ class MenuScreen extends StatelessWidget {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const AchievementsScreen(),
+      ),
+    );
+  }
+}
+
+/// Today's best on the daily board, or that it is still to play, and the
+/// player's streak of days, under the Daily Board button. It is rebuilt
+/// only when one of them changes, not on every frame of play.
+class _DailyStatus extends StatelessWidget {
+  const _DailyStatus();
+
+  @override
+  Widget build(BuildContext context) {
+    final (best, streak) = context.select<GameManager, (int?, int)>(
+        (manager) => (manager.dailyBestToday, manager.dailyStreak));
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Text(
+        GameStrings.dailyStatus(
+            best == null ? null : groupedThousands(best), streak),
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: best == null
+                  ? GameConstants.mutedColor
+                  : GameConstants.secondaryColor,
+            ),
+        textAlign: TextAlign.center,
       ),
     );
   }

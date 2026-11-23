@@ -190,7 +190,9 @@ class _GameHUD extends StatelessWidget {
                 child: _HUDItem(
                   icon: Icons.layers,
                   label: GameStrings.level,
-                  value: gameState.currentLevelNumber.toString(),
+                  value: gameState.daily == null
+                      ? gameState.currentLevelNumber.toString()
+                      : GameStrings.daily,
                   color: GameConstants.primaryColor,
                 ),
               ),

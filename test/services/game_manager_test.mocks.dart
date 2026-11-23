@@ -3,21 +3,22 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:ui' as _i10;
+import 'dart:ui' as _i11;
 
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i14;
+import 'package:mockito/src/dummies.dart' as _i15;
 import 'package:pachinko_game/models/ball.dart' as _i3;
-import 'package:pachinko_game/models/ball_launcher.dart' as _i12;
+import 'package:pachinko_game/models/ball_launcher.dart' as _i13;
 import 'package:pachinko_game/models/board_feature.dart' as _i5;
 import 'package:pachinko_game/models/confetti_particle.dart' as _i9;
+import 'package:pachinko_game/models/daily_board.dart' as _i10;
 import 'package:pachinko_game/models/game_state.dart' as _i7;
-import 'package:pachinko_game/models/level.dart' as _i13;
+import 'package:pachinko_game/models/level.dart' as _i14;
 import 'package:pachinko_game/models/peg.dart' as _i4;
 import 'package:pachinko_game/models/slot.dart' as _i6;
 import 'package:pachinko_game/services/physics_engine.dart' as _i2;
 import 'package:pachinko_game/widgets/floating_text.dart' as _i8;
-import 'package:vector_math/vector_math_64.dart' as _i11;
+import 'package:vector_math/vector_math_64.dart' as _i12;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -300,20 +301,32 @@ class MockGameState extends _i1.Mock implements _i7.GameState {
       ) as bool);
 
   @override
-  void loadLevel(int? levelNumber) => super.noSuchMethod(
+  void loadLevel(
+    int? levelNumber, {
+    _i10.DailyBoard? daily,
+  }) =>
+      super.noSuchMethod(
         Invocation.method(
           #loadLevel,
           [levelNumber],
+          {#daily: daily},
         ),
         returnValueForMissingStub: null,
       );
 
   @override
-  void startNewGame({int? level = 1}) => super.noSuchMethod(
+  void startNewGame({
+    int? level = 1,
+    _i10.DailyBoard? daily,
+  }) =>
+      super.noSuchMethod(
         Invocation.method(
           #startNewGame,
           [],
-          {#level: level},
+          {
+            #level: level,
+            #daily: daily,
+          },
         ),
         returnValueForMissingStub: null,
       );
@@ -384,8 +397,8 @@ class MockGameState extends _i1.Mock implements _i7.GameState {
   @override
   void addFloatingText(
     String? text,
-    _i10.Offset? position,
-    _i10.Color? color, {
+    _i11.Offset? position,
+    _i11.Color? color, {
     double? fontSize = 20.0,
   }) =>
       super.noSuchMethod(
@@ -430,7 +443,7 @@ class MockGameState extends _i1.Mock implements _i7.GameState {
 
   @override
   void spawnConfetti(
-    _i11.Vector2? position,
+    _i12.Vector2? position,
     int? count,
   ) =>
       super.noSuchMethod(
@@ -517,7 +530,7 @@ class MockGameState extends _i1.Mock implements _i7.GameState {
       );
 
   @override
-  void addListener(_i10.VoidCallback? listener) => super.noSuchMethod(
+  void addListener(_i11.VoidCallback? listener) => super.noSuchMethod(
         Invocation.method(
           #addListener,
           [listener],
@@ -526,7 +539,7 @@ class MockGameState extends _i1.Mock implements _i7.GameState {
       );
 
   @override
-  void removeListener(_i10.VoidCallback? listener) => super.noSuchMethod(
+  void removeListener(_i11.VoidCallback? listener) => super.noSuchMethod(
         Invocation.method(
           #removeListener,
           [listener],
@@ -547,16 +560,16 @@ class MockGameState extends _i1.Mock implements _i7.GameState {
 /// A class which mocks [BallLauncher].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockBallLauncher extends _i1.Mock implements _i12.BallLauncher {
+class MockBallLauncher extends _i1.Mock implements _i13.BallLauncher {
   MockBallLauncher() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i12.LaunchPhase get phase => (super.noSuchMethod(
+  _i13.LaunchPhase get phase => (super.noSuchMethod(
         Invocation.getter(#phase),
-        returnValue: _i12.LaunchPhase.ready,
-      ) as _i12.LaunchPhase);
+        returnValue: _i13.LaunchPhase.ready,
+      ) as _i13.LaunchPhase);
 
   @override
   double get launchPower => (super.noSuchMethod(
@@ -607,19 +620,19 @@ class MockBallLauncher extends _i1.Mock implements _i12.BallLauncher {
       );
 
   @override
-  List<_i11.Vector2> getLaunchPath() => (super.noSuchMethod(
+  List<_i12.Vector2> getLaunchPath() => (super.noSuchMethod(
         Invocation.method(
           #getLaunchPath,
           [],
         ),
-        returnValue: <_i11.Vector2>[],
-      ) as List<_i11.Vector2>);
+        returnValue: <_i12.Vector2>[],
+      ) as List<_i12.Vector2>);
 }
 
 /// A class which mocks [Level].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockLevel extends _i1.Mock implements _i13.Level {
+class MockLevel extends _i1.Mock implements _i14.Level {
   MockLevel() {
     _i1.throwOnMissingStub(this);
   }
@@ -633,7 +646,7 @@ class MockLevel extends _i1.Mock implements _i13.Level {
   @override
   String get name => (super.noSuchMethod(
         Invocation.getter(#name),
-        returnValue: _i14.dummyValue<String>(
+        returnValue: _i15.dummyValue<String>(
           this,
           Invocation.getter(#name),
         ),

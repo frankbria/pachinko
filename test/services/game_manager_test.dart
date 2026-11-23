@@ -85,6 +85,7 @@ void main() {
   setUp(() {
     mockPhysicsEngine = MockPhysicsEngine();
     mockGameState = MockGameState();
+    when(mockGameState.daily).thenReturn(null);
     mockBallLauncher = MockBallLauncher();
 
     // Setup default mock behaviors

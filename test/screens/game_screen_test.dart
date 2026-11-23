@@ -47,6 +47,7 @@ void main() {
     when(mockGameState.feverPoints).thenReturn(0);
     when(mockGameState.specialBonusTriggered).thenReturn(false);
     when(mockGameState.currentLevelNumber).thenReturn(3);
+    when(mockGameState.daily).thenReturn(null);
     when(mockGameState.activeBalls).thenReturn([]);
     when(mockGameState.canLaunchBall).thenReturn(true);
     when(mockGameState.phase).thenReturn(GamePhase.ready);
@@ -520,6 +521,7 @@ void main() {
       when(mockGameState.score).thenReturn(5000);
       when(mockGameState.ballsRemaining).thenReturn(5);
       when(mockGameState.currentLevelNumber).thenReturn(10);
+      when(mockGameState.daily).thenReturn(null);
 
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
