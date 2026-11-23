@@ -175,6 +175,9 @@ class GameState extends ChangeNotifier {
         _phase = GamePhase.ready;
       } else {
         _phase = GamePhase.gameOver;
+        // A fever still running has no ball left to pay; its rims and meter
+        // would otherwise stay up behind the round summary
+        _feverSecondsLeft = 0.0;
       }
     }
     notifyListeners();

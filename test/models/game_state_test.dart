@@ -580,6 +580,22 @@ void main() {
       expect(gameState.scoreLanding(slot), slot.pointValue);
     });
 
+    test('the last ball landing ends a fever that has time left', () {
+      gameState.triggerSpecialBonus();
+      for (final ball in gameState.activeBalls) {
+        gameState.removeBall(ball);
+      }
+      while (gameState.ballsRemaining > 0) {
+        final ball = Ball(position: Vector2(200, 300));
+        gameState.launchBall(ball);
+        gameState.removeBall(ball);
+      }
+
+      expect(gameState.phase, GamePhase.gameOver);
+      expect(gameState.feverActive, isFalse);
+      expect(gameState.feverRemaining, 0.0);
+    });
+
     test('Restart ends the fever and takes back what it paid', () {
       gameState.triggerSpecialBonus();
       gameState.scoreLanding(gameState.currentLevel!.slots[0]);
