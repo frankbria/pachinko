@@ -18,6 +18,7 @@ import 'package:pachinko_game/services/achievement_service.dart';
 import 'package:pachinko_game/services/audio_service.dart';
 import 'package:pachinko_game/services/game_manager.dart';
 import 'package:pachinko_game/services/haptics_service.dart';
+import 'package:pachinko_game/services/music_service.dart';
 import 'package:pachinko_game/services/storage_service.dart';
 import 'package:pachinko_game/utils/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -1835,6 +1836,183 @@ void main() {
     });
   });
 
+  group('Music', () {
+    // The manager says what the music is for and how far it drops; the
+    // service, with no music files here, plays nothing and keeps what it
+    // was told. What each scene and duck sounds like is tested in
+    // music_service_test.dart
+    late MusicService music;
+
+    setUp(() {
+      music = MusicService(listAssets: () async => []);
+      when(mockGameState.feverActive).thenReturn(false);
+      when(mockGameState.isPaused).thenReturn(false);
+      when(mockGameState.phase).thenReturn(GamePhase.ready);
+    });
+
+    tearDown(() => music.dispose());
+
+    GameManager managerWith(MusicService music, {GameState? state}) {
+      final manager = GameManager(
+        gameState: state ?? mockGameState,
+        physicsEngine: state == null ? mockPhysicsEngine : null,
+        ballLauncher: state == null ? mockBallLauncher : null,
+        music: music,
+        audioService: _RecordingAudio(),
+      );
+      addTearDown(manager.dispose);
+      return manager;
+    }
+
+    test('Given a new manager Then the menu music plays at full level', () {
+      managerWith(music);
+
+      expect(music.scene, MusicScene.menu);
+      expect(music.duck, MusicDuck.none);
+    });
+
+    test(
+        'Given storage not loaded yet Then the music stays silent until the saved settings say otherwise',
+        () async {
+      managerWith(music);
+      expect(music.enabled, isFalse,
+          reason: 'a player who turned sound off must not hear the menu');
+
+      SharedPreferences.setMockInitialValues({});
+      final storage =
+          StorageService(prefs: await SharedPreferences.getInstance());
+      when(mockGameState.singleBallLaunch).thenReturn(true);
+      final late = MusicService(listAssets: () async => []);
+      addTearDown(late.dispose);
+      managerWith(late).attachServices(storageService: storage);
+
+      expect(late.enabled, isTrue);
+      expect(late.volume, const GameSettings().musicVolume);
+    });
+
+    testLoop(
+        'Given a screen hosting the board Then the round music plays, and the menu music once it lets go',
+        () async {
+      final manager = managerWith(music);
+
+      host(manager);
+      expect(music.scene, MusicScene.round);
+
+      manager.detachVsync(clock);
+      expect(music.scene, MusicScene.menu);
+    });
+
+    testLoop(
+        'Given a round When the game pauses Then the music drops low, and comes back on Resume',
+        () async {
+      final manager = managerWith(music);
+      host(manager);
+
+      when(mockGameState.isPaused).thenReturn(true);
+      manager.pauseGame();
+      expect(music.duck, MusicDuck.paused);
+
+      when(mockGameState.isPaused).thenReturn(false);
+      manager.resumeGame();
+      expect(music.duck, MusicDuck.none);
+    });
+
+    testLoop(
+        'Given the round over When the summary shows Then the music drops a little, and Replay brings it back',
+        () async {
+      final manager = managerWith(music);
+      host(manager);
+
+      when(mockGameState.phase).thenReturn(GamePhase.gameOver);
+      manager.resumeGame();
+      expect(music.duck, MusicDuck.summary);
+
+      when(mockGameState.phase).thenReturn(GamePhase.ready);
+      manager.resetGame();
+      expect(music.duck, MusicDuck.none);
+      expect(music.scene, MusicScene.round);
+    });
+
+    testLoop(
+        'Given the summary showing When the player goes back to the menu Then the menu music plays at full level',
+        () async {
+      final manager = managerWith(music);
+      host(manager);
+      when(mockGameState.phase).thenReturn(GamePhase.gameOver);
+      manager.resumeGame();
+
+      manager.detachVsync(clock);
+
+      expect(music.scene, MusicScene.menu);
+      expect(music.duck, MusicDuck.none);
+    });
+
+    test(
+        'Given the settings Then sound off silences the music and its volume is applied at once',
+        () async {
+      final manager = managerWith(music);
+
+      await manager.updateSettings(
+          (current) => current.copyWith(soundOn: false, musicVolume: 0.3));
+
+      expect(music.enabled, isFalse);
+      expect(music.volume, 0.3);
+      await manager.updateSettings(
+          (current) => current.copyWith(soundOn: true, musicVolume: 0.9));
+      expect(music.enabled, isTrue);
+      expect(music.volume, 0.9);
+    });
+
+    // A real round: the bonus starts the fever music in the frame it
+    // triggers, the fever ends in the loop and the round music returns
+    Future<(GameManager, _RecordingAudio)> bonusRound(
+        MusicService music) async {
+      final audio = _RecordingAudio();
+      final manager = GameManager(music: music, audioService: audio);
+      addTearDown(manager.dispose);
+      host(manager);
+      manager.startGame();
+      final level = manager.gameState.currentLevel!;
+      // Every prize peg collected but the last, and a ball falling onto it
+      final prize = level.specialPegs.last;
+      for (final peg in level.specialPegs) {
+        if (peg != prize) peg.hasBeenHit = true;
+      }
+      manager.gameState.launchBall(Ball(
+          position: prize.position - Vector2(0, prize.radius + 9),
+          velocity: Vector2(0, 120)));
+      manager.resumeGame();
+      await play(const Duration(milliseconds: 50));
+      return (manager, audio);
+    }
+
+    testLoop(
+        'Given the music has no stinger When the bonus triggers Then the fever music plays and the bonus sound effect is heard, and the round music returns when Replay ends it',
+        () async {
+      final (manager, audio) = await bonusRound(music);
+
+      expect(manager.gameState.feverActive, isTrue);
+      expect(music.scene, MusicScene.fever);
+      expect(audio.played, contains('bonusTrigger'));
+
+      // Replay ends the fever, as every transition does
+      manager.resetGame();
+      expect(music.scene, MusicScene.round);
+    });
+
+    testLoop(
+        'Given the music has a stinger When the bonus triggers Then the stinger replaces the bonus sound effect',
+        () async {
+      final stinger = _MusicWithStinger();
+      addTearDown(stinger.dispose);
+
+      final (_, audio) = await bonusRound(stinger);
+
+      expect(stinger.scene, MusicScene.fever);
+      expect(audio.played, isNot(contains('bonusTrigger')));
+    });
+  });
+
   group('Achievements earned in play', () {
     /// Combo King and Lucky Shot could not be won: their rules asked for the
     /// impossible and the game never told the service about them (#85). These
@@ -2281,6 +2459,14 @@ class _RecordingAudio extends AudioService {
 
   @override
   Future<void> playTulipCatch() async => played.add('tulipCatch');
+}
+
+/// Music with no files that says its fever stinger would sound.
+class _MusicWithStinger extends MusicService {
+  _MusicWithStinger() : super(listAssets: () async => []);
+
+  @override
+  bool get playsFeverStinger => true;
 }
 
 /// Haptics that vibrate nothing and record what they were asked for.

@@ -399,6 +399,12 @@ class GameStrings {
       'Wait for the ball in play to land before launching the next. Turn off to launch as many as you like.';
   static const String soundEffects = 'Sound effects';
   static const String volume = 'Volume';
+  static const String musicVolume = 'Music volume';
+  static const String credits = 'Credits';
+
+  /// Who made the music and the sounds, as the settings screen credits them.
+  static const String creditLines = 'Music by Frank Bria\n'
+      'Prize peg chime by mokasza, Freesound.org (CC BY 4.0)';
   static const String vibration = 'Vibration';
   static const String vibrationHint =
       'A tick for a pin, stronger for a prize peg, a high slot and the bonus';

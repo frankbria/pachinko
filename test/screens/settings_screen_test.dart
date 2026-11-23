@@ -12,7 +12,8 @@ import 'package:pachinko_game/utils/constants.dart';
 import 'package:pachinko_game/utils/game_theme.dart';
 
 /// The settings screen: whether a ball may only be launched once no ball is
-/// in play, and sound, volume, vibration and reduced motion.
+/// in play, sound, its volume and the music's, vibration, reduced motion,
+/// the launcher's side, and the credits.
 ///
 /// Real objects throughout, over an in-memory SharedPreferences, so that
 /// "survives a restart" can be shown by building a second manager on the
@@ -29,6 +30,11 @@ void main() {
       .widget<SwitchListTile>(find.ancestor(
           of: find.text(title), matching: find.byType(SwitchListTile)))
       .value;
+
+  /// The slider under the setting called [title].
+  Finder sliderFor(String title) => find.descendant(
+      of: find.ancestor(of: find.text(title), matching: find.byType(ListTile)),
+      matching: find.byType(Slider));
 
   GameManager managerOn(SharedPreferences prefs) =>
       GameManager(storageService: StorageService(prefs: prefs));
@@ -79,7 +85,9 @@ void main() {
       await pump(tester, manager, const SettingsScreen());
 
       expect(switchValue(tester, GameStrings.soundEffects), isTrue);
-      expect(tester.widget<Slider>(find.byType(Slider)).value, 1.0);
+      expect(tester.widget<Slider>(sliderFor(GameStrings.volume)).value, 1.0);
+      expect(
+          tester.widget<Slider>(sliderFor(GameStrings.musicVolume)).value, 0.7);
       expect(switchValue(tester, GameStrings.vibration), isTrue);
       expect(switchValue(tester, GameStrings.reducedMotion), isFalse);
       expect(switchValue(tester, GameStrings.leftHanded), isFalse);
@@ -101,9 +109,12 @@ void main() {
       addTearDown(manager.dispose);
       await pump(tester, manager, const SettingsScreen());
 
-      await tester.drag(find.byType(Slider), const Offset(-2000, 0));
+      await tester.drag(sliderFor(GameStrings.volume), const Offset(-2000, 0));
+      await tester.drag(
+          sliderFor(GameStrings.musicVolume), const Offset(2000, 0));
       await tester.pumpAndSettle();
       expect(manager.settings.soundVolume, 0.0);
+      expect(manager.settings.musicVolume, 1.0);
       await tester.tap(find.text(GameStrings.soundEffects));
       await tester.tap(find.text(GameStrings.vibration));
       await tester.tap(find.text(GameStrings.reducedMotion));
@@ -114,12 +125,18 @@ void main() {
       const chosen = GameSettings(
           soundOn: false,
           soundVolume: 0.0,
+          musicVolume: 1.0,
           vibrationOn: false,
           reducedMotion: true,
           leftHanded: true);
       expect(manager.settings, chosen);
-      expect(tester.widget<Slider>(find.byType(Slider)).onChanged, isNull,
+      expect(tester.widget<Slider>(sliderFor(GameStrings.volume)).onChanged,
+          isNull,
           reason: 'the volume is for sound, which is off');
+      expect(
+          tester.widget<Slider>(sliderFor(GameStrings.musicVolume)).onChanged,
+          isNull,
+          reason: 'sound off silences the music too');
 
       final restarted = managerOn(prefs);
       addTearDown(restarted.dispose);
@@ -130,6 +147,17 @@ void main() {
       expect(switchValue(tester, GameStrings.reducedMotion), isTrue);
       expect(switchValue(tester, GameStrings.leftHanded), isTrue);
     });
+  });
+
+  testWidgets('the settings screen credits the music and the sounds',
+      (tester) async {
+    final manager = managerOn(prefs);
+    addTearDown(manager.dispose);
+    await pump(tester, manager, const SettingsScreen());
+
+    await tester.scrollUntilVisible(find.text(GameStrings.credits), 100);
+    expect(find.textContaining('Music by Frank Bria'), findsOneWidget);
+    expect(find.textContaining('mokasza'), findsOneWidget);
   });
 
   testWidgets(
@@ -167,7 +195,7 @@ void main() {
 
   testWidgets('the settings screen matches its golden', (tester) async {
     // A phone's portrait screen, with every setting showing: sound off so
-    // the volume slider is in its disabled state
+    // the volume sliders are in their disabled state
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 2.625;
     addTearDown(tester.view.reset);
