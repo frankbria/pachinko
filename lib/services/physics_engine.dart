@@ -5,21 +5,28 @@ import '../models/peg.dart';
 import '../models/slot.dart';
 import '../utils/constants.dart';
 import 'audio_service.dart';
+import 'haptics_service.dart';
 
 class PhysicsEngine {
   final AudioService? _audioService;
+  final HapticsService? _haptics;
   math.Random _random;
 
   static const double _gravity = GameConstants.gravity;
   static const double _damping = GameConstants.bounceDamping;
   static const double _airResistance = GameConstants.airResistance;
 
-  /// Creates a PhysicsEngine with optional AudioService for sound effects.
+  /// Creates a PhysicsEngine, with an optional AudioService for the pin
+  /// sound and HapticsService for the pin's tick.
   ///
   /// [random] drives the small deflection added to each peg bounce; pass a
   /// seeded one for a repeatable simulation.
-  PhysicsEngine({AudioService? audioService, math.Random? random})
+  PhysicsEngine(
+      {AudioService? audioService,
+      HapticsService? haptics,
+      math.Random? random})
       : _audioService = audioService,
+        _haptics = haptics,
         _random = random ?? math.Random();
 
   /// Restarts the bounce deflections from [seed], so that the same launches
@@ -133,7 +140,7 @@ class PhysicsEngine {
 
       for (final peg in pegs) {
         if (peg.checkCollision(ball.position, ball.radius)) {
-          _resolvePegCollision(ball, peg);
+          final impactSpeed = _resolvePegCollision(ball, peg);
 
           // Every bounce flashes and sounds. Only a peg's first hit is
           // reported: that is what collects a prize peg
@@ -144,7 +151,8 @@ class PhysicsEngine {
               hitPegs.add(peg);
             }
             peg.onHit();
-            _audioService?.playPegHit();
+            _audioService?.playPegHit(impactSpeed);
+            _haptics?.pin();
           }
         }
       }
@@ -153,7 +161,9 @@ class PhysicsEngine {
     return hitPegs;
   }
 
-  void _resolvePegCollision(Ball ball, Peg peg) {
+  /// Bounces [ball] off [peg] and returns the speed at which it met the peg
+  /// along the line between them: 0 when it was already moving away.
+  double _resolvePegCollision(Ball ball, Peg peg) {
     // Calculate collision normal
     final collisionNormal = peg.getCollisionNormal(ball.position);
 
@@ -171,7 +181,7 @@ class PhysicsEngine {
     final velocityAlongNormal = relativeVelocity.dot(collisionNormal);
 
     // Do not resolve if velocities are separating
-    if (velocityAlongNormal > 0) return;
+    if (velocityAlongNormal > 0) return 0;
 
     // Calculate restitution (bounciness)
     const restitution = 0.8;
@@ -187,6 +197,7 @@ class PhysicsEngine {
     final randomAngle = (_random.nextDouble() - 0.5) * 0.2;
     final rotationMatrix = Matrix2.rotation(randomAngle);
     ball.velocity = rotationMatrix * ball.velocity;
+    return -velocityAlongNormal;
   }
 
   List<Slot> checkSlotCollisions(List<Ball> balls, List<Slot> slots) {

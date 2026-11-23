@@ -7,6 +7,7 @@ import 'package:pachinko_game/models/ball.dart';
 import 'package:pachinko_game/models/peg.dart';
 import 'package:pachinko_game/models/slot.dart';
 import 'package:pachinko_game/services/audio_service.dart';
+import 'package:pachinko_game/services/haptics_service.dart';
 import 'package:pachinko_game/services/physics_engine.dart';
 import 'package:pachinko_game/utils/constants.dart';
 
@@ -385,6 +386,47 @@ void main() {
       expect(first.prizePegsCollected, 1);
       expect(second.prizePegsCollected, 0);
       expect(prize.isCollected, isTrue);
+    });
+
+    /// The pin's sound follows how hard it is hit (#110): the speed along
+    /// the line between ball and pin, not the ball's whole speed.
+    test(
+        'Given a ball falling onto a pin When it bounces Then the pin sounds at the speed it was met, and ticks',
+        () {
+      final audio = _CountingAudio();
+      final haptics = _CountingHaptics();
+      final engine = PhysicsEngine(audioService: audio, haptics: haptics);
+      final pin = Peg(position: Vector2(200, 200));
+      final touching = pin.radius + GameConstants.ballRadius - 1;
+      Ball falling(double speed) => Ball(
+          position: Vector2(200, 200 - touching),
+          velocity: Vector2(0, speed),
+          radius: GameConstants.ballRadius);
+
+      engine.checkPegCollisions([falling(300)], [pin]);
+      pin.updateAnimation(1.0);
+      engine.checkPegCollisions([falling(120)], [pin]);
+
+      expect(audio.impactSpeeds[0], closeTo(300, 1e-9));
+      expect(audio.impactSpeeds[1], closeTo(120, 1e-9));
+      expect(haptics.pins, 2);
+    });
+
+    test(
+        'Given a ball touching a pin and moving away from it When it is checked Then the pin sounds at no impact speed',
+        () {
+      final audio = _CountingAudio();
+      final engine = PhysicsEngine(audioService: audio);
+      final pin = Peg(position: Vector2(200, 200));
+      final touching = pin.radius + GameConstants.ballRadius - 1;
+      final rising = Ball(
+          position: Vector2(200, 200 - touching),
+          velocity: Vector2(0, -200),
+          radius: GameConstants.ballRadius);
+
+      engine.checkPegCollisions([rising], [pin]);
+
+      expect(audio.impactSpeeds, [0]);
     });
 
     /// Tests that inactive balls do not trigger peg collisions
@@ -840,14 +882,23 @@ void main() {
   });
 }
 
-/// An audio service that plays nothing and counts the peg sounds asked for.
+/// An audio service that plays nothing and records the impact speed of each
+/// peg sound asked for.
 class _CountingAudio extends AudioService {
-  _CountingAudio() : super(audioPlayers: []);
+  final List<double> impactSpeeds = [];
 
-  int pegHits = 0;
+  int get pegHits => impactSpeeds.length;
 
   @override
-  Future<void> playPegHit() async {
-    pegHits++;
+  Future<void> playPegHit(double impactSpeed) async {
+    impactSpeeds.add(impactSpeed);
   }
+}
+
+/// Haptics that vibrate nothing and count the pin ticks asked for.
+class _CountingHaptics extends HapticsService {
+  int pins = 0;
+
+  @override
+  void pin() => pins++;
 }

@@ -29,6 +29,7 @@ import 'package:pachinko_game/screens/settings_screen.dart';
 import 'package:pachinko_game/services/achievement_service.dart';
 import 'package:pachinko_game/services/audio_service.dart';
 import 'package:pachinko_game/services/game_manager.dart';
+import 'package:pachinko_game/services/haptics_service.dart';
 import 'package:pachinko_game/services/physics_engine.dart';
 import 'package:pachinko_game/services/storage_service.dart';
 import 'package:pachinko_game/utils/constants.dart';
