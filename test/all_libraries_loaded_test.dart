@@ -24,6 +24,7 @@ import 'package:pachinko_game/models/level.dart';
 import 'package:pachinko_game/models/peg.dart';
 import 'package:pachinko_game/models/round_summary.dart';
 import 'package:pachinko_game/models/slot.dart';
+import 'package:pachinko_game/models/star_targets.dart';
 import 'package:pachinko_game/screens/achievements_screen.dart';
 import 'package:pachinko_game/screens/game_screen.dart';
 import 'package:pachinko_game/screens/high_scores_screen.dart';

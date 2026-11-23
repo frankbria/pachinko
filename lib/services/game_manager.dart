@@ -12,6 +12,7 @@ import '../models/game_settings.dart';
 import '../models/game_state.dart';
 import '../models/peg.dart';
 import '../models/slot.dart';
+import '../models/star_targets.dart';
 import '../widgets/floating_text.dart';
 import '../utils/constants.dart';
 import 'physics_engine.dart';
@@ -51,6 +52,10 @@ class GameManager extends ChangeNotifier {
   /// Whether the round just finished beat the level's best. Null until the
   /// stored scores have been read, and when there is no storage.
   bool? _roundIsNewBest;
+
+  /// Whether the current level had a star before the round just finished,
+  /// once storage has answered.
+  bool _levelHadStar = false;
   bool _disposed = false;
 
   /// Counts the rounds this manager has started. An answer from storage
@@ -202,6 +207,31 @@ class GameManager extends ChangeNotifier {
     };
   }
 
+  /// The stars won on each level that has a score or stored stars, for the
+  /// level picker and its locks. A level's stars are the more of those
+  /// stored and those its best score wins on today's targets, so scores
+  /// from before stars existed award theirs. Empty when there is no storage.
+  Future<Map<int, int>> starsByLevel() async {
+    final storage = _storageService;
+    if (storage == null) return const {};
+    final stored = storage.storedStars;
+    final levels = {...await storage.levelsWithScores(), ...stored.keys};
+    final stars = await Future.wait([
+      for (final level in levels)
+        storage.getBestScore(level).then((best) => math.max(stored[level] ?? 0,
+            StarTargets.forLevel(level).starsFor(best?.score ?? 0))),
+    ]);
+    return Map.fromIterables(levels, stars);
+  }
+
+  /// Whether the round summary offers Next Level: the level after this one
+  /// is open, because this round won a star or the level already had one.
+  bool get nextLevelOpen =>
+      _levelHadStar ||
+      StarTargets.forLevel(_gameState.currentLevelNumber)
+              .starsFor(_gameState.levelScore) >=
+          1;
+
   /// Sets whether a ball may only be launched once no ball is in play,
   /// applies it to the game at once and saves it for the next start.
   Future<void> setSingleBallLaunch(bool value) async {
@@ -307,6 +337,7 @@ class GameManager extends ChangeNotifier {
     _ballLauncher.reset();
     _levelResultSaved = false;
     _roundIsNewBest = null;
+    _levelHadStar = false;
     _firstBall = null;
     _firstBallSeen = false;
     _prizePegHint = null;
@@ -644,18 +675,25 @@ class GameManager extends ChangeNotifier {
     _achievementService?.trackLevelScore(level, score);
   }
 
-  /// Saves [score] for [level], and works out first whether it beats the
-  /// level's best so that the round summary can say so.
+  /// Saves [score] for [level] and the stars it wins, and works out first
+  /// whether it beats the level's best and whether the level already had a
+  /// star, so that the round summary can say so and offer Next Level.
   Future<void> _recordScore(
       StorageService storage, int level, int score) async {
     final round = _round;
     // No score stored counts as a best of zero: a first round without a point
     // is saved, but the summary does not call it a best
     final best = (await storage.getBestScore(level))?.score ?? 0;
+    final targets = StarTargets.forLevel(level);
+    final starsBefore =
+        math.max(storage.storedStars[level] ?? 0, targets.starsFor(best));
     await storage.saveHighScore(level, score);
+    await storage.saveStars(
+        level, math.max(starsBefore, targets.starsFor(score)));
     // The player may have moved on, or left, while storage answered
     if (_disposed || round != _round) return;
     _roundIsNewBest = score > best;
+    _levelHadStar = starsBefore >= 1;
     notifyListeners();
   }
 

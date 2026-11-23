@@ -88,6 +88,26 @@ class StorageService {
     await _prefs.setBool(_prizePegHintShownKey, true);
   }
 
+  /// What every stored key of a level's stars starts with.
+  static const String _starsKeyPrefix = 'stars_level_';
+
+  /// The stars stored for each level that has any, by level number. Stars
+  /// are stored separately from the scores so that clearing the scores, or
+  /// raising a level's targets later, takes no star or unlock away.
+  Map<int, int> get storedStars => {
+        for (final key in _prefs.getKeys())
+          if (key.startsWith(_starsKeyPrefix))
+            if (int.tryParse(key.substring(_starsKeyPrefix.length))
+                case final level?)
+              level: _prefs.getInt(key) ?? 0,
+      };
+
+  /// Records that [level] has won [stars], unless it already has more.
+  Future<void> saveStars(int level, int stars) async {
+    final key = '$_starsKeyPrefix$level';
+    if (stars > (_prefs.getInt(key) ?? 0)) await _prefs.setInt(key, stars);
+  }
+
   /// Initializes StorageService with production SharedPreferences.
   ///
   /// This is the recommended way to create a StorageService in production code.
@@ -192,7 +212,7 @@ class StorageService {
   /// Clears all high score data from storage.
   ///
   /// Only removes keys that start with 'highscores_level_'.
-  /// Other app data is preserved.
+  /// Other app data is preserved, the stars and so the open levels too.
   /// Handles errors gracefully by logging without throwing exceptions.
   Future<void> clearData() async {
     try {

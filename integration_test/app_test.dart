@@ -114,6 +114,7 @@ void main() {
     testWidgets(
         'givenMenuScreen_whenUserSelectsLevel3_thenGameScreenDisplaysLevel3',
         (WidgetTester tester) async {
+      await openLevelsUpTo(3);
       app.main();
       await settle(tester);
 

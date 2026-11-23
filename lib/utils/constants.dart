@@ -411,6 +411,23 @@ class GameStrings {
   static const String replay = 'Replay';
   static const String menu = 'Menu';
   static const String newBest = 'New best for this level';
+
+  /// The stars a round won and how far it was from the next: "2 stars, 1,800
+  /// short of 3", or "3 stars". [pointsShort] is already written with its
+  /// thousands grouped, and null when there is no next star.
+  static String starsWon(int stars, String? pointsShort) {
+    final won = switch (stars) {
+      0 => 'No stars',
+      1 => '1 star',
+      _ => '$stars stars',
+    };
+    return pointsShort == null
+        ? won
+        : '$won, $pointsShort short of ${stars + 1}';
+  }
+
+  static const String levelLocked = 'Locked';
+  static const String levelLockedHint = 'Win a star on the level before';
   static const String prizePegs = 'Prize pegs';
   static const String bonusBalls = 'Bonus balls';
   static const String feverPoints = 'Fever ×${GameConstants.feverMultiplier}';

@@ -8,7 +8,10 @@
 //     flutter test tool/scoring_simulation_test.dart \
 //       --dart-define=LEVELS=60 --dart-define=ROUNDS=20
 //
-// and read the lines that start with SIM and BAND. A BAND line gives the
+// and read the lines that start with SIM and BAND. The STARS lines give each
+// level's star targets (#116) and the share of rounds that win them; the
+// targets in StarTargets come from a run with LEVELS=50 and ROUNDS=200. A
+// BAND line gives the
 // spread of round scores on its levels (p10 to p99): the difficulty curve
 // (#115) is that p50 stays flat from band to band while the bonus grows. To compare two commits,
 // copy this file into a checkout of each: it uses what GameState,
@@ -29,6 +32,7 @@ import 'package:pachinko_game/models/board_feature.dart';
 import 'package:pachinko_game/models/game_state.dart';
 import 'package:pachinko_game/models/level.dart';
 import 'package:pachinko_game/models/peg.dart';
+import 'package:pachinko_game/models/star_targets.dart';
 import 'package:pachinko_game/services/achievement_service.dart';
 import 'package:pachinko_game/services/game_manager.dart';
 import 'package:pachinko_game/services/physics_engine.dart';
@@ -85,6 +89,7 @@ class Tally {
     pegs += o.pegs;
     over10k += o.over10k;
     scores.addAll(o.scores);
+    stars.addAll(o.stars);
     comboRounds += o.comboRounds;
     luckyRounds += o.luckyRounds;
     bonusRoundScore += o.bonusRoundScore;
@@ -149,6 +154,16 @@ class Tally {
     }
     return line;
   }
+
+  /// Rounds and the stars each won on its level's targets (#116).
+  final stars = <int>[];
+
+  /// The share of rounds that won at least one, two and three stars.
+  String starShares(String name) => '$name | ${[
+        1,
+        2,
+        3
+      ].map((n) => share(stars.where((s) => s >= n).length)).join(' | ')}';
 
   /// How many rounds scored at least [threshold].
   int reaching(int threshold) =>
@@ -322,6 +337,7 @@ void main() {
     tally.best = state.score;
     if (state.score >= 10000) tally.over10k = 1;
     tally.scores.add(state.score);
+    tally.stars.add(StarTargets.forLevel(levelNumber).starsFor(state.score));
     if (tally.bonusRounds == 1) tally.bonusRoundScore = state.score;
     tally.feverPoints = state.feverPoints;
     tally.tulipBalls = state.tulipBalls;
@@ -338,9 +354,17 @@ void main() {
       'levels 21-40': Tally(),
       'levels 41-60': Tally()
     };
+    // Levels 1 to 20 each, and every later level together: the star targets
+    final byLevel = <int, Tally>{};
+    final afterHardest = Tally();
     for (int n = 1; n <= levels; n++) {
       for (int r = 0; r < rounds; r++) {
         final t = playRound(n, r + 1, n * 1000 + r);
+        if (n <= GameConstants.hardestLayoutLevel) {
+          (byLevel[n] ??= Tally()).add(t);
+        } else {
+          afterHardest.add(t);
+        }
         byPattern[n % 3]!.add(t);
         all.add(t);
         bands[n <= 10
@@ -390,6 +414,33 @@ void main() {
       // ignore: avoid_print
       print('FEATURE ${all.feature(kind)}');
     }
+    // The star targets are these percentiles rounded to the nearest 500, and
+    // the table in StarTargets is copied from the last column
+    int nearest500(int score) => (score / 500).round() * 500;
+    String targets(Tally tally) {
+      final rounded = [40, 75, 95].map((p) => nearest500(tally.percentile(p)));
+      return '${tally.percentile(40)} | ${tally.percentile(75)} | '
+          '${tally.percentile(95)} | StarTargets(${rounded.join(', ')}),';
+    }
+
+    // ignore: avoid_print
+    print('STARS level | p40 | p75 | p95 | targets');
+    byLevel.forEach((n, tally) {
+      // ignore: avoid_print
+      print('STARS $n | ${targets(tally)}');
+    });
+    if (afterHardest.rounds > 0) {
+      // ignore: avoid_print
+      print('STARS ${GameConstants.hardestLayoutLevel + 1}-$levels | '
+          '${targets(afterHardest)}');
+    }
+    // ignore: avoid_print
+    print(
+        'STARS levels | 1 star or more | 2 or more | 3, on the shipped targets');
+    bands.forEach((name, tally) {
+      // ignore: avoid_print
+      if (tally.rounds > 0) print('STARS ${tally.starShares(name)}');
+    });
     // ignore: avoid_print
     print('ROW left to right | ${all.byPosition.map(all.pct).join(' | ')}');
   }, timeout: const Timeout(Duration(minutes: 20)));

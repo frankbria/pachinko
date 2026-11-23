@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pachinko_game/models/game_state.dart';
 import 'package:pachinko_game/models/round_summary.dart';
+import 'package:pachinko_game/models/star_targets.dart';
 
 /// The summary shown when the last ball lands. Its numbers come from the
 /// round itself: the slots' ball counts, the pegs and the level's score.
@@ -171,5 +172,26 @@ void main() {
 
     expect(RoundSummary.of(state).isNewBest, isNull);
     expect(RoundSummary.of(state, isNewBest: true).isNewBest, isTrue);
+  });
+
+  test(
+      'the stars are those the level score wins on its targets, with the distance to the next',
+      () {
+    final targets = StarTargets.forLevel(1);
+    RoundSummary scoring(int score) => RoundSummary(
+        levelNumber: 1,
+        score: score,
+        tiers: const [],
+        prizePegsCollected: 0,
+        prizePegsTotal: 5,
+        bonusBalls: 0);
+
+    expect(scoring(targets.one - 1).stars, 0);
+    expect(scoring(targets.one - 1).pointsShortOfNextStar, 1);
+    expect(scoring(targets.two).stars, 2);
+    expect(scoring(targets.two).pointsShortOfNextStar,
+        targets.three - targets.two);
+    expect(scoring(targets.three).stars, 3);
+    expect(scoring(targets.three).pointsShortOfNextStar, isNull);
   });
 }

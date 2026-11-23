@@ -35,6 +35,7 @@ void main() {
     when(mockGameManager.settings).thenReturn(const GameSettings());
     when(mockGameManager.lastLanding).thenReturn(ValueNotifier(null));
     when(mockGameManager.prizePegHint).thenReturn(null);
+    when(mockGameManager.nextLevelOpen).thenReturn(true);
 
     // Stub GameState properties with default values
     when(mockGameState.score).thenReturn(1000);
@@ -313,6 +314,22 @@ void main() {
       expect(find.byIcon(Icons.skip_next), findsNothing);
     });
 
+    /// GIVEN a finished round that did not open the next level
+    /// WHEN the summary shows
+    /// THEN it does not offer Next Level (#116)
+    testWidgets(
+        'givenGameOverWithTheNextLevelLocked_whenTheSummaryShows_thenNextLevelIsNotOffered',
+        (WidgetTester tester) async {
+      when(mockGameState.phase).thenReturn(GamePhase.gameOver);
+      when(mockGameState.ballsRemaining).thenReturn(0);
+      when(mockGameManager.nextLevelOpen).thenReturn(false);
+
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+
+      expect(find.byType(RoundSummaryPanel), findsOneWidget);
+      expect(find.text('Next Level'), findsNothing);
+    });
+
     /// GIVEN GameScreen with phase=ready (not gameOver)
     /// WHEN checking control buttons
     /// THEN "Next Level" button is NOT present
@@ -352,6 +369,8 @@ void main() {
 
       await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
 
+      // The summary scrolls when the test's screen is shorter than it
+      await tester.ensureVisible(find.text('Next Level'));
       await tester.tap(find.text('Next Level'));
       await tester.pump();
 

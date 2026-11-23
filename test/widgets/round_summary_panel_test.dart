@@ -7,6 +7,7 @@ import 'package:vector_math/vector_math_64.dart' show Vector2;
 import 'package:pachinko_game/models/ball.dart';
 import 'package:pachinko_game/models/game_state.dart';
 import 'package:pachinko_game/models/round_summary.dart';
+import 'package:pachinko_game/models/star_targets.dart';
 import 'package:pachinko_game/screens/game_screen.dart';
 import 'package:pachinko_game/services/game_manager.dart';
 import 'package:pachinko_game/services/storage_service.dart';
@@ -34,7 +35,7 @@ void main() {
   );
 
   Future<void> pumpPanel(WidgetTester tester, RoundSummary summary,
-          {List<String>? tapped}) =>
+          {List<String>? tapped, bool nextLevelOpen = true}) =>
       tester.pumpWidget(MaterialApp(
         theme: buildGameTheme(),
         home: Scaffold(
@@ -44,6 +45,7 @@ void main() {
               onMenu: () => tapped?.add('menu'),
               onReplay: () => tapped?.add('replay'),
               onNextLevel: () => tapped?.add('next'),
+              nextLevelOpen: nextLevelOpen,
             ),
           ),
         ),
@@ -134,6 +136,76 @@ void main() {
     expect(tapped, ['menu', 'replay', 'next']);
   });
 
+  testWidgets(
+      'given a round short of a star, then the panel shows its stars and how far it was from the next',
+      (tester) async {
+    final targets = StarTargets.forLevel(3);
+    await pumpPanel(
+        tester,
+        RoundSummary(
+          levelNumber: 3,
+          score: targets.two + 200,
+          tiers: const [],
+          prizePegsCollected: 0,
+          prizePegsTotal: 5,
+          bonusBalls: 0,
+        ));
+
+    final short = groupedThousands(targets.three - targets.two - 200);
+    expect(find.text('2 stars, $short short of 3'), findsOneWidget);
+    expect(find.byIcon(Icons.star), findsNWidgets(2));
+    expect(find.byIcon(Icons.star_border), findsOneWidget);
+  });
+
+  testWidgets(
+      'given a round that won every star, then nothing is said to be short',
+      (tester) async {
+    await pumpPanel(
+        tester,
+        RoundSummary(
+          levelNumber: 1,
+          score: StarTargets.forLevel(1).three,
+          tiers: const [],
+          prizePegsCollected: 0,
+          prizePegsTotal: 5,
+          bonusBalls: 0,
+        ));
+
+    expect(find.text('3 stars'), findsOneWidget);
+    expect(find.byIcon(Icons.star), findsNWidgets(3));
+  });
+
+  testWidgets(
+      'given the next level is locked, then Next Level is not offered and the rest still are',
+      (tester) async {
+    await pumpPanel(tester, example, nextLevelOpen: false);
+
+    expect(find.text('Next Level'), findsNothing);
+    expect(find.text('Replay'), findsOneWidget);
+    expect(find.text('Menu'), findsOneWidget);
+  });
+
+  testWidgets('the panel with two stars matches its golden', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.625;
+    addTearDown(tester.view.reset);
+    await pumpPanel(
+        tester,
+        RoundSummary(
+          levelNumber: 3,
+          score: StarTargets.forLevel(3).two + 1250,
+          tiers: example.tiers,
+          prizePegsCollected: 5,
+          prizePegsTotal: 5,
+          bonusBalls: 6,
+          feverPoints: 2000,
+          isNewBest: true,
+        ));
+
+    await expectLater(find.byType(RoundSummaryPanel),
+        matchesGoldenFile('goldens/round_summary_stars.png'));
+  }, tags: ['golden']);
+
   test('numbers are grouped in thousands', () {
     expect(groupedThousands(0), '0');
     expect(groupedThousands(550), '550');
@@ -145,10 +217,11 @@ void main() {
     late GameManager manager;
 
     /// Plays a whole round of [manager]'s level by dropping every ball into
-    /// the first 200 slot, with frames of the screen's clock between balls.
-    Future<void> playRound(WidgetTester tester) async {
+    /// the first slot worth [points] (20 balls of 200 win no star, of 2,000
+    /// every star), with frames of the screen's clock between balls.
+    Future<void> playRound(WidgetTester tester, {int points = 200}) async {
       final slot = manager.gameState.currentLevel!.slots
-          .firstWhere((slot) => slot.pointValue == 200);
+          .firstWhere((slot) => slot.pointValue == points);
       while (manager.gameState.ballsRemaining > 0) {
         manager.gameState.launchBall(Ball(
             position: Vector2(slot.position.x, slot.top - 4),
@@ -212,6 +285,8 @@ void main() {
       await pumpScreen(tester);
       await playRound(tester);
 
+      // The summary scrolls when the test's screen is shorter than it
+      await tester.ensureVisible(find.text('Replay'));
       await tester.tap(find.text('Replay'));
       await tester.pump();
 
@@ -225,11 +300,25 @@ void main() {
     });
 
     testWidgets(
-        'given the summary, when Next Level is tapped, then the next level is ready to play',
+        'given a round that won no star on a level without one, then Next Level is not offered',
         (tester) async {
       await pumpScreen(tester);
       await playRound(tester);
+      await tester.pump();
 
+      expect(find.byType(RoundSummaryPanel), findsOneWidget);
+      expect(find.textContaining('No stars'), findsOneWidget);
+      expect(find.text('Next Level'), findsNothing);
+    });
+
+    testWidgets(
+        'given a round that won a star, when Next Level is tapped, then the next level is ready to play',
+        (tester) async {
+      await pumpScreen(tester);
+      await playRound(tester, points: 2000);
+
+      // The summary scrolls when the test's screen is shorter than it
+      await tester.ensureVisible(find.text('Next Level'));
       await tester.tap(find.text('Next Level'));
       await tester.pump();
 
@@ -245,6 +334,8 @@ void main() {
       await pumpScreen(tester);
       await playRound(tester);
 
+      // The summary scrolls when the test's screen is shorter than it
+      await tester.ensureVisible(find.text('Menu'));
       await tester.tap(find.text('Menu'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));

@@ -29,6 +29,9 @@ void main() {
     // Read by the level picker for the best score on each level
     when(mockGameManager.bestScoresByLevel())
         .thenAnswer((_) async => const <int, int>{});
+    // A star on levels 1 and 2 opens levels 1 to 3; 4 and on are locked
+    when(mockGameManager.starsByLevel())
+        .thenAnswer((_) async => const <int, int>{1: 1, 2: 2});
     when(mockGameManager.ballLauncher).thenReturn(mockBallLauncher);
     // No first-round hint: those are tested in first_round_hints_test.dart
     when(mockGameManager.showsLaunchHint).thenReturn(false);
@@ -299,6 +302,70 @@ void main() {
 
       // Verify GameManager.startGame was called with level 3
       verify(mockGameManager.startGame(level: 3)).called(1);
+    });
+
+    /// GIVEN levels 1 and 2 have stars
+    /// WHEN the player taps level 4, whose level before has none
+    /// THEN nothing starts, and the tile shows a lock instead of stars
+    testWidgets(
+        'givenLevelSelectDialogOpen_whenUserTapsLockedLevel_thenNothingStarts',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+      await tester.tap(find.text('Select Level'));
+      await tester.pumpAndSettle();
+
+      Finder tile(int level) => find
+          .ancestor(of: find.text('$level'), matching: find.byType(Semantics))
+          .first;
+      expect(find.descendant(of: tile(4), matching: find.byIcon(Icons.lock)),
+          findsOneWidget);
+      expect(find.descendant(of: tile(3), matching: find.byIcon(Icons.lock)),
+          findsNothing);
+      expect(find.descendant(of: tile(2), matching: find.byIcon(Icons.star)),
+          findsNWidgets(2));
+      expect(
+          find.descendant(
+              of: tile(2), matching: find.byIcon(Icons.star_border)),
+          findsOneWidget);
+
+      await tester.tap(find.text('4'));
+      await tester.pump();
+
+      verifyNever(mockGameManager.startGame(level: anyNamed('level')));
+      expect(find.byType(AlertDialog), findsOneWidget);
+    });
+
+    /// GIVEN a player who has won no star yet
+    /// WHEN the picker opens
+    /// THEN only level 1 is open
+    testWidgets('givenNoStars_whenPickerOpens_thenOnlyLevel1IsOpen',
+        (WidgetTester tester) async {
+      when(mockGameManager.starsByLevel())
+          .thenAnswer((_) async => const <int, int>{});
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+      await tester.tap(find.text('Select Level'));
+      await tester.pumpAndSettle();
+
+      expect(
+          find.descendant(
+              of: find
+                  .ancestor(
+                      of: find.text('2'), matching: find.byType(Semantics))
+                  .first,
+              matching: find.byIcon(Icons.lock)),
+          findsOneWidget);
+      expect(
+          tester
+              .getSemantics(find
+                  .ancestor(
+                      of: find.text('2'), matching: find.byType(Semantics))
+                  .first)
+              .value,
+          GameStrings.levelLocked);
+
+      await tester.tap(find.text('1'));
+      await tester.pump();
+      verify(mockGameManager.startGame(level: 1)).called(1);
     });
 
     /// GIVEN level select dialog is open

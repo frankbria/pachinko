@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pachinko_game/models/achievement.dart';
+import 'package:pachinko_game/models/round_summary.dart';
+import 'package:pachinko_game/models/star_targets.dart';
 import 'package:pachinko_game/screens/achievements_screen.dart';
 import 'package:pachinko_game/screens/high_scores_screen.dart';
 import 'package:pachinko_game/screens/menu_screen.dart';
@@ -15,6 +17,7 @@ import 'package:pachinko_game/services/storage_service.dart';
 import 'package:pachinko_game/utils/constants.dart';
 import 'package:pachinko_game/utils/game_theme.dart';
 import 'package:pachinko_game/widgets/achievement_toast.dart';
+import 'package:pachinko_game/widgets/round_summary_panel.dart';
 
 /// The screens around the game, on the design tokens (issue #32).
 ///
@@ -121,6 +124,46 @@ void main() {
       await tester.tap(find.text('Select Level'));
       await tester.pumpAndSettle();
       expect(find.byType(GridView), findsOneWidget);
+      expect(lowContrast(tester), isEmpty);
+    });
+
+    testWidgets('on the level picker, with stars won and levels locked',
+        (tester) async {
+      await storage.saveHighScore(1, StarTargets.forLevel(1).two);
+      await storage.saveHighScore(4, 300);
+      await pump(tester, const MenuScreen());
+      await tester.tap(find.text('Select Level'));
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.star), findsNWidgets(2));
+      expect(find.byIcon(Icons.lock), findsWidgets);
+      expect(lowContrast(tester), isEmpty);
+    });
+
+    testWidgets('on the round summary, with stars won and short of the next',
+        (tester) async {
+      await pump(
+          tester,
+          Scaffold(
+            body: Center(
+              child: RoundSummaryPanel(
+                summary: RoundSummary(
+                  levelNumber: 2,
+                  score: StarTargets.forLevel(2).one + 50,
+                  tiers: const [SlotTierTally(pointValue: 2000, balls: 3)],
+                  prizePegsCollected: 5,
+                  prizePegsTotal: 5,
+                  bonusBalls: 6,
+                  feverPoints: 2000,
+                  isNewBest: true,
+                ),
+                onMenu: () {},
+                onReplay: () {},
+                onNextLevel: () {},
+                nextLevelOpen: true,
+              ),
+            ),
+          ));
+      expect(find.byIcon(Icons.star_border), findsNWidgets(2));
       expect(lowContrast(tester), isEmpty);
     });
 
@@ -261,6 +304,22 @@ void main() {
       }
     });
   });
+
+  testWidgets('the level picker with stars and locks matches its golden',
+      (tester) async {
+    // Three stars on 1, two on 2, one on 3, none on 4 (played), so 5 on
+    // are locked
+    await storage.saveHighScore(1, StarTargets.forLevel(1).three);
+    await storage.saveHighScore(2, StarTargets.forLevel(2).two);
+    await storage.saveHighScore(3, StarTargets.forLevel(3).one);
+    await storage.saveHighScore(4, 2400);
+    await pump(tester, const MenuScreen());
+    await tester.tap(find.text('Select Level'));
+    await tester.pumpAndSettle();
+
+    await expectLater(find.byType(AlertDialog),
+        matchesGoldenFile('../widgets/goldens/level_picker_stars.png'));
+  }, tags: ['golden']);
 
   group('How to Play', () {
     testWidgets(

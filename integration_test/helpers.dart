@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:pachinko_game/services/storage_service.dart';
 import 'package:pachinko_game/widgets/achievement_toast.dart';
 import 'package:pachinko_game/utils/constants.dart';
 import 'package:pachinko_game/widgets/pachinko_board.dart';
@@ -81,5 +83,15 @@ Future<void> toastsGone(WidgetTester tester) async {
     if (DateTime.now().isAfter(end)) {
       fail('Achievement toasts were still appearing after 90 s');
     }
+  }
+}
+
+/// Opens levels 1 to [level] in the picker, as a player who has won a star
+/// on every level before [level] would have (#116): a test that picks a level
+/// from the picker calls this before it starts the app.
+Future<void> openLevelsUpTo(int level) async {
+  final storage = StorageService(prefs: await SharedPreferences.getInstance());
+  for (int before = 1; before < level; before++) {
+    await storage.saveStars(before, 1);
   }
 }
