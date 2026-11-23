@@ -208,6 +208,8 @@ void main() {
     final met = <Ball, Set<FeatureKind>>{};
     // Balls a tulip caught, which leave play without landing
     final caught = <Ball>{};
+    // Balls whose landing has been credited to the features they met
+    final credited = <Ball>{};
     FeatureKind kindOf(BoardFeature feature) => switch (feature) {
           Tulip() => FeatureKind.tulips,
           Windmill() => FeatureKind.windmill,
@@ -289,12 +291,16 @@ void main() {
               level.slots.indexOf(slot) == level.slots.length ~/ 2) {
             tally.gateLevelCentre++;
           }
-          // The ball that landed here: the one this step that is now in it
-          final landed = balls.where(
-              (ball) => ball.hasLanded && slot.containsPoint(ball.position));
-          for (final kind in landed.isEmpty
-              ? const <FeatureKind>{}
-              : met[landed.first] ?? const <FeatureKind>{}) {
+          // The ball that landed here: one this step, in this slot, not yet
+          // counted; two can land in one slot on the same step
+          final landed = balls
+              .where((ball) =>
+                  ball.hasLanded &&
+                  slot.containsPoint(ball.position) &&
+                  !credited.contains(ball))
+              .firstOrNull;
+          if (landed != null) credited.add(landed);
+          for (final kind in met[landed] ?? const <FeatureKind>{}) {
             tally.featureLanded[kind] = (tally.featureLanded[kind] ?? 0) + 1;
             tally.featureLandedPoints[kind] =
                 (tally.featureLandedPoints[kind] ?? 0) + slot.pointValue;
