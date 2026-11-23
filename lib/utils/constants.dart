@@ -152,10 +152,11 @@ class GameConstants {
   /// the sway is what sets the bonus rate. Spread wider, the pegs stand in
   /// separate streams of balls and the bonus comes more often (a sway of 20
   /// gave it in about a quarter of rounds, 45 in more than half); kept close,
-  /// each shades the next. From 31 on level 1 to 25.5 the bonus comes in
-  /// about 42% of rounds on levels 1 to 10 and 36% on levels 41 to 60, which
-  /// pays for the bonus growing with the level (#115).
-  static const double prizeColumnSwayHardest = 25.5;
+  /// each shades the next. From 31 on level 1 to 23 the bonus comes in about
+  /// 48% of rounds on levels 1 to 10 and 40% on levels 21 to 50, which pays
+  /// for the bonus growing with the level (#115). It was 25.5 until launch
+  /// power became aim (#112), whose entry rows put more balls on the column.
+  static const double prizeColumnSwayHardest = 23.0;
   static const double prizeColumnStepHardest = 42.0;
 
   /// The level from which the layouts and the prize column are at their
@@ -258,14 +259,17 @@ class GameConstants {
   static const double tulipTriggerRadius = 9.5;
 
   /// How long a tulip stays open after its trigger pin is hit, in seconds of
-  /// play, unless it catches a ball first.
-  static const double tulipOpenSeconds = 0.6;
+  /// play, unless it catches a ball first. The trigger pin is in the entry
+  /// rows (#112), which drop a caught ball from it onto the tulip: open for
+  /// 0.6 s, tulips caught three times as many balls (5.3 a round) and the
+  /// paid balls lifted the bonus over 50% of rounds.
+  static const double tulipOpenSeconds = 0.2;
 
   /// How far from straight up, in radians, a ball can meet an open tulip and
   /// still fall into its mouth.
   static const double tulipMouthHalfAngle = 0.4;
 
-  /// The balls a tulip pays for each ball it catches: about four a round on
+  /// The balls a tulip pays for each ball it catches: about five a round on
   /// a level with tulips. Paid balls are more chances at the prize pegs, so
   /// this moves the bonus rate.
   static const int tulipPayoutBalls = 2;
