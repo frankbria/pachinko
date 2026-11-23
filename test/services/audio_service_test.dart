@@ -416,6 +416,7 @@ void main() {
       for (final player in players) {
         verify(player.dispose()).called(1);
       }
+      verifyNever(launch.setVolume(any));
       verifyNever(launch.resume());
     });
 
@@ -502,7 +503,10 @@ void main() {
 
     test('disposing twice disposes each player once', () async {
       await audioService.initialize();
-      await audioService.dispose();
+      final first = audioService.dispose();
+      // A second caller waits for the same teardown
+      expect(audioService.dispose(), same(first));
+      await first;
       await audioService.dispose();
 
       for (final player in players) {

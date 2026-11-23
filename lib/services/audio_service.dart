@@ -218,9 +218,10 @@ class AudioService {
     // Stopping ends the player's last sound, so that the next start is a
     // new one from the beginning, at the rate set below
     await player.stop();
+    // Disposed while it stopped: the player is about to go
+    if (_disposed) return;
     await player.setVolume(tone.volume * _volume);
     await player.setPlaybackRate(tone.playbackRate);
-    // Disposed while it was being set up: the player is about to go
     if (_disposed) return;
     await player.resume();
   }
@@ -254,9 +255,13 @@ class AudioService {
   /// and a player that fails to dispose does not keep the others alive.
   ///
   /// Waits for loads and starts in flight first (see [_inFlight]). Sounds
-  /// asked for afterwards are ignored. Calling it again does nothing.
-  Future<void> dispose() async {
-    if (_disposed) return;
+  /// asked for afterwards are ignored. Calling it again returns the same
+  /// teardown.
+  Future<void> dispose() => _disposal ??= _dispose();
+
+  Future<void>? _disposal;
+
+  Future<void> _dispose() async {
     _disposed = true;
     await Future.wait(_inFlight.toList());
     for (final player in _players) {
