@@ -1,0 +1,27 @@
+{
+  "gateVersion": "crap-1",
+  "policy": {
+    "threshold": 6,
+    "legacyRatchet": "not-worse",
+    "unverifiedHandling": "debt",
+    "debtTicketMode": "standing-per-boundary",
+    "installMode": "local"
+  },
+  "pythonPolicy": "python-ast-1",
+  "project": "/root/projects/pachinko",
+  "base": "ea0b7837f115652ef66374d5eafcdbab2a3289e7",
+  "head": "ea0b7837f115652ef66374d5eafcdbab2a3289e7",
+  "files": {},
+  "rowCounts": {
+    "new": 0,
+    "modified-raised": 0,
+    "legacy-unchanged": 0,
+    "unverified": 0
+  },
+  "verdict": "nothing to score",
+  "timestamp": "2026-11-23T05:16:02.082Z",
+  "ccOnly": false,
+  "sourceMapTranslations": [],
+  "sourceMapRefusals": [],
+  "reasons": []
+}

@@ -6,6 +6,7 @@ import 'game_screen.dart';
 import 'high_scores_screen.dart';
 import 'settings_screen.dart';
 import '../widgets/game_card.dart';
+import '../widgets/how_to_play_dialog.dart';
 import 'achievements_screen.dart';
 
 class MenuScreen extends StatelessWidget {
@@ -84,9 +85,9 @@ class MenuScreen extends StatelessWidget {
 
                   // Instructions Button
                   _MenuButton(
-                    title: 'How to Play',
+                    title: GameStrings.howToPlay,
                     icon: Icons.help_outline,
-                    onPressed: () => _showInstructions(context),
+                    onPressed: () => showHowToPlay(context),
                   ),
 
                   const SizedBox(height: 20),
@@ -248,65 +249,6 @@ class MenuScreen extends StatelessWidget {
       ),
     );
   }
-
-  void _showInstructions(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('How to Play'),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _heading(Icons.flag, 'Objective'),
-              _body('Score as many points as possible with 20 balls.'),
-              _heading(Icons.touch_app, 'Controls'),
-              _body(
-                  '• Drag from the launcher: the longer the drag, the more power\n'
-                  '• A soft launch drops the ball near the launcher; a full one sends it over the top to the far side\n'
-                  '• Release to launch\n'
-                  '• Pegs change the ball\'s direction'),
-              _heading(Icons.auto_awesome, 'Special Features'),
-              _body('• Gold pegs are prizes: hit them all for bonus balls\n'
-                  '• Edge slots give the most points and are the hardest to reach\n'
-                  '• The centre slot gives good points'),
-              _heading(Icons.emoji_events, 'Scoring'),
-              _body('• Edge slots: 2000 points\n'
-                  '• Centre slot: 1000 points\n'
-                  '• Other slots: 50 to 200 points'),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Got it!'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// A section heading in How to Play: an icon from the icon font, not an
-  /// emoji, and its title.
-  Widget _heading(IconData icon, String title) => Padding(
-        padding: const EdgeInsets.only(top: 12, bottom: 4),
-        child: Row(
-          children: [
-            Icon(icon, size: 18, color: GameConstants.primaryColor),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: const TextStyle(
-                  color: GameConstants.inkColor, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-      );
-
-  Widget _body(String text) =>
-      Text(text, style: const TextStyle(color: GameConstants.mutedColor));
 
   void _showHighScores(BuildContext context) {
     Navigator.of(context).push(

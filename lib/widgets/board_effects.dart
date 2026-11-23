@@ -110,6 +110,10 @@ void paintConfettiPiece(Canvas canvas, ConfettiParticle particle) {
 
 /// The height, in board coordinates, of the row of prize lamps in the dome.
 const double prizeLampRowY = 88.0;
+
+/// The middle of the row of prize lamps, in board coordinates.
+const double prizeLampCentreX =
+    (GameConstants.topCurveStartX + GameConstants.topCurveEndX) / 2;
 const double _prizeLampRadius = 5.0;
 const double _prizeLampSpacing = 20.0;
 
@@ -118,9 +122,7 @@ const double _prizeLampSpacing = 20.0;
 /// how many prizes are left to win.
 void paintPrizeLamps(Canvas canvas,
     {required int total, required int collected}) {
-  const centreX =
-      (GameConstants.topCurveStartX + GameConstants.topCurveEndX) / 2;
-  final firstX = centreX - _prizeLampSpacing * (total - 1) / 2;
+  final firstX = prizeLampCentreX - _prizeLampSpacing * (total - 1) / 2;
 
   for (int i = 0; i < total; i++) {
     final centre = Offset(firstX + _prizeLampSpacing * i, prizeLampRowY);

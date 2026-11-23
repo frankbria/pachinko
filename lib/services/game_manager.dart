@@ -64,6 +64,17 @@ class GameManager extends ChangeNotifier {
   /// save it to. Saved when storage is attached.
   bool? _unsavedSingleBallLaunch;
 
+  /// Whether the ghost hand is still to show this install's player the drag.
+  /// False until storage says otherwise, so that a returning player never
+  /// sees it flash up while storage loads.
+  bool _launchHintDue = false;
+
+  /// Whether the first prize peg hit on this install is still to come.
+  bool _prizePegHintDue = false;
+
+  /// The level's number of prize pegs while the prize peg callout shows.
+  int? _prizePegHint;
+
   /// Creates a GameManager with optional dependency injection.
   ///
   /// Dependencies default to production instances if not provided,
@@ -87,7 +98,17 @@ class GameManager extends ChangeNotifier {
     // The player's saved choice, when there is storage to read it from
     if (storageService != null) {
       _gameState.singleBallLaunch = storageService.singleBallLaunch;
+      _readHints(storageService);
     }
+  }
+
+  /// Reads which first-round hints this install has still to show.
+  void _readHints(StorageService storage) {
+    // shortcut: a ball launched before storage loads (it loads at start-up,
+    // well before Play can be pressed) does not count as the first launch;
+    // track launches made without storage if that ever matters.
+    _launchHintDue = storage.launchHintDue;
+    _prizePegHintDue = storage.prizePegHintDue;
   }
 
   /// Gives the manager the services that load after the app has started.
@@ -108,17 +129,38 @@ class GameManager extends ChangeNotifier {
       return;
     }
     _storageService = storageService;
+    final shownBefore = (_gameState.singleBallLaunch, _launchHintDue);
+    _readHints(storageService);
 
     final unsaved = _unsavedSingleBallLaunch;
+    _unsavedSingleBallLaunch = null;
     if (unsaved != null) {
-      _unsavedSingleBallLaunch = null;
       unawaited(storageService.saveSingleBallLaunch(unsaved));
-    } else if (_gameState.singleBallLaunch != storageService.singleBallLaunch) {
+    } else {
       _gameState.singleBallLaunch = storageService.singleBallLaunch;
+    }
+    if (shownBefore != (_gameState.singleBallLaunch, _launchHintDue)) {
       scheduleMicrotask(() {
         if (!_disposed) notifyListeners();
       });
     }
+  }
+
+  /// Whether the board shows the ghost hand dragging the plunger: on this
+  /// install's first round, until the player first launches, and not while
+  /// the player is touching the plunger.
+  bool get showsLaunchHint =>
+      _launchHintDue && _ballLauncher.phase == LaunchPhase.ready;
+
+  /// The level's number of prize pegs while the board shows the callout that
+  /// says what they are for, and null otherwise. It is set at the first prize
+  /// peg hit on this install, and only then.
+  int? get prizePegHint => _prizePegHint;
+
+  /// Takes the prize peg callout down, once it has been shown for its time.
+  void dismissPrizePegHint() {
+    _prizePegHint = null;
+    notifyListeners();
   }
 
   /// The best score stored for each level that has been played, for the
@@ -193,12 +235,22 @@ class GameManager extends ChangeNotifier {
   /// is no storage, and once another round has begun.
   bool? get roundIsNewBest => _roundIsNewBest;
 
-  void startGame({int level = 1}) {
+  /// Clears what the manager tracks about the round being left, for a
+  /// transition that starts another. Cancelling the loop strands a launcher
+  /// that is carrying a ball, a set [_levelResultSaved] would keep the next
+  /// game over from being recorded, the next round has a first ball of its
+  /// own, and the prize peg callout gave the count of the level being left.
+  void _clearRoundTracking() {
     _ballLauncher.reset();
     _levelResultSaved = false;
     _roundIsNewBest = null;
     _firstBall = null;
     _firstBallSeen = false;
+    _prizePegHint = null;
+  }
+
+  void startGame({int level = 1}) {
+    _clearRoundTracking();
     _gameState.startNewGame(level: level);
     _beginRound();
     _startGameLoop();
@@ -218,11 +270,7 @@ class GameManager extends ChangeNotifier {
   }
 
   void resetGame() {
-    _ballLauncher.reset();
-    _levelResultSaved = false;
-    _roundIsNewBest = null;
-    _firstBall = null;
-    _firstBallSeen = false;
+    _clearRoundTracking();
     _ticker?.stop();
     _gameState.resetLevel();
     _beginRound();
@@ -260,6 +308,10 @@ class GameManager extends ChangeNotifier {
       _gameState.launchBall(ball);
       // The launcher carries one ball at a time up its channel
       _gameState.launcherBusy = true;
+      if (_launchHintDue) {
+        _launchHintDue = false;
+        _storageService?.saveLaunchHintShown();
+      }
 
       // Track ball launch achievement
       _achievementService?.trackBallLaunched();
@@ -402,9 +454,19 @@ class GameManager extends ChangeNotifier {
       if (peg.type == PegType.special) {
         _audioService?.playSpecialPeg();
         _haptics?.prizePeg();
+        _showPrizePegHintOnce();
         _checkSpecialBonus();
       }
     }
+  }
+
+  /// At the first prize peg hit on this install, tells the player how many
+  /// there are to collect for the bonus.
+  void _showPrizePegHintOnce() {
+    if (!_prizePegHintDue) return;
+    _prizePegHintDue = false;
+    _prizePegHint = _gameState.currentLevel?.specialPegs.length;
+    _storageService?.savePrizePegHintShown();
   }
 
   void _handleSlotHits(List<Slot> hitSlots) {
@@ -508,11 +570,7 @@ class GameManager extends ChangeNotifier {
   }
 
   void nextLevel() {
-    _ballLauncher.reset();
-    _levelResultSaved = false;
-    _roundIsNewBest = null;
-    _firstBall = null;
-    _firstBallSeen = false;
+    _clearRoundTracking();
     _ticker?.stop();
     _gameState.nextLevel();
     _beginRound();
@@ -526,11 +584,7 @@ class GameManager extends ChangeNotifier {
   /// that is left, so whoever gives it a caller should first decide whether a
   /// jump starts a new run (raised in the reviews of #5 and #20).
   void selectLevel(int levelNumber) {
-    _ballLauncher.reset();
-    _levelResultSaved = false;
-    _roundIsNewBest = null;
-    _firstBall = null;
-    _firstBallSeen = false;
+    _clearRoundTracking();
     _ticker?.stop();
     _gameState.loadLevel(levelNumber);
     _beginRound();

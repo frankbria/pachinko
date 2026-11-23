@@ -28,6 +28,9 @@ void main() {
     // Stub GameManager properties
     when(mockGameManager.gameState).thenReturn(mockGameState);
     when(mockGameManager.ballLauncher).thenReturn(mockBallLauncher);
+    // No first-round hint: those are tested in first_round_hints_test.dart
+    when(mockGameManager.showsLaunchHint).thenReturn(false);
+    when(mockGameManager.prizePegHint).thenReturn(null);
 
     // Stub GameState properties with default values
     when(mockGameState.score).thenReturn(1000);

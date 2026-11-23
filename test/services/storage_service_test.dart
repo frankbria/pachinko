@@ -334,4 +334,30 @@ void main() {
       expect(await storageService.levelsWithScores(), isEmpty);
     });
   });
+
+  group('StorageService - first-round hints', () {
+    test(
+        'given a fresh install, then both hints are due, and each once shown stays shown across a restart',
+        () async {
+      SharedPreferences.setMockInitialValues({});
+      final storage =
+          StorageService(prefs: await SharedPreferences.getInstance());
+      expect(storage.launchHintDue, isTrue);
+      expect(storage.prizePegHintDue, isTrue);
+
+      await storage.saveLaunchHintShown();
+      expect(storage.launchHintDue, isFalse);
+      expect(storage.prizePegHintDue, isTrue,
+          reason: 'the two are stored apart');
+      await storage.savePrizePegHintShown();
+
+      final restarted =
+          StorageService(prefs: await SharedPreferences.getInstance());
+      expect(restarted.launchHintDue, isFalse);
+      expect(restarted.prizePegHintDue, isFalse);
+      await restarted.clearData();
+      expect(restarted.launchHintDue, isFalse,
+          reason: 'clearing the high scores leaves the hints alone');
+    });
+  });
 }

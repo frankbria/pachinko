@@ -72,6 +72,12 @@ class MockGameManager extends _i1.Mock implements _i5.GameManager {
   }
 
   @override
+  bool get showsLaunchHint => (super.noSuchMethod(
+        Invocation.getter(#showsLaunchHint),
+        returnValue: false,
+      ) as bool);
+
+  @override
   _i2.GameState get gameState => (super.noSuchMethod(
         Invocation.getter(#gameState),
         returnValue: _FakeGameState_0(
@@ -123,6 +129,15 @@ class MockGameManager extends _i1.Mock implements _i5.GameManager {
             #storageService: storageService,
             #achievementService: achievementService,
           },
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void dismissPrizePegHint() => super.noSuchMethod(
+        Invocation.method(
+          #dismissPrizePegHint,
+          [],
         ),
         returnValueForMissingStub: null,
       );
