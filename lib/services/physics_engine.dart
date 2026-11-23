@@ -8,7 +8,7 @@ import 'audio_service.dart';
 
 class PhysicsEngine {
   final AudioService? _audioService;
-  final math.Random _random;
+  math.Random _random;
 
   static const double _gravity = GameConstants.gravity;
   static const double _damping = GameConstants.bounceDamping;
@@ -22,7 +22,17 @@ class PhysicsEngine {
       : _audioService = audioService,
         _random = random ?? math.Random();
 
+  /// Restarts the bounce deflections from [seed], so that the same launches
+  /// from here on give the same bounces.
+  void seed(int seed) => _random = math.Random(seed);
+
+  /// The share of a ball's velocity that [deltaTime] seconds of air leave:
+  /// [GameConstants.airResistance] per 1/60 s, whatever the step.
+  static double _airFactor(double deltaTime) =>
+      math.pow(_airResistance, deltaTime * 60).toDouble();
+
   void updateBalls(List<Ball> balls, double deltaTime) {
+    final airFactor = _airFactor(deltaTime);
     for (final ball in balls) {
       if (!ball.isActive || ball.hasLanded) continue;
 
@@ -32,8 +42,7 @@ class PhysicsEngine {
       // Update velocity with acceleration
       ball.velocity.add(ball.acceleration * deltaTime);
 
-      // Apply air resistance
-      ball.velocity.scale(_airResistance);
+      ball.velocity.scale(airFactor);
 
       // Update position
       ball.position.add(ball.velocity * deltaTime);
@@ -232,7 +241,7 @@ class PhysicsEngine {
       // Update position and velocity for next point
       position.add(velocity * timeStep);
       velocity.y += _gravity * timeStep;
-      velocity.scale(_airResistance);
+      velocity.scale(_airFactor(timeStep));
 
       // Stop if ball goes off screen
       if (position.y > GameConstants.boardHeight) break;

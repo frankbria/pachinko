@@ -15,7 +15,8 @@ class GameScreen extends StatefulWidget {
   State<GameScreen> createState() => _GameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen> {
+class _GameScreenState extends State<GameScreen>
+    with SingleTickerProviderStateMixin {
   late final GameManager _gameManager;
   final GlobalKey _headerKey = GlobalKey();
   AchievementToastOverlayState? _toasts;
@@ -24,7 +25,7 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void initState() {
     super.initState();
-    _gameManager = context.read<GameManager>();
+    _gameManager = context.read<GameManager>()..attachVsync(this);
     _toasts = AchievementToastOverlay.of(context);
     _lifecycleListener = AppLifecycleListener(onHide: _pauseWhileHidden);
     // The header has no size until the first frame has been laid out
@@ -41,8 +42,9 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   /// Pauses a ball in play when the app is no longer visible (Home, the app
-  /// switcher). Timers keep firing for a while after that, so without this
-  /// the ball would play on unseen. The player resumes with the Resume button.
+  /// switcher). Frames stop while the app is hidden, so without this the
+  /// ball would play on the moment it returned, before the player is ready.
+  /// The player resumes with the Resume button.
   void _pauseWhileHidden() {
     if (_gameManager.gameState.phase == GamePhase.playing) {
       _gameManager.pauseGame();
@@ -52,8 +54,10 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void dispose() {
     _lifecycleListener.dispose();
-    // Leaving the screen abandons the game in progress; stop it playing on in the background
-    _gameManager.stopLoop();
+    // Leaving the screen abandons the game in progress: letting go of this
+    // screen's clock stops it playing on in the background. A newer game
+    // screen that has already taken the loop over keeps it
+    _gameManager.detachVsync(this);
     // The overlay is an ancestor, and an ancestor cannot be rebuilt while this
     // subtree is being torn down, so the release waits for the frame to end
     final toasts = _toasts;

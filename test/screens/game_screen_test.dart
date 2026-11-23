@@ -384,8 +384,10 @@ void main() {
       // When
       await tester.pumpWidget(const SizedBox());
 
-      // Then
-      verify(mockGameManager.stopLoop()).called(1);
+      // Then: the screen lets go of the clock it gave the loop, which stops it
+      final host =
+          verify(mockGameManager.attachVsync(captureAny)).captured.single;
+      verify(mockGameManager.detachVsync(host)).called(1);
     });
   });
 

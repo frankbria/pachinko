@@ -19,6 +19,8 @@ class LevelBand {
 class GameConstants {
   // Physics constants
   static const double gravity = 980.0; // pixels/second^2
+  /// The share of a ball's speed kept over each 1/60 s: the physics applies
+  /// it per second of play, so it does not change with the step.
   static const double airResistance = 0.999;
   static const double bounceDamping = 0.7;
   static const double minVelocity = 10.0;
@@ -198,8 +200,17 @@ class GameConstants {
   static const bool showDebugGrid = false;
   static const bool showPegSpacing = false;
 
-  // Physics time step
-  static const double physicsTimeStep = 1.0 / 60.0; // 60 FPS
+  /// How many fixed physics steps make a second of play, whatever the
+  /// display's frame rate. Small enough steps that the fastest ball moves
+  /// less than a pin and a ball across in one.
+  static const int physicsStepsPerSecond = 120;
+
+  /// The length of one physics step, in seconds.
+  static const double physicsTimeStep = 1.0 / physicsStepsPerSecond;
+
+  /// The most physics steps one frame runs. A frame later than this (the app
+  /// was hidden, or the device stalled) loses the rest of its time instead of
+  /// catching up on it.
   static const int maxPhysicsIterations = 5;
 
   // Scoring
