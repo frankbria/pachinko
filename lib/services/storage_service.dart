@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/game_settings.dart';
 import '../models/high_score.dart';
+import '../models/star_targets.dart';
 
 /// Service for persisting high scores to local storage.
 ///
@@ -224,10 +225,18 @@ class StorageService {
   /// Clears all high score data from storage.
   ///
   /// Only removes keys that start with 'highscores_level_'.
-  /// Other app data is preserved, the stars and so the open levels too.
+  /// Other app data is preserved, the stars and so the open levels too:
+  /// first each level's scores are turned into the stars they win, which a
+  /// table stored before stars existed has not been yet.
   /// Handles errors gracefully by logging without throwing exceptions.
   Future<void> clearData() async {
     try {
+      for (final level in await levelsWithScores()) {
+        if (await getBestScore(level) case final best?) {
+          await saveStars(
+              level, StarTargets.forLevel(level).starsFor(best.score));
+        }
+      }
       final keys = _prefs.getKeys();
       for (final key in keys) {
         if (key.startsWith(_levelKeyPrefix)) {

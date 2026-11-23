@@ -441,6 +441,20 @@ void main() {
       expect(storage.storedStars[3], StarTargets.maxStars);
     });
 
+    test(
+        'given scores stored before stars existed, when cleared, then the stars they won are kept',
+        () async {
+      // Clear may come before anything has read the stars from the scores
+      final one = StarTargets.forLevel(1);
+      await storage.saveHighScore(1, one.two);
+      await storage.saveHighScore(2, 10);
+
+      await storage.clearData();
+
+      expect(await storage.levelsWithScores(), isEmpty);
+      expect(storage.storedStars, {1: 2});
+    });
+
     test('given the scores cleared, then the stars and the open levels stay',
         () async {
       await storage.saveHighScore(1, 12000);
