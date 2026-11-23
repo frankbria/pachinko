@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:provider/provider.dart';
+import 'package:vector_math/vector_math_64.dart' show Vector2;
 import 'package:pachinko_game/main.dart' as app;
 import 'package:pachinko_game/screens/menu_screen.dart';
 import 'package:pachinko_game/screens/game_screen.dart';
 import 'package:pachinko_game/services/game_manager.dart';
+import 'package:pachinko_game/models/ball.dart';
 import 'package:pachinko_game/models/peg.dart';
 import 'package:pachinko_game/utils/constants.dart';
 
@@ -291,6 +293,49 @@ void main() {
 
       // Initial state should not have bonus triggered
       expect(gameManager.gameState.specialBonusTriggered, isFalse);
+    });
+  });
+
+  group('Board Feature Tests', () {
+    /// GIVEN a level with tulips, its trigger pin just struck
+    /// WHEN a ball falls into the open tulip
+    /// THEN the tulip catches it and pays out balls (#114)
+    ///
+    /// The strike is counted on the pin directly and the ball placed over the
+    /// tulip's mouth, so the test does not wait on a launch that happens to
+    /// pass that way. Everything after is the real loop on the device.
+    testWidgets('givenOpenTulip_whenBallFallsIn_thenBallsArePaidOut',
+        (WidgetTester tester) async {
+      app.main();
+      await settle(tester);
+
+      await tester.tap(find.text(GameStrings.play));
+      await settle(tester);
+
+      final context = tester.element(find.byType(GameScreen));
+      final gameManager = Provider.of<GameManager>(context, listen: false);
+      gameManager.startGame(level: 3);
+      await settle(tester);
+
+      final gameState = gameManager.gameState;
+      final tulip = gameState.currentLevel!.tulips.first;
+      tulip.triggerPin.timesStruck++;
+      final ballsBefore = gameState.ballsRemaining;
+      gameState.launchBall(Ball(
+        position: tulip.position + Vector2(0, -30),
+        velocity: Vector2(0, 50),
+      ));
+      gameManager.resumeGame();
+
+      await pumpUntil(tester, () => tulip.catches > 0,
+          timeout: const Duration(seconds: 10), what: 'the tulip to catch');
+      await pumpUntil(tester, () => gameState.activeBalls.isEmpty,
+          timeout: const Duration(seconds: 5), what: 'the ball to leave play');
+
+      expect(gameState.ballsRemaining,
+          ballsBefore - 1 + GameConstants.tulipPayoutBalls);
+      expect(gameState.tulipBalls, GameConstants.tulipPayoutBalls);
+      expect(tulip.isOpen, isFalse);
     });
   });
 

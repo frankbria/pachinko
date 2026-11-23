@@ -23,7 +23,9 @@ import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pachinko_game/models/ball.dart';
 import 'package:pachinko_game/models/ball_launcher.dart';
+import 'package:pachinko_game/models/board_feature.dart';
 import 'package:pachinko_game/models/game_state.dart';
+import 'package:pachinko_game/models/level.dart';
 import 'package:pachinko_game/models/peg.dart';
 import 'package:pachinko_game/services/achievement_service.dart';
 import 'package:pachinko_game/services/game_manager.dart';
@@ -49,6 +51,21 @@ class Tally {
   /// them, against what rounds without it scored.
   int bonusRoundScore = 0, feverPoints = 0;
 
+  /// Per feature kind: rounds on a level with it, and the balls that met it
+  /// with what they landed for, against every ball on those levels.
+  final featureRounds = <FeatureKind, int>{};
+  final featureBalls = <FeatureKind, int>{};
+  final featureLanded = <FeatureKind, int>{};
+  final featureLandedPoints = <FeatureKind, int>{};
+  final levelLanded = <FeatureKind, int>{};
+  final levelLandedPoints = <FeatureKind, int>{};
+
+  /// Balls landed in the centre slot on levels with the centre gate.
+  int gateLevelCentre = 0;
+
+  /// Tulips opened, balls they caught and balls they paid out.
+  int tulipOpens = 0, tulipCatches = 0, tulipBalls = 0;
+
   /// Every round's score, for the percentiles.
   final scores = <int>[];
   final slots = <int, int>{50: 0, 200: 0, 1000: 0, 2000: 0};
@@ -71,6 +88,18 @@ class Tally {
     bonusRoundScore += o.bonusRoundScore;
     feverPoints += o.feverPoints;
     best = max(best, o.best);
+    void sum(Map<FeatureKind, int> into, Map<FeatureKind, int> from) =>
+        from.forEach((k, v) => into[k] = (into[k] ?? 0) + v);
+    sum(featureRounds, o.featureRounds);
+    sum(featureBalls, o.featureBalls);
+    sum(featureLanded, o.featureLanded);
+    sum(featureLandedPoints, o.featureLandedPoints);
+    sum(levelLanded, o.levelLanded);
+    sum(levelLandedPoints, o.levelLandedPoints);
+    gateLevelCentre += o.gateLevelCentre;
+    tulipOpens += o.tulipOpens;
+    tulipCatches += o.tulipCatches;
+    tulipBalls += o.tulipBalls;
     o.slots.forEach((k, v) => slots[k] = slots[k]! + v);
     for (int i = 0; i < byPosition.length; i++) {
       byPosition[i] += o.byPosition[i];
@@ -94,6 +123,29 @@ class Tally {
     return '$name | ${mean(bonusRoundScore, bonusRounds)} | '
         '${mean(score - bonusRoundScore, others)} | '
         '${mean(feverPoints, bonusRounds)}';
+  }
+
+  /// How often balls meet a feature of [kind] and what they land for
+  /// afterwards, against every ball on the levels that have it.
+  String feature(FeatureKind kind) {
+    final rounds = featureRounds[kind] ?? 0;
+    if (rounds == 0) return '${kind.name} | 0 | - | - | -';
+    String per(int n) => (n / rounds).toStringAsFixed(2);
+    String mean(int total, int count) =>
+        count == 0 ? '-' : (total / count).toStringAsFixed(0);
+    var line = '${kind.name} | $rounds | ${per(featureBalls[kind] ?? 0)} | '
+        '${mean(featureLandedPoints[kind] ?? 0, featureLanded[kind] ?? 0)} | '
+        '${mean(levelLandedPoints[kind] ?? 0, levelLanded[kind] ?? 0)}';
+    if (kind == FeatureKind.tulips) {
+      line += ' | opens ${per(tulipOpens)} | catches ${per(tulipCatches)} | '
+          'balls paid ${per(tulipBalls)}';
+    }
+    if (kind == FeatureKind.centreGate) {
+      final landed = levelLanded[kind] ?? 0;
+      line += ' | centre slot '
+          '${landed == 0 ? '-' : (100 * gateLevelCentre / landed).toStringAsFixed(1)}%';
+    }
+    return line;
   }
 
   /// How many rounds scored at least [threshold].
@@ -146,11 +198,37 @@ void main() {
     final engine = PhysicsEngine()
       ..seed(GameManager.physicsSeedFor(levelNumber, round));
     final powers = Random(seed);
+    final features = level.features;
+    final kinds = Level.featureKindsFor(levelNumber);
+    for (final kind in kinds) {
+      tally.featureRounds[kind] = 1;
+    }
+    final tulips = level.tulips.toList();
+    // The kinds of feature each ball has met
+    final met = <Ball, Set<FeatureKind>>{};
+    // Balls a tulip caught, which leave play without landing
+    final caught = <Ball>{};
+    FeatureKind kindOf(BoardFeature feature) => switch (feature) {
+          Tulip() => FeatureKind.tulips,
+          Windmill() => FeatureKind.windmill,
+          CentreGate() => FeatureKind.centreGate,
+        };
+
+    /// One step of the features, counting the tulips that open on it.
+    void stepFeatures() {
+      final wasOpen = [for (final tulip in tulips) tulip.isOpen];
+      engine.updateFeatures(features, dt);
+      for (int i = 0; i < tulips.length; i++) {
+        if (!wasOpen[i] && tulips[i].isOpen) tally.tulipOpens++;
+      }
+    }
 
     Ball? firstOfRound;
     while (state.ballsRemaining > 0) {
-      final launched =
-          launchedBall(powers.nextDouble() * 100, () => state.updateFever(dt));
+      final launched = launchedBall(powers.nextDouble() * 100, () {
+        state.updateFever(dt);
+        stepFeatures();
+      });
       final firstBall = firstOfRound ??= launched;
       state.launchBall(launched);
       int frames = 0;
@@ -166,8 +244,20 @@ void main() {
           break;
         }
         state.updateFever(dt);
+        stepFeatures();
         engine.updateBalls(balls, dt);
         final hitPegs = engine.checkPegCollisions(balls, level.pegs);
+        for (final hit in engine.checkFeatureCollisions(balls, features)) {
+          if ((met[hit.ball] ??= {}).add(kindOf(hit.feature))) {
+            final kind = kindOf(hit.feature);
+            tally.featureBalls[kind] = (tally.featureBalls[kind] ?? 0) + 1;
+          }
+          if (hit.caught && hit.feature is Tulip) {
+            tally.tulipCatches++;
+            caught.add(hit.ball);
+            state.payTulip(hit.feature as Tulip);
+          }
+        }
         if (hitPegs.any((peg) => peg.type == PegType.special) &&
             level.allSpecialPegsHit &&
             !state.specialBonusTriggered) {
@@ -190,12 +280,31 @@ void main() {
           }
           state.scoreLanding(slot);
           tally.slots[slot.pointValue] = tally.slots[slot.pointValue]! + 1;
+          for (final kind in kinds) {
+            tally.levelLanded[kind] = (tally.levelLanded[kind] ?? 0) + 1;
+            tally.levelLandedPoints[kind] =
+                (tally.levelLandedPoints[kind] ?? 0) + slot.pointValue;
+          }
+          if (kinds.contains(FeatureKind.centreGate) &&
+              level.slots.indexOf(slot) == level.slots.length ~/ 2) {
+            tally.gateLevelCentre++;
+          }
+          // The ball that landed here: the one this step that is now in it
+          final landed = balls.where(
+              (ball) => ball.hasLanded && slot.containsPoint(ball.position));
+          for (final kind in landed.isEmpty
+              ? const <FeatureKind>{}
+              : met[landed.first] ?? const <FeatureKind>{}) {
+            tally.featureLanded[kind] = (tally.featureLanded[kind] ?? 0) + 1;
+            tally.featureLandedPoints[kind] =
+                (tally.featureLandedPoints[kind] ?? 0) + slot.pointValue;
+          }
           tally.byPosition[level.slots.indexOf(slot)]++;
         }
         for (final ball in balls) {
           if (!ball.isActive) {
             tally.balls++;
-            if (!ball.hasLanded) tally.gap++;
+            if (!ball.hasLanded && !caught.contains(ball)) tally.gap++;
             state.removeBall(ball);
           }
         }
@@ -207,6 +316,7 @@ void main() {
     tally.scores.add(state.score);
     if (tally.bonusRounds == 1) tally.bonusRoundScore = state.score;
     tally.feverPoints = state.feverPoints;
+    tally.tulipBalls = state.tulipBalls;
     state.dispose();
     return tally;
   }
@@ -264,6 +374,14 @@ void main() {
     });
     // ignore: avoid_print
     print('FEVER ${all.fever('all')}');
+    // ignore: avoid_print
+    print(
+        'FEATURE kind | rounds on a level with it | balls meeting it a round | '
+        'mean slot value of those balls | of every ball on those levels');
+    for (final kind in FeatureKind.values) {
+      // ignore: avoid_print
+      print('FEATURE ${all.feature(kind)}');
+    }
     // ignore: avoid_print
     print('ROW left to right | ${all.byPosition.map(all.pct).join(' | ')}');
   }, timeout: const Timeout(Duration(minutes: 20)));

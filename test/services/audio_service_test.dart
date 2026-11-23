@@ -282,6 +282,44 @@ void main() {
     });
   });
 
+  group('board features (#114)', () {
+    test('a windmill is a pin played lower, and the gate is quieter and low',
+        () {
+      for (final speed in [0.0, 300.0, AudioService.pegHitFullSpeed]) {
+        final pin = AudioService.pegHitToneFor(speed);
+        final windmill = AudioService.windmillToneFor(speed);
+        expect(windmill.volume, pin.volume);
+        expect(windmill.playbackRate, closeTo(pin.playbackRate * 0.6, 1e-9));
+        final gate = AudioService.gateToneFor(speed);
+        expect(gate.volume, closeTo(pin.volume * 0.8, 1e-9));
+        expect(gate.playbackRate, 0.7);
+      }
+    });
+
+    test('each feature plays its own sample at its own tone', () async {
+      await audioService.initialize();
+
+      await audioService.playTulipOpen();
+      await audioService.playTulipCatch();
+      await audioService.playWindmillHit(0);
+      await audioService.playGateHit(0);
+
+      final chimes = playersOf(SoundEffect.specialPeg);
+      verify(chimes[0].setPlaybackRate(AudioService.tulipOpenTone.playbackRate))
+          .called(1);
+      verify(chimes[1]
+              .setPlaybackRate(AudioService.tulipCatchTone.playbackRate))
+          .called(1);
+      final windmill = AudioService.windmillToneFor(0);
+      verify(playersOf(SoundEffect.pegHit)
+              .first
+              .setPlaybackRate(windmill.playbackRate))
+          .called(1);
+      verify(playersOf(SoundEffect.slotScore).first.setPlaybackRate(0.7))
+          .called(1);
+    });
+  });
+
   group('volume', () {
     setUp(() => audioService.initialize());
 

@@ -8,6 +8,7 @@ import '../models/level.dart';
 import '../models/peg.dart';
 import '../utils/constants.dart';
 import 'board_effects.dart';
+import 'board_features.dart';
 import 'floating_text.dart';
 import 'board_static_layer.dart';
 import 'first_round_hints.dart';
@@ -263,6 +264,8 @@ class _PachinkoBoardPainter extends CustomPainter {
 
     _drawAnimatedPegs(canvas, level,
         reducesMotion: reducesMotion, mirrored: mirrored);
+    // Tulips, the windmill and the centre gate move while a level is played
+    paintBoardFeatures(canvas, level.features, mirrored: mirrored);
     final prizes = level.pegs.where((peg) => peg.type == PegType.special);
     paintPrizeLamps(
       canvas,

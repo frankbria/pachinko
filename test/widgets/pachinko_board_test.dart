@@ -34,6 +34,7 @@ void main() {
     mockGameState = MockGameState();
     mockBallLauncher = MockBallLauncher();
     mockLevel = MockLevel();
+    when(mockLevel.features).thenReturn([]);
 
     // Stub GameManager properties
     when(mockGameManager.gameState).thenReturn(mockGameState);

@@ -47,6 +47,7 @@ The board changes colour every five levels. These are levels 1, 6, 11 and 16:
 ## What is in the game
 
 - **Levels without end.** Three peg layouts (triangle, random, hexagonal) take turns, and Next Level has no upper limit. The level picker opens any of the first 20 and shows your best score on each.
+- **Board features.** From level 3 the board has things to aim at. A gold tulip opens when the pin above it is hit, and a ball that falls into it while it is open pays out two more balls. A brass windmill turns and throws balls aside, and on every fifth level a gate rocks over the centre slot, turning balls away while it is level and guiding them in while it is steep. Tulips come on odd levels and a windmill on even ones, and after level 20 the tulips are on every level.
 - **Four colour bands.** Midnight, Lagoon, Plum and Ember, five levels each, then round again.
 - **18 achievements**, announced by a toast over whatever screen you are on. Some are milestones (First Launch, Marathon Runner), some take a good round (High Roller: 27,500 in one level), and some take luck or aim (Lucky Shot: the first ball of a round in a 2,000 slot; Combo King: every prize peg on a level with one ball).
 - **High scores.** The ten best scores for each level are kept on the device.
@@ -102,7 +103,7 @@ flutter analyze                       # must report nothing
 dart format lib test integration_test tool test_driver
 ```
 
-- **Tests.** More than 750 unit and widget tests and 10 golden image tests run on every pull request. 20 integration tests play the game on an Android emulator: `flutter test integration_test -d emulator-5554 --timeout 120s`.
+- **Tests.** More than 750 unit and widget tests and 15 golden image tests run on every pull request. 21 integration tests play the game on an Android emulator: `flutter test integration_test -d emulator-5554 --timeout 120s`.
 - **CI gates**, in order: analyzer, formatting, generated mocks up to date, tests, coverage of at least 85% on the lines a pull request changes, and golden tests. A second job builds the Android app in profile mode.
 - **Balance.** `flutter test tool/scoring_simulation_test.dart --dart-define=LEVELS=60 --dart-define=ROUNDS=20` plays whole rounds through the real generator, launcher and physics and prints where balls land, how often the bonus triggers and what rounds score. Run it before and after any change to levels, scoring or the bonus.
 - **Workflow.** Work on a branch, use conventional commits (`feat:`, `fix:`, `docs:`), and open a pull request to `master`.

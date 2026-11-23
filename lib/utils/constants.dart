@@ -131,6 +131,67 @@ class GameConstants {
     return grown < bonusBallsMax ? grown : bonusBallsMax;
   }
 
+  // Board features (#114): which levels have which is Level.featureKindsFor.
+  // Where they stand and how they behave were set with
+  // `tool/scoring_simulation_test.dart`, so that the bonus still comes in 35
+  // to 50% of rounds on every band of levels.
+
+  /// A tulip's body, and where the two stand: in the pins, one each side of
+  /// the prize column. Lower down they stood in the two streams of balls
+  /// down the sides and knocked them inwards onto the prize pegs, and the
+  /// bonus came in four rounds out of five. Each tulip's trigger pin is
+  /// [tulipTriggerOffsetX] outwards and [tulipTriggerRise] up from it, so a
+  /// ball can still fall into its mouth from straight above.
+  static const double tulipRadius = 12.0;
+  static const double tulipLeftX = 110.0;
+  static const double tulipRightX = 290.0;
+  static const double tulipY = 250.0;
+  static const double tulipTriggerOffsetX = 22.0;
+  static const double tulipTriggerRise = 42.0;
+  static const double tulipTriggerRadius = 9.5;
+
+  /// How long a tulip stays open after its trigger pin is hit, in seconds of
+  /// play, unless it catches a ball first.
+  static const double tulipOpenSeconds = 0.6;
+
+  /// How far from straight up, in radians, a ball can meet an open tulip and
+  /// still fall into its mouth.
+  static const double tulipMouthHalfAngle = 0.4;
+
+  /// The balls a tulip pays for each ball it catches: about four a round on
+  /// a level with tulips. Paid balls are more chances at the prize pegs, so
+  /// this moves the bonus rate.
+  static const int tulipPayoutBalls = 2;
+
+  /// A windmill: four blades of [windmillBladeLength] from a hub at
+  /// ([windmillX], [windmillY]), turning at [windmillSpin] radians a second
+  /// of play. It turns anticlockwise, so its top throws balls out towards
+  /// the wall and not in towards the prize pegs.
+  static const double windmillX = 100.0;
+  static const double windmillY = 320.0;
+  static const double windmillBladeLength = 24.0;
+  static const int windmillBlades = 4;
+  static const double windmillSpin = -3.0;
+
+  /// Half the thickness of a windmill blade and of the centre gate's bar.
+  static const double featureBarHalfThickness = 2.5;
+
+  /// The centre gate: a bar of half length [centreGateHalfLength] that
+  /// rocks about a pivot at the mouth of the centre slot, [centreGateY]
+  /// down, up to [centreGateSwing] radians either way of level and back
+  /// every [centreGatePeriod] seconds of play. Level, it turns balls away
+  /// from the slot; steep, it guides them down its length into it.
+  static const double centreGateY = 530.0;
+  static const double centreGateHalfLength = 18.0;
+  static const double centreGateSwing = 1.05;
+  static const double centreGatePeriod = 3.2;
+
+  /// The step down the prize column on a level with the centre gate, in
+  /// place of [prizeColumnStep]: shorter, so that the lowest prize peg leaves
+  /// a ball room past the gate. Lifting the whole column instead made the
+  /// bonus come in seven rounds out of ten on those levels.
+  static const double centreGateColumnStep = 32.0;
+
   // Bonus balls drop from the top of the playfield, above the first peg row
   static const double bonusBallSpawnY = 70.0;
   static const double bonusBallSpawnMinX = 120.0;
