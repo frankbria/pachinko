@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
+import 'package:pachinko_game/models/game_settings.dart';
 import 'package:pachinko_game/screens/menu_screen.dart';
 import 'package:pachinko_game/services/game_manager.dart';
 import 'package:pachinko_game/models/game_state.dart';
@@ -31,6 +32,8 @@ void main() {
     when(mockGameManager.ballLauncher).thenReturn(mockBallLauncher);
     // No first-round hint: those are tested in first_round_hints_test.dart
     when(mockGameManager.showsLaunchHint).thenReturn(false);
+    when(mockGameManager.settings).thenReturn(const GameSettings());
+    when(mockGameManager.lastLanding).thenReturn(ValueNotifier(null));
     when(mockGameManager.prizePegHint).thenReturn(null);
 
     // Stub GameState properties

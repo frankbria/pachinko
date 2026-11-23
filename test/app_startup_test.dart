@@ -12,6 +12,7 @@ import 'package:pachinko_game/main.dart';
 import 'package:pachinko_game/screens/menu_screen.dart';
 import 'package:pachinko_game/services/game_manager.dart';
 import 'package:pachinko_game/services/storage_service.dart';
+import 'package:pachinko_game/utils/constants.dart';
 
 /// A preferences store that does not answer until the test lets it, to
 /// stand for a phone whose storage loads after the first frame.
@@ -42,7 +43,10 @@ void main() {
     testWidgets(
         'given a saved choice, when storage arrives, then the manager takes it and saves through it',
         (tester) async {
-      final store = _GatedStore({'flutter.setting_single_ball_launch': false});
+      final store = _GatedStore({
+        'flutter.setting_single_ball_launch': false,
+        'flutter.setting_sound_on': false,
+      });
       SharedPreferencesStorePlatform.instance = store;
       SharedPreferences.resetStatic();
 
@@ -56,16 +60,20 @@ void main() {
       // The settings screen is already open when storage answers
       await tester.tap(find.text('Settings'));
       await tester.pumpAndSettle();
-      expect(tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
-          isTrue);
+      final launchModeSwitch = find.ancestor(
+          of: find.text(GameStrings.singleBallLaunch),
+          matching: find.byType(SwitchListTile));
+      expect(manager.settings.soundOn, isTrue);
+      expect(tester.widget<SwitchListTile>(launchModeSwitch).value, isTrue);
 
       store.gate.complete();
       await tester.pumpAndSettle();
 
       expect(manager.gameState.singleBallLaunch, isFalse,
           reason: 'the saved choice, once storage has answered');
-      expect(tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
-          isFalse,
+      expect(manager.settings.soundOn, isFalse,
+          reason: 'and the saved sound setting with it');
+      expect(tester.widget<SwitchListTile>(launchModeSwitch).value, isFalse,
           reason: 'the open screen follows');
       await manager.setSingleBallLaunch(true);
       expect(

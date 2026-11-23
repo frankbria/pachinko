@@ -24,6 +24,9 @@ class HapticsService {
     return () => stopwatch.elapsed;
   }
 
+  /// Whether the phone vibrates. While false every pulse is dropped.
+  bool enabled = true;
+
   final Duration Function() _clock;
   Duration? _lastPulseAt;
   HapticStrength _lastStrength = HapticStrength.light;
@@ -43,6 +46,7 @@ class HapticsService {
   void bonus() => _pulse(HapticStrength.heavy);
 
   void _pulse(HapticStrength strength) {
+    if (!enabled) return;
     final now = _clock();
     final last = _lastPulseAt;
     if (last != null &&

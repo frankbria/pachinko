@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:vector_math/vector_math_64.dart' show Vector2;
+import 'package:pachinko_game/models/ball.dart';
+import 'package:pachinko_game/models/game_settings.dart';
 import 'package:pachinko_game/models/peg.dart';
 import 'package:pachinko_game/services/game_manager.dart';
 import 'package:pachinko_game/utils/constants.dart';
@@ -212,5 +214,97 @@ void main() {
     expect(scrim, lessThan(firstBall));
     expect(scrim, lessThan(firstConfetti));
     await tester.pump(const Duration(seconds: 4));
+  });
+
+  group('reduced motion', () {
+    /// The player's choice, or the system's when the player has not chosen:
+    /// no confetti, a prize peg whose rings hold still, a short trail.
+    Future<(GameManager, CustomPainter)> reducedBoard(WidgetTester tester,
+        {bool? chosen, bool system = false}) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          FakeAccessibilityFeatures(disableAnimations: system);
+      addTearDown(
+          tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+      final manager = GameManager();
+      addTearDown(manager.dispose);
+      await manager.updateSettings((_) => GameSettings(reducedMotion: chosen));
+      return (manager, await pumpBoard(tester, manager));
+    }
+
+    testWidgets('given it chosen, then no confetti is drawn', (tester) async {
+      final (manager, painter) = await reducedBoard(tester, chosen: true);
+      manager.gameState.spawnConfetti(Vector2(200, 300), 12);
+
+      final canvas = TestRecordingCanvas();
+      painter.paint(canvas, const Size(400, 600));
+
+      expect(
+          canvas.invocations
+              .where((recorded) => recorded.invocation.memberName == #rotate),
+          isEmpty);
+      await tester.pump(const Duration(seconds: 3));
+    });
+
+    testWidgets(
+        'given the system asks for it, then a prize peg does not shimmer and the board ticker rests',
+        (tester) async {
+      final (manager, painter) = await reducedBoard(tester, system: true);
+      final prize = manager.gameState.currentLevel!.specialPegs.first;
+      List<double> ringStrengths() => circlesAt(painter, prize)
+          .where(isRing)
+          .map((ring) => paintOf(ring).color.a)
+          .toList();
+
+      final before = ringStrengths();
+      await tester.pump(const Duration(milliseconds: 600));
+
+      expect(before, hasLength(2), reason: 'still a prize, with its rings');
+      expect(ringStrengths(), before);
+      expect(tester.binding.hasScheduledFrame, isFalse,
+          reason: 'nothing on the board is animating');
+    });
+
+    testWidgets(
+        'given the player turned it off, then the shimmer runs even though the system asks for less motion',
+        (tester) async {
+      final (manager, painter) =
+          await reducedBoard(tester, chosen: false, system: true);
+      final prize = manager.gameState.currentLevel!.specialPegs.first;
+      double ringStrength() =>
+          paintOf(circlesAt(painter, prize).firstWhere(isRing)).color.a;
+
+      await tester.pump(const Duration(milliseconds: 100));
+      final before = ringStrength();
+      await tester.pump(const Duration(milliseconds: 600));
+
+      expect(ringStrength(), isNot(closeTo(before, 0.001)));
+    });
+
+    testWidgets('given it chosen, then a ball trails only its last positions',
+        (tester) async {
+      // A ball with a full trail behind it, standing still: the trail circles
+      // are the ball's colour and no wider than the ball
+      final (manager, painter) = await reducedBoard(tester, chosen: true);
+      final ball = Ball(position: Vector2(200, 300));
+      for (var step = 0; step < Ball.maxTrailLength; step++) {
+        ball.position = Vector2(200, 200 + step * 10.0);
+        ball.recordTrail();
+      }
+      ball.position = Vector2(200, 400);
+      manager.gameState.launchBall(ball);
+
+      final canvas = TestRecordingCanvas();
+      painter.paint(canvas, const Size(400, 600));
+      final trailPoints = ball.trail
+          .map((point) => Offset(point.x, point.y))
+          .where((point) => canvas.invocations.any((recorded) =>
+              recorded.invocation.memberName == #drawCircle &&
+              recorded.invocation.positionalArguments[0] == point))
+          .toList();
+
+      expect(trailPoints, hasLength(reducedMotionTrailLength));
+      expect(trailPoints.last, Offset(ball.trail.last.x, ball.trail.last.y));
+      manager.stopLoop();
+    });
   });
 }

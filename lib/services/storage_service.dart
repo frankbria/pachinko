@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/game_settings.dart';
 import '../models/high_score.dart';
 
 /// Service for persisting high scores to local storage.
@@ -31,6 +32,35 @@ class StorageService {
   /// Saves the player's choice for [singleBallLaunch].
   Future<void> saveSingleBallLaunch(bool value) async {
     await _prefs.setBool(_singleBallLaunchKey, value);
+  }
+
+  static const String _soundOnKey = 'setting_sound_on';
+  static const String _soundVolumeKey = 'setting_sound_volume';
+  static const String _vibrationOnKey = 'setting_vibration_on';
+  static const String _reducedMotionKey = 'setting_reduced_motion';
+
+  /// The player's sound, vibration and motion settings, or the defaults of a
+  /// new install for any not chosen yet.
+  GameSettings get settings {
+    const defaults = GameSettings();
+    return GameSettings(
+      soundOn: _prefs.getBool(_soundOnKey) ?? defaults.soundOn,
+      soundVolume: _prefs.getDouble(_soundVolumeKey) ?? defaults.soundVolume,
+      vibrationOn: _prefs.getBool(_vibrationOnKey) ?? defaults.vibrationOn,
+      reducedMotion: _prefs.getBool(_reducedMotionKey),
+    );
+  }
+
+  /// Saves [settings]. Reduced motion is stored only once the player has
+  /// chosen it, so that until then it follows the system.
+  Future<void> saveSettings(GameSettings settings) async {
+    await _prefs.setBool(_soundOnKey, settings.soundOn);
+    await _prefs.setDouble(_soundVolumeKey, settings.soundVolume);
+    await _prefs.setBool(_vibrationOnKey, settings.vibrationOn);
+    final reducedMotion = settings.reducedMotion;
+    if (reducedMotion != null) {
+      await _prefs.setBool(_reducedMotionKey, reducedMotion);
+    }
   }
 
   static const String _launchHintShownKey = 'hint_launch_shown';

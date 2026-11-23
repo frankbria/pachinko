@@ -84,6 +84,10 @@ class AudioService {
   /// The volume set by [setVolume], 0 to 1.
   double _volume = 1.0;
 
+  /// Whether sounds play. While false every sound asked for is dropped; the
+  /// players stay loaded, so turning sound back on is immediate.
+  bool enabled = true;
+
   bool _initialized = false;
 
   /// Set by [dispose]. No sound is loaded or started afterwards.
@@ -201,7 +205,7 @@ class AudioService {
 
   /// Plays [effect] at [tone] on its next free player. Never throws.
   Future<void> _play(SoundEffect effect, SoundTone tone) async {
-    if (_disposed) return;
+    if (_disposed || !enabled) return;
     final player = _nextFreeVoice(effect);
     if (player == null) return;
     _starting.add(player);
@@ -245,6 +249,9 @@ class AudioService {
 
   /// Plays the bonus fanfare.
   Future<void> playBonusTrigger() => _play(SoundEffect.bonusTrigger, _plain);
+
+  /// The volume every sound is scaled by, 0 to 1.
+  double get volume => _volume;
 
   /// Sets the volume of every sound from now on, clamped to 0 to 1.
   void setVolume(double volume) {

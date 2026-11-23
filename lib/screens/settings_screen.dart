@@ -4,17 +4,25 @@ import '../services/game_manager.dart';
 import '../utils/constants.dart';
 import '../widgets/achievement_toast_overlay.dart';
 
-/// The game's settings. One so far: whether a ball may only be launched once
-/// no ball is in play.
+/// The game's settings: whether a ball may only be launched once no ball is
+/// in play, sound and its volume, vibration and reduced motion.
 ///
-/// The choice goes through [GameManager.setSingleBallLaunch], which applies
-/// it to the game and saves it.
+/// Each choice goes through the manager ([GameManager.setSingleBallLaunch],
+/// [GameManager.updateSettings]), which applies it to the game at once and
+/// saves it.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final gameManager = context.watch<GameManager>();
+    final settings = gameManager.settings;
+    final reducesMotion = settings.reducesMotion(
+        systemDisablesAnimations: MediaQuery.disableAnimationsOf(context));
+    // Each control changes one setting of the manager's own at the moment of
+    // the change, not of those built here: two changes before a rebuild must
+    // both stand, and so must the stored settings a change does not touch
+    final change = gameManager.updateSettings;
 
     // Toasts start below the app bar: one at the top would lie over the
     // title and the Back button
@@ -28,6 +36,40 @@ class SettingsScreen extends StatelessWidget {
             subtitle: const Text(GameStrings.singleBallLaunchHint),
             value: gameManager.gameState.singleBallLaunch,
             onChanged: gameManager.setSingleBallLaunch,
+          ),
+          SwitchListTile(
+            title: const Text(GameStrings.soundEffects),
+            value: settings.soundOn,
+            onChanged: (on) =>
+                change((current) => current.copyWith(soundOn: on)),
+          ),
+          ListTile(
+            title: const Text(GameStrings.volume),
+            subtitle: Slider(
+              value: settings.soundVolume,
+              divisions: 10,
+              label: '${(settings.soundVolume * 100).round()}%',
+              semanticFormatterCallback: (volume) =>
+                  '${(volume * 100).round()}%',
+              onChanged: settings.soundOn
+                  ? (volume) =>
+                      change((current) => current.copyWith(soundVolume: volume))
+                  : null,
+            ),
+          ),
+          SwitchListTile(
+            title: const Text(GameStrings.vibration),
+            subtitle: const Text(GameStrings.vibrationHint),
+            value: settings.vibrationOn,
+            onChanged: (on) =>
+                change((current) => current.copyWith(vibrationOn: on)),
+          ),
+          SwitchListTile(
+            title: const Text(GameStrings.reducedMotion),
+            subtitle: const Text(GameStrings.reducedMotionHint),
+            value: reducesMotion,
+            onChanged: (reduce) =>
+                change((current) => current.copyWith(reducedMotion: reduce)),
           ),
         ],
       ),

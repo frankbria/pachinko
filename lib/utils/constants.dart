@@ -237,6 +237,20 @@ class GameStrings {
   static const String singleBallLaunch = 'One ball at a time';
   static const String singleBallLaunchHint =
       'Wait for the ball in play to land before launching the next. Turn off to launch as many as you like.';
+  static const String soundEffects = 'Sound effects';
+  static const String volume = 'Volume';
+  static const String vibration = 'Vibration';
+  static const String vibrationHint =
+      'A tick for a pin, stronger for a prize peg, a high slot and the bonus';
+  static const String reducedMotion = 'Reduced motion';
+  static const String reducedMotionHint =
+      'No confetti or shimmer, and a short trail behind the ball. Follows the system until changed.';
+
+  /// What a screen reader hears when a ball lands: "1,000 points, centre
+  /// slot". [points] is already written with its thousands grouped.
+  static String ballLanded(String points, String slotName) =>
+      '$points points, $slotName slot';
+  static const String back = 'Back';
   static const String play = 'Play';
   static const String pause = 'Pause';
   static const String resume = 'Resume';
@@ -252,6 +266,7 @@ class GameStrings {
   static const String score = 'Score';
   static const String level = 'Level';
   static const String ballsRemaining = 'Balls';
+  static const String ballsLeft = 'Balls left';
   static const String specialBonus = 'Special Bonus!';
   static const String ballsAdded = 'Bonus Balls Added!';
 }
