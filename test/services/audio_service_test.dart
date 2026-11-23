@@ -91,6 +91,42 @@ void main() {
       expect(context.android.audioFocus, AndroidAudioFocus.none);
     });
 
+    test('a sound\'s other players load only once its first has loaded',
+        () async {
+      // On Android a player that joins a sound still loading on another
+      // copies a sample that does not exist yet, and never sounds
+      final firstLoad = Completer<void>();
+      final service = AudioService(createPlayer: () {
+        final player = newPlayer();
+        if (players.length == 1) {
+          when(player.setSource(any)).thenAnswer((_) => firstLoad.future);
+        }
+        return player;
+      });
+      final initialized = service.initialize();
+      await Future<void>.delayed(Duration.zero);
+
+      final launch = players.sublist(0, SoundEffect.launch.voices);
+      verify(launch[0].setSource(any)).called(1);
+      verifyNever(launch[1].setSource(any));
+      // Other sounds are not held up by this one
+      verify(players[SoundEffect.launch.voices].setSource(any)).called(1);
+
+      firstLoad.complete();
+      await initialized;
+      verify(launch[1].setSource(any)).called(1);
+      await service.dispose();
+    });
+
+    test('turns off the players\' position updates, which effects never use',
+        () async {
+      await audioService.initialize();
+
+      for (final player in players) {
+        verify(player.positionUpdater = null).called(1);
+      }
+    });
+
     test('initializing again makes no more players', () async {
       await audioService.initialize();
       final count = players.length;
@@ -346,6 +382,26 @@ void main() {
         verify(player.dispose()).called(1);
       }
       verifyNever(launch.resume());
+    });
+
+    test('a sound still resuming: the players outlive it', () async {
+      await audioService.initialize();
+      final launch = playersOf(SoundEffect.launch).first;
+      final resuming = Completer<void>();
+      when(launch.resume()).thenAnswer((_) => resuming.future);
+      final sound = audioService.playLaunch();
+      await Future<void>.delayed(Duration.zero);
+
+      final disposed = audioService.dispose();
+      await Future<void>.delayed(Duration.zero);
+      verifyNever(launch.dispose());
+      await audioService.playLaunch();
+      verify(launch.resume()).called(1);
+
+      resuming.complete();
+      await disposed;
+      await sound;
+      verify(launch.dispose()).called(1);
     });
 
     test('the preload still running: the players outlive it', () async {

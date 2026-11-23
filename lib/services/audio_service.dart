@@ -133,19 +133,29 @@ class AudioService {
     _initialized = true;
     final loads = <Future<void>>[];
     for (final effect in SoundEffect.values) {
+      final voices = <AudioPlayer>[];
       for (var voice = 0; voice < effect.voices; voice++) {
-        final AudioPlayer player;
         try {
-          player = _createPlayer();
+          voices.add(_createPlayer());
         } catch (e) {
           debugPrint('AudioService: no player for ${effect.name}: $e');
-          continue;
         }
-        _players.add(player);
-        loads.add(_loadVoice(effect, player));
       }
+      _players.addAll(voices);
+      if (voices.isNotEmpty) loads.add(_loadEffect(effect, voices));
     }
     await Future.wait(loads);
+  }
+
+  /// Loads [effect] onto its first player, then onto the rest. On Android a
+  /// player given a sound that another is still loading copies that one's
+  /// sample before it exists, and never sounds; once the first has loaded,
+  /// the others share its sample.
+  Future<void> _loadEffect(SoundEffect effect, List<AudioPlayer> voices) async {
+    await _loadVoice(effect, voices.first);
+    await Future.wait([
+      for (final player in voices.skip(1)) _loadVoice(effect, player),
+    ]);
   }
 
   Future<void> _loadVoice(SoundEffect effect, AudioPlayer player) async {
@@ -158,6 +168,10 @@ class AudioService {
   }
 
   Future<void> _load(SoundEffect effect, AudioPlayer player) async {
+    // A sound effect needs no position. The player's own updater would ask
+    // the platform for one on every frame after each start, unawaited, and
+    // a SoundPool sound never reports that it has finished to stop it
+    player.positionUpdater = null;
     await player.setPlayerMode(PlayerMode.lowLatency);
     await player.setAudioContext(_effectsContext);
     await player.setReleaseMode(ReleaseMode.stop);

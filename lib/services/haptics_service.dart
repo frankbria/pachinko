@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 /// How strongly the phone vibrates, weakest first.
@@ -51,13 +52,20 @@ class HapticsService {
     }
     _lastPulseAt = now;
     _lastStrength = strength;
-    switch (strength) {
-      case HapticStrength.light:
-        HapticFeedback.lightImpact();
-      case HapticStrength.medium:
-        HapticFeedback.mediumImpact();
-      case HapticStrength.heavy:
-        HapticFeedback.heavyImpact();
+    _vibrate(strength);
+  }
+
+  /// Nothing awaits a vibration, so a platform that fails one is logged
+  /// rather than left to raise an error no caller can catch.
+  Future<void> _vibrate(HapticStrength strength) async {
+    try {
+      await switch (strength) {
+        HapticStrength.light => HapticFeedback.lightImpact(),
+        HapticStrength.medium => HapticFeedback.mediumImpact(),
+        HapticStrength.heavy => HapticFeedback.heavyImpact(),
+      };
+    } catch (e) {
+      debugPrint('HapticsService: could not vibrate: $e');
     }
   }
 }

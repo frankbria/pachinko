@@ -98,6 +98,17 @@ void main() {
     });
   });
 
+  test('a platform that fails to vibrate raises nothing', () async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      throw PlatformException(code: 'no-vibrator');
+    });
+
+    // An error escaping the unawaited vibration would fail this test
+    haptics.bonus();
+    await Future<void>.delayed(Duration.zero);
+  });
+
   test('without a clock of its own it reads elapsed real time', () {
     final realTime = HapticsService();
     realTime.pin();
