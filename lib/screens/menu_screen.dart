@@ -289,37 +289,42 @@ class _LevelTile extends StatelessWidget {
               width: 1.5,
             ),
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '$levelNumber',
-                style: TextStyle(
-                  color: isOpen
-                      ? GameConstants.inkColor
-                      : GameConstants.mutedColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-              if (!isOpen)
-                const Icon(Icons.lock,
-                    size: 14, color: GameConstants.mutedColor)
-              else
-                StarRow(stars: stars, size: 12),
-              if (score != null)
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    groupedThousands(score),
-                    style: const TextStyle(
-                      color: GameConstants.secondaryColor,
+          // A small phone's tile is narrower than three stars: the whole
+          // of its content scales down to fit, never past its edge
+          child: Padding(
+            padding: const EdgeInsets.all(2),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '$levelNumber',
+                    style: TextStyle(
+                      color: isOpen
+                          ? GameConstants.inkColor
+                          : GameConstants.mutedColor,
                       fontWeight: FontWeight.bold,
-                      fontSize: 11,
+                      fontSize: 18,
                     ),
                   ),
-                ),
-            ],
+                  if (!isOpen)
+                    const Icon(Icons.lock,
+                        size: 14, color: GameConstants.mutedColor)
+                  else
+                    StarRow(stars: stars, size: 12),
+                  if (score != null)
+                    Text(
+                      groupedThousands(score),
+                      style: const TextStyle(
+                        color: GameConstants.secondaryColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

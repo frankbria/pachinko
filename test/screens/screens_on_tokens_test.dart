@@ -290,6 +290,26 @@ void main() {
           reason: 'only its number');
     });
 
+    // The CI emulator's screen gives a tile about 31 by 39 pixels, narrower
+    // than three stars: an overflow there fails this test
+    testWidgets(
+        'given a small phone and every kind of tile, then nothing overflows its tile',
+        (tester) async {
+      await storage.saveHighScore(1, StarTargets.forLevel(1).three + 123456);
+      await storage.saveHighScore(2, StarTargets.forLevel(2).one);
+      await storage.saveHighScore(9, 1200);
+      await pump(tester, const MenuScreen());
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1.0;
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Select Level'));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.lock), findsWidgets);
+      expect(find.byIcon(Icons.star), findsWidgets);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets(
         'given the picker, then all twenty levels are on screen without scrolling',
         (tester) async {
