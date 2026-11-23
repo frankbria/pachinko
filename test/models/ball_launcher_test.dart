@@ -289,12 +289,15 @@ void main() {
     });
 
     test(
-        'given the least launch speed, then it is enough to leave the channel, and the most is enough to ride the dome over its top',
+        'given the least launch speed, then it is enough to leave the channel, and the most is not enough to ride the dome over its top',
         () {
       // The dome is close to a parabola 105 high over a half-width of 180. A
       // ball rides it while its sideways speed exceeds that of a projectile
       // following the same curve; it loses a little under a third of its
-      // speed turning onto the dome, and height takes more on the way up
+      // speed turning onto the dome, and height takes more on the way up. A
+      // ball that rode it over the top would ride it down to the far foot
+      // and be turned back by the wall there, out of the order of entry
+      // points that makes power aim (#112)
       const sag = GameConstants.topCurveStartY -
           (GameConstants.topCurveStartY + GameConstants.topCurveControlY) / 2;
       const halfWidth =
@@ -304,7 +307,7 @@ void main() {
 
       expect(
           GameConstants.launchSpeedMax * 0.72,
-          greaterThan(math
+          lessThan(math
               .sqrt(rideSpeed * rideSpeed + 2 * GameConstants.gravity * sag)));
       expect(GameConstants.launchSpeedMin, greaterThan(300));
       expect(GameConstants.launchSpeedMin, lessThan(rideSpeed));

@@ -97,8 +97,9 @@ class BallLauncher {
       // The top of the channel: the ball is let go at the speed it came up
       // with, and the physics has it from here. Where it comes down depends
       // on how far that speed carries it along the dome
-      _currentBall!.position = _launchPath.last.clone();
-      _currentBall!.velocity = Vector2(0, -speed);
+      final released = releasedBall(_launchPower);
+      _currentBall!.position = released.position;
+      _currentBall!.velocity = released.velocity;
       _phase = LaunchPhase.released;
       return true; // Ball is now released to physics
     }
@@ -129,13 +130,26 @@ class BallLauncher {
     return false; // Ball still traveling on guided path
   }
 
-  /// The speed the ball travels up the channel and leaves it with: between
-  /// [GameConstants.launchSpeedMin] and [GameConstants.launchSpeedMax],
-  /// by the launch power.
-  double get _launchSpeed =>
+  /// The speed the ball travels up the channel and leaves it with.
+  double get _launchSpeed => launchSpeedFor(_launchPower);
+
+  /// The speed a launch at [power] (0 to 100) leaves the channel with:
+  /// between [GameConstants.launchSpeedMin] and
+  /// [GameConstants.launchSpeedMax].
+  static double launchSpeedFor(double power) =>
       GameConstants.launchSpeedMin +
-      (_launchPower / _maxPower) *
+      (power.clamp(0.0, 100.0) / 100.0) *
           (GameConstants.launchSpeedMax - GameConstants.launchSpeedMin);
+
+  /// The ball as the channel lets it go after a launch at [power]: at the
+  /// top of the channel, moving straight up. From there only the physics
+  /// moves it, so this is where a prediction of its flight starts.
+  static Ball releasedBall(double power) => Ball(
+        position:
+            Vector2(GameConstants.ballLaunchX, GameConstants.launchChannelEndY),
+        velocity: Vector2(0, -launchSpeedFor(power)),
+        color: GameConstants.ballColor,
+      );
 
   void reset() {
     _phase = LaunchPhase.ready;

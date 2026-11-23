@@ -23,6 +23,18 @@ class GameConstants {
   /// it per second of play, so it does not change with the step.
   static const double airResistance = 0.999;
   static const double bounceDamping = 0.7;
+
+  /// The share of a ball's speed into a pin that a pin gives back.
+  static const double pinRestitution = 0.8;
+
+  /// The pins whose centres are above this height are the entry rows. They
+  /// catch a ball coming in off the dome: they give back
+  /// [entryPinRestitution] of its speed into them and keep
+  /// [entryPinGrip] of its speed along them, so the ball falls on from
+  /// about where the launch put it and launch power is aim (#112)
+  static const double entryRowsBottomY = 230.0;
+  static const double entryPinRestitution = 0.1;
+  static const double entryPinGrip = 0.2;
   static const double minVelocity = 10.0;
 
   // Ball constants
@@ -62,10 +74,12 @@ class GameConstants {
   /// How fast a ball leaves the top of the launch channel, moving straight
   /// up, at no power and at full power. From there the physics has it: it
   /// meets the dome and rides it for as long as its speed presses it there.
-  /// The least must carry a ball out of the channel's mouth into the field;
-  /// the most must carry it over the top of the dome to the far side (#96)
-  static const double launchSpeedMin = 350.0;
-  static const double launchSpeedMax = 850.0;
+  /// The least must carry a ball out of the channel's mouth into the field
+  /// (#96); the most carries it under the top of the dome to come down by
+  /// the far wall, short of riding the dome down to its far foot, where the
+  /// wall would turn it back and break the order of entry points (#112)
+  static const double launchSpeedMin = 370.0;
+  static const double launchSpeedMax = 775.0;
 
   // Field boundary constants (playfield area where balls interact with pegs/slots)
   // Left boundary slightly inside the board to align near leftmost slot
@@ -90,6 +104,20 @@ class GameConstants {
       -100.0; // Above the board, so the curve bows upward
   static const double topCurveEndX = 390.0;
   static const double topCurveEndY = 110.0;
+
+  /// The dome's height at [x], between [topCurveStartX] and [topCurveEndX].
+  /// The control point is midway between the ends, so x moves evenly along
+  /// the curve and its parameter is the share of the way across.
+  static double topCurveYAt(double x) {
+    final t = (x - topCurveStartX) / (topCurveEndX - topCurveStartX);
+    return (1 - t) * (1 - t) * topCurveStartY +
+        2 * (1 - t) * t * topCurveControlY +
+        t * t * topCurveEndY;
+  }
+
+  /// Where a launched ball enters the pin field: the height at which it
+  /// comes down past the dome's feet (#112).
+  static const double fieldEntryY = topCurveStartY;
 
   // Game constants
   static const int ballsPerRound = 20;

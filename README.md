@@ -33,7 +33,7 @@ The board changes colour every five levels. These are levels 1, 6, 11 and 16:
 
 ## How a round plays
 
-1. **Launch.** Drag the plunger at the bottom right and let go. The launch channel fills with light as the power builds. Power is how you aim: a soft launch drops the ball beside the channel, a full one rides the dome over to the far side.
+1. **Launch.** Drag the plunger at the bottom right and let go. The launch channel fills with light as the power builds. Power is how you aim: a soft launch drops the ball beside the channel, a full one flies under the dome to the far side, and while you drag, a mark on the dome shows where the ball will come down. The top rows of pins catch it there; below them the fall is luck.
 2. **Fall.** From the top of the channel only the physics moves the ball. It bounces down through the pins, and each pin it hits flashes and sounds.
 3. **Score.** The ball lands in one of seven slots:
 

@@ -367,6 +367,26 @@ void paintLaunchPower(Canvas canvas, double ratio, {bool mirrored = false}) {
       paint: () => label.paint(canvas, labelAt));
 }
 
+/// How far the entry marker hangs below the dome, and its half width.
+const double entryMarkerDepth = 9;
+const double entryMarkerHalfWidth = 5;
+
+/// Marks, while the player charges, where a ball launched at this power
+/// will enter the pin field: a small point hanging from the dome above
+/// [entryX], in the colour of launch power at [ratio] (#112). It sits in the
+/// clearance the pegs keep from the dome, so it never covers a peg.
+void paintEntryMarker(Canvas canvas, double entryX, double ratio) {
+  final domeY = GameConstants.topCurveYAt(entryX);
+  canvas.drawPath(
+    Path()
+      ..moveTo(entryX - entryMarkerHalfWidth, domeY)
+      ..lineTo(entryX + entryMarkerHalfWidth, domeY)
+      ..lineTo(entryX, domeY + entryMarkerDepth)
+      ..close(),
+    Paint()..color = launchPowerColour(ratio),
+  );
+}
+
 /// Draws the plunger the resting ball sits on: a cap under the ball and a
 /// shaft below it, in chrome.
 void paintPlunger(Canvas canvas) {

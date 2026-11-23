@@ -8,7 +8,11 @@
 //     flutter test tool/scoring_simulation_test.dart \
 //       --dart-define=LEVELS=60 --dart-define=ROUNDS=20
 //
-// and read the lines that start with SIM and BAND. To compare two commits,
+// and read the lines that start with SIM and BAND. The lines that start with
+// AIM say whether launch power is aim (#112): for each of levels 1 to
+// AIM_LEVELS (30), points per ball in each 5-point band of power against
+// points per ball over all power, with AIM_BALLS (100) balls per band. That
+// table takes most of the run's few minutes. To compare two commits,
 // copy this file into a checkout of each: it uses what GameState,
 // BallLauncher, PhysicsEngine and Level have offered since #6, and the fixed
 // step and seeding added in #108. For a commit older than #108, run that
@@ -23,6 +27,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pachinko_game/models/ball.dart';
 import 'package:pachinko_game/models/ball_launcher.dart';
 import 'package:pachinko_game/models/game_state.dart';
+import 'package:pachinko_game/models/level.dart';
 import 'package:pachinko_game/models/peg.dart';
 import 'package:pachinko_game/services/achievement_service.dart';
 import 'package:pachinko_game/services/game_manager.dart';
@@ -183,6 +188,80 @@ void main() {
     state.dispose();
     return tally;
   }
+
+  /// The points one ball launched at [power] on [level] wins: 0 when it
+  /// leaves play without landing or comes to rest in the field. [seed] seeds
+  /// its bounces.
+  int pointsForBall(Level level, double power, int seed) {
+    final engine = PhysicsEngine()..seed(seed);
+    final ball = launchedBall(power);
+    for (int step = 0; step < maxFrames && ball.isActive; step++) {
+      engine.updateBalls([ball], dt);
+      engine.checkPegCollisions([ball], level.pegs);
+      final landed = engine.checkSlotCollisions([ball], level.slots);
+      if (landed.isNotEmpty) return landed.first.pointValue;
+    }
+    return 0;
+  }
+
+  // Whether aim pays (#112): on each level, points per ball for launches
+  // spread evenly over each band of power, against launches spread over all
+  // power. The best band is picked on one set of bounce seeds and measured
+  // with other powers and other bounce seeds, so that the luck of the draw
+  // that made a band look best does not count towards it.
+  test('aim by power band', () {
+    const aimLevels = int.fromEnvironment('AIM_LEVELS', defaultValue: 30);
+    const ballsPerBand = int.fromEnvironment('AIM_BALLS', defaultValue: 100);
+    const bandWidth = 5;
+    const bands = 100 ~/ bandWidth;
+
+    /// Points per ball in each band, from bounce seeds in [half] (0 or 1).
+    List<double> perBand(Level level, int half) => [
+          for (int band = 0; band < bands; band++)
+            [
+                  for (int i = 0; i < ballsPerBand; i++)
+                    pointsForBall(
+                        level,
+                        band * bandWidth +
+                            bandWidth * (i + 0.25 + 0.5 * half) / ballsPerBand,
+                        level.levelNumber * 1000003 +
+                            band * 10007 +
+                            2 * i +
+                            half)
+                ].reduce((a, b) => a + b) /
+                ballsPerBand
+        ];
+
+    // ignore: avoid_print
+    print('AIM level | uniform | best band | its points | gain | '
+        '${[for (int b = 0; b < bands; b++) b * bandWidth].join(' ')}');
+    int levelsWithAim = 0;
+    double weakest = double.infinity, strongest = -1;
+    for (int n = 1; n <= aimLevels; n++) {
+      final level = Level.generate(
+          n, GameConstants.boardWidth, GameConstants.boardHeight);
+      final picking = perBand(level, 0);
+      final measuring = perBand(level, 1);
+      final uniform = measuring.reduce((a, b) => a + b) / bands;
+      int best = 0;
+      for (int b = 1; b < bands; b++) {
+        if (picking[b] > picking[best]) best = b;
+      }
+      final gain = measuring[best] / uniform - 1;
+      if (gain >= 0.2) levelsWithAim++;
+      weakest = min(weakest, gain);
+      strongest = max(strongest, gain);
+      // ignore: avoid_print
+      print('AIM $n | ${uniform.round()} | ${best * bandWidth}-'
+          '${(best + 1) * bandWidth} | ${measuring[best].round()} | '
+          '${(100 * gain).toStringAsFixed(0)}% | '
+          '${measuring.map((p) => p.round()).join(' ')}');
+    }
+    // ignore: avoid_print
+    print('AIM levels with a band at least 20% better: $levelsWithAim of '
+        '$aimLevels; the weakest gain ${(100 * weakest).toStringAsFixed(0)}%, '
+        'the strongest ${(100 * strongest).toStringAsFixed(0)}%');
+  }, timeout: const Timeout(Duration(minutes: 20)));
 
   test('scoring simulation', () {
     final byPattern = {0: Tally(), 1: Tally(), 2: Tally()};
