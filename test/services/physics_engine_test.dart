@@ -249,6 +249,7 @@ void main() {
         radius: GameConstants.ballRadius,
       );
       final mockPeg = MockPeg();
+      when(mockPeg.timesStruck).thenReturn(0);
 
       // Mock peg properties
       when(mockPeg.position).thenReturn(Vector2(210, 210));
@@ -279,6 +280,7 @@ void main() {
         radius: GameConstants.ballRadius,
       );
       final mockPeg = MockPeg();
+      when(mockPeg.timesStruck).thenReturn(0);
 
       when(mockPeg.position).thenReturn(Vector2(210, 210));
       when(mockPeg.radius).thenReturn(10.0);
@@ -441,6 +443,7 @@ void main() {
       );
       ball.isActive = false;
       final mockPeg = MockPeg();
+      when(mockPeg.timesStruck).thenReturn(0);
 
       when(mockPeg.checkCollision(any, any)).thenReturn(true);
 
@@ -466,6 +469,7 @@ void main() {
         radius: GameConstants.ballRadius,
       );
       final mockPeg = MockPeg();
+      when(mockPeg.timesStruck).thenReturn(0);
       final pegPosition = Vector2(210, 200); // Peg to the right
       final collisionNormal =
           Vector2(-1, 0); // Normal points left (from peg to ball)
@@ -499,6 +503,7 @@ void main() {
           radius: GameConstants.ballRadius,
         );
         final mockPeg = MockPeg();
+        when(mockPeg.timesStruck).thenReturn(0);
 
         when(mockPeg.position).thenReturn(Vector2(210, 200));
         when(mockPeg.radius).thenReturn(10.0);
@@ -538,6 +543,7 @@ void main() {
         radius: GameConstants.ballRadius,
       );
       final mockPeg = MockPeg();
+      when(mockPeg.timesStruck).thenReturn(0);
       final pegPosition = Vector2(210, 200); // Peg to the right
       final collisionNormal = Vector2(-1, 0).normalized();
 

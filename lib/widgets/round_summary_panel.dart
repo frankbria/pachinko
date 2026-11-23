@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../models/round_summary.dart';
 import '../models/slot.dart';
 import '../utils/constants.dart';
 import 'game_card.dart';
 
 /// The panel shown over the board when the last ball lands: what the round
-/// scored and how, and where to go next.
+/// scored and how, and where to go next. A daily round is headed with its
+/// board's date and has no stars, which belong to levels.
 class RoundSummaryPanel extends StatelessWidget {
   final RoundSummary summary;
   final VoidCallback onMenu;
   final VoidCallback onReplay;
   final VoidCallback onNextLevel;
+
+  /// Whether the next level is open, so Next Level is offered.
+  final bool nextLevelOpen;
 
   const RoundSummaryPanel({
     super.key,
@@ -18,11 +23,13 @@ class RoundSummaryPanel extends StatelessWidget {
     required this.onMenu,
     required this.onReplay,
     required this.onNextLevel,
+    required this.nextLevelOpen,
   });
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final daily = summary.daily;
 
     return Container(
       constraints: const BoxConstraints(maxWidth: 340),
@@ -40,7 +47,10 @@ class RoundSummaryPanel extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '${GameStrings.level} ${summary.levelNumber}',
+              daily == null
+                  ? '${GameStrings.level} ${summary.levelNumber}'
+                  : '${GameStrings.dailyBoard}, '
+                      '${DateFormat('d MMM y').format(daily.date)}',
               style:
                   text.titleMedium?.copyWith(color: GameConstants.mutedColor),
             ),
@@ -56,10 +66,23 @@ class RoundSummaryPanel extends StatelessWidget {
             ),
             if (summary.isNewBest == true)
               Text(
-                GameStrings.newBest,
+                daily == null ? GameStrings.newBest : GameStrings.newDailyBest,
                 style: text.labelLarge
                     ?.copyWith(color: GameConstants.secondaryColor),
               ),
+            if (daily == null) ...[
+              const SizedBox(height: 8),
+              StarRow(stars: summary.stars, size: 28),
+              Text(
+                GameStrings.starsWon(
+                    summary.stars,
+                    switch (summary.pointsShortOfNextStar) {
+                      final short? => groupedThousands(short),
+                      null => null,
+                    }),
+                style: text.bodyMedium?.copyWith(color: GameConstants.inkColor),
+              ),
+            ],
             const SizedBox(height: 12),
             for (final tier in summary.tiers) _row(text, tier),
             const Divider(height: 20),
@@ -67,6 +90,9 @@ class RoundSummaryPanel extends StatelessWidget {
                 '${summary.prizePegsCollected} of ${summary.prizePegsTotal}'),
             if (summary.bonusBalls > 0)
               _line(text, GameStrings.bonusBalls, '+${summary.bonusBalls}'),
+            if (summary.feverPoints > 0)
+              _line(text, GameStrings.feverPoints,
+                  '+${groupedThousands(summary.feverPoints)}'),
             const SizedBox(height: 16),
             Wrap(
               alignment: WrapAlignment.center,
@@ -77,9 +103,10 @@ class RoundSummaryPanel extends StatelessWidget {
                     onPressed: onMenu, child: const Text(GameStrings.menu)),
                 OutlinedButton(
                     onPressed: onReplay, child: const Text(GameStrings.replay)),
-                FilledButton(
-                    onPressed: onNextLevel,
-                    child: const Text(GameStrings.nextLevel)),
+                if (nextLevelOpen)
+                  FilledButton(
+                      onPressed: onNextLevel,
+                      child: const Text(GameStrings.nextLevel)),
               ],
             ),
           ],

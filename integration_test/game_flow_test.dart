@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:provider/provider.dart';
+import 'package:vector_math/vector_math_64.dart' show Vector2;
 import 'package:pachinko_game/main.dart' as app;
 import 'package:pachinko_game/screens/menu_screen.dart';
 import 'package:pachinko_game/screens/game_screen.dart';
 import 'package:pachinko_game/services/game_manager.dart';
+import 'package:pachinko_game/models/ball.dart';
 import 'package:pachinko_game/models/peg.dart';
+import 'package:pachinko_game/models/star_targets.dart';
+import 'package:pachinko_game/widgets/round_summary_panel.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pachinko_game/utils/constants.dart';
 
 import 'helpers.dart';
@@ -294,6 +299,49 @@ void main() {
     });
   });
 
+  group('Board Feature Tests', () {
+    /// GIVEN a level with tulips, its trigger pin just struck
+    /// WHEN a ball falls into the open tulip
+    /// THEN the tulip catches it and pays out balls (#114)
+    ///
+    /// The strike is counted on the pin directly and the ball placed over the
+    /// tulip's mouth, so the test does not wait on a launch that happens to
+    /// pass that way. Everything after is the real loop on the device.
+    testWidgets('givenOpenTulip_whenBallFallsIn_thenBallsArePaidOut',
+        (WidgetTester tester) async {
+      app.main();
+      await settle(tester);
+
+      await tester.tap(find.text(GameStrings.play));
+      await settle(tester);
+
+      final context = tester.element(find.byType(GameScreen));
+      final gameManager = Provider.of<GameManager>(context, listen: false);
+      gameManager.startGame(level: 3);
+      await settle(tester);
+
+      final gameState = gameManager.gameState;
+      final tulip = gameState.currentLevel!.tulips.first;
+      tulip.triggerPin.timesStruck++;
+      final ballsBefore = gameState.ballsRemaining;
+      gameState.launchBall(Ball(
+        position: tulip.position + Vector2(0, -30),
+        velocity: Vector2(0, 50),
+      ));
+      gameManager.resumeGame();
+
+      await pumpUntil(tester, () => tulip.catches > 0,
+          timeout: const Duration(seconds: 10), what: 'the tulip to catch');
+      await pumpUntil(tester, () => gameState.activeBalls.isEmpty,
+          timeout: const Duration(seconds: 5), what: 'the ball to leave play');
+
+      expect(gameState.ballsRemaining,
+          ballsBefore - 1 + GameConstants.tulipPayoutBalls);
+      expect(gameState.tulipBalls, GameConstants.tulipPayoutBalls);
+      expect(tulip.isOpen, isFalse);
+    });
+  });
+
   group('Level Progression Tests', () {
     /// GIVEN game is on level 1
     /// WHEN level 1 conditions met and next level selected
@@ -303,6 +351,7 @@ void main() {
     testWidgets(
         'givenLevel1_whenNextLevelSelected_thenLevel2LoadsWithDifferentPattern',
         (WidgetTester tester) async {
+      await openLevelsUpTo(2);
       app.main();
       await settle(tester);
 
@@ -345,6 +394,7 @@ void main() {
     /// Verifies level variety across first 5 levels.
     testWidgets('givenLevels1Through5_whenLoaded_thenEachHasValidConfiguration',
         (WidgetTester tester) async {
+      await openLevelsUpTo(5);
       app.main();
       await settle(tester);
 
@@ -378,6 +428,7 @@ void main() {
     /// THEN level number in HUD updates
     testWidgets('givenLevelNumber_whenLevelChanges_thenHUDUpdates',
         (WidgetTester tester) async {
+      await openLevelsUpTo(3);
       app.main();
       await settle(tester);
 
@@ -398,6 +449,75 @@ void main() {
 
       // Verify level 3 in HUD
       expect(find.text('3'), findsWidgets);
+    });
+  });
+
+  group('Stars and Locks Tests', () {
+    /// GIVEN a player with no star on level 1, so level 2 is locked
+    /// WHEN a round on level 1 wins a star
+    /// THEN the summary offers Next Level, and the picker opens level 2 (#116)
+    ///
+    /// The balls are dropped straight into the 1,000 slot (20 of them win
+    /// two stars on level 1) rather than launched, so the test does not wait
+    /// on where launches happen to land. Storage, the loop, the summary and
+    /// the picker are the app's own.
+    testWidgets('givenAStarWonOnLevel1_whenPickerOpens_thenLevel2IsOpen',
+        (WidgetTester tester) async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('stars_level_1');
+      await prefs.remove('highscores_level_1');
+      app.main();
+      await settle(tester);
+
+      await tester.tap(find.text('Select Level'));
+      await settle(tester);
+      final levelTwo = find
+          .ancestor(of: find.text('2'), matching: find.byType(Semantics))
+          .first;
+      expect(tester.getSemantics(levelTwo).value, GameStrings.levelLocked,
+          reason: 'the picker has read the stars and shows level 2 locked');
+      await tester.tap(find.text('2'));
+      await settle(tester);
+      expect(find.byType(GameScreen), findsNothing,
+          reason: 'level 2 is locked before a star on level 1');
+      await tester.tap(find.text('Cancel'));
+      await settle(tester);
+
+      await tester.tap(find.text(GameStrings.play));
+      await settle(tester);
+      final gameManager = Provider.of<GameManager>(
+          tester.element(find.byType(GameScreen)),
+          listen: false);
+      final gameState = gameManager.gameState;
+      final centre = gameState.currentLevel!.slots
+          .firstWhere((slot) => slot.pointValue == 1000);
+      while (gameState.ballsRemaining > 0) {
+        gameState.launchBall(Ball(
+            position: Vector2(centre.position.x, centre.top - 4),
+            velocity: Vector2(0, 300)));
+        gameManager.resumeGame();
+        await pumpUntil(tester, () => gameState.activeBalls.isEmpty,
+            timeout: const Duration(seconds: 5), what: 'the ball to land');
+      }
+      await pumpUntil(tester, () => gameManager.roundIsNewBest != null,
+          timeout: const Duration(seconds: 5), what: 'storage to answer');
+      await settle(tester);
+
+      expect(StarTargets.forLevel(1).starsFor(gameState.levelScore),
+          greaterThanOrEqualTo(1));
+      expect(find.byType(RoundSummaryPanel), findsOneWidget);
+      expect(find.text(GameStrings.nextLevel), findsOneWidget);
+
+      await tester.ensureVisible(find.text(GameStrings.menu));
+      await tester.tap(find.text(GameStrings.menu));
+      await settle(tester);
+      await tester.tap(find.text('Select Level'));
+      await settle(tester);
+      await tester.tap(find.text('2'));
+      await settle(tester);
+
+      expect(find.byType(GameScreen), findsOneWidget);
+      expect(gameManager.gameState.currentLevelNumber, 2);
     });
   });
 

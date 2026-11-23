@@ -159,7 +159,7 @@ void paintBoardStaticLayer(Canvas canvas, Level level,
   final band = GameConstants.bandForLevel(level.levelNumber);
   _paintFelt(canvas, band);
   _paintRail(canvas, band);
-  _paintLevelSign(canvas, level.levelNumber, band, mirrored: mirrored);
+  _paintLevelSign(canvas, level.name.toUpperCase(), band, mirrored: mirrored);
   // Every glow before any slot, so that no slot is washed by its neighbour's
   for (final slot in level.slots) {
     _paintLightSpill(canvas, slot.bounds, slot.color);
@@ -237,12 +237,13 @@ void _paintRail(Canvas canvas, LevelBand band) {
   }
 }
 
-/// The level's sign, under the top of the dome. Balls pass over it.
-void _paintLevelSign(Canvas canvas, int levelNumber, LevelBand band,
+/// The level's sign, under the top of the dome, reading [name]: LEVEL 4, or
+/// DAILY on the daily board. Balls pass over it.
+void _paintLevelSign(Canvas canvas, String name, LevelBand band,
     {required bool mirrored}) {
   final sign = TextPainter(
     text: TextSpan(
-      text: 'LEVEL $levelNumber',
+      text: name,
       style: TextStyle(
         color: band.rim,
         fontFamily: displayFontFamily,

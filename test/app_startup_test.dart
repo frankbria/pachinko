@@ -57,7 +57,9 @@ void main() {
       expect(manager.gameState.singleBallLaunch, isTrue,
           reason: 'storage has not answered: the default');
 
-      // The settings screen is already open when storage answers
+      // The settings screen is already open when storage answers. The menu
+      // is taller than the test's screen, so its last buttons are scrolled to
+      await tester.ensureVisible(find.text('Settings'));
       await tester.tap(find.text('Settings'));
       await tester.pumpAndSettle();
       final launchModeSwitch = find.ancestor(

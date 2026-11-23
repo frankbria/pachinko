@@ -6,16 +6,19 @@ import 'package:mockito/mockito.dart';
 import 'package:vector_math/vector_math_64.dart';
 import 'package:pachinko_game/models/ball.dart';
 import 'package:pachinko_game/models/ball_launcher.dart';
+import 'package:pachinko_game/models/board_feature.dart';
 import 'package:pachinko_game/models/game_settings.dart';
 import 'package:pachinko_game/models/game_state.dart';
 import 'package:pachinko_game/models/high_score.dart';
 import 'package:pachinko_game/models/peg.dart';
 import 'package:pachinko_game/models/slot.dart';
+import 'package:pachinko_game/models/star_targets.dart';
 import 'package:pachinko_game/models/level.dart';
 import 'package:pachinko_game/services/achievement_service.dart';
 import 'package:pachinko_game/services/audio_service.dart';
 import 'package:pachinko_game/services/game_manager.dart';
 import 'package:pachinko_game/services/haptics_service.dart';
+import 'package:pachinko_game/services/music_service.dart';
 import 'package:pachinko_game/services/storage_service.dart';
 import 'package:pachinko_game/utils/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -83,9 +86,11 @@ void main() {
   setUp(() {
     mockPhysicsEngine = MockPhysicsEngine();
     mockGameState = MockGameState();
+    when(mockGameState.daily).thenReturn(null);
     mockBallLauncher = MockBallLauncher();
 
     // Setup default mock behaviors
+    when(mockPhysicsEngine.checkFeatureCollisions(any, any)).thenReturn([]);
     when(mockGameState.activeBalls).thenReturn([]);
     when(mockGameState.ballsRemaining).thenReturn(20);
     when(mockGameState.currentLevelNumber).thenReturn(1);
@@ -98,6 +103,11 @@ void main() {
     when(mockGameState.confettiParticles).thenReturn([]);
     when(mockGameState.ballCountHighlighted).thenReturn(false);
     when(mockGameState.slotsLit).thenReturn(false);
+    // A landing scores the slot's value, as it does outside the fever
+    when(mockGameState.scoreLanding(any)).thenAnswer((invocation) {
+      final slot = invocation.positionalArguments.first;
+      return slot is Slot ? slot.pointValue : 0;
+    });
     when(mockBallLauncher.phase).thenReturn(LaunchPhase.ready);
     when(mockBallLauncher.currentBall).thenReturn(null);
 
@@ -170,6 +180,7 @@ void main() {
       // Given: Mock level to enable updates
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
 
@@ -191,6 +202,7 @@ void main() {
       // Given: Start game
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
       when(mockBallLauncher.launch()).thenReturn(Ball(
@@ -215,6 +227,7 @@ void main() {
       // Given: Paused game
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
       when(mockBallLauncher.launch()).thenReturn(Ball(
@@ -349,6 +362,7 @@ void main() {
       );
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockGameState.activeBalls).thenReturn([ball]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
@@ -383,6 +397,7 @@ void main() {
       );
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([peg]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockGameState.activeBalls).thenReturn([ball]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
@@ -418,6 +433,7 @@ void main() {
       );
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([slot]);
       when(mockGameState.activeBalls).thenReturn([ball]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
@@ -454,6 +470,7 @@ void main() {
       );
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([specialPeg]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.specialPegs).thenReturn([specialPeg]);
       when(mockLevel.slots).thenReturn([]);
       when(mockLevel.allSpecialPegsHit).thenReturn(true);
@@ -491,6 +508,7 @@ void main() {
       );
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([specialPeg]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.specialPegs).thenReturn([specialPeg]);
       when(mockLevel.slots).thenReturn([]);
       when(mockLevel.allSpecialPegsHit).thenReturn(true);
@@ -529,6 +547,7 @@ void main() {
       );
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([specialPeg]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockLevel.allSpecialPegsHit).thenReturn(false); // Not all hit yet
       when(mockGameState.activeBalls).thenReturn([ball]);
@@ -552,7 +571,7 @@ void main() {
   group('Slot Hit Scoring', () {
     /// Tests score added when ball lands in slot
     testLoop(
-        'Given ball in slot When slot collision detected Then GameState.addScore called with slot pointValue',
+        'Given ball in slot When slot collision detected Then GameState scores the landing in that slot',
         () async {
       // Given: Ball and slot
       final ball = Ball(
@@ -568,6 +587,7 @@ void main() {
       );
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([slot]);
       when(mockGameState.activeBalls).thenReturn([ball]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
@@ -580,13 +600,13 @@ void main() {
 
       await play(const Duration(milliseconds: 20));
 
-      // Then: Should add score with slot's point value
-      verify(mockGameState.addScore(2000)).called(greaterThan(0));
+      // Then: the game state scores it, fever and all
+      verify(mockGameState.scoreLanding(slot)).called(greaterThan(0));
     });
 
     /// Tests multiple slot hits add scores correctly
     testLoop(
-        'Given multiple balls in slots When collisions detected Then addScore called for each',
+        'Given multiple balls in slots When collisions detected Then each landing is scored',
         () async {
       // Given: Multiple slots hit
       final ball1 = Ball(
@@ -599,6 +619,7 @@ void main() {
           position: Vector2(300, 550), width: 50, height: 60, pointValue: 2000);
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([slot1, slot2]);
       when(mockGameState.activeBalls).thenReturn([ball1, ball2]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
@@ -613,8 +634,8 @@ void main() {
       await play(const Duration(milliseconds: 20));
 
       // Then: Both scores should be added
-      verify(mockGameState.addScore(1000)).called(greaterThan(0));
-      verify(mockGameState.addScore(2000)).called(greaterThan(0));
+      verify(mockGameState.scoreLanding(slot1)).called(greaterThan(0));
+      verify(mockGameState.scoreLanding(slot2)).called(greaterThan(0));
     });
   });
 
@@ -648,6 +669,7 @@ void main() {
           Peg(position: Vector2(210, 210), radius: 10.0, type: PegType.special);
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([prize]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.specialPegs).thenReturn([prize]);
       when(mockLevel.slots).thenReturn([]);
       when(mockLevel.allSpecialPegsHit).thenReturn(true);
@@ -665,6 +687,45 @@ void main() {
     });
 
     testLoop(
+        'Given an open tulip catching a ball When the loop sees it Then it pays out, is heard and is felt, and a bounce pays nothing',
+        () async {
+      useRecorders();
+      final ball = Ball(
+          position: Vector2(110, 230), velocity: Vector2(0, 50), radius: 8.0);
+      final bounced = Ball(position: Vector2(300, 230), radius: 8.0);
+      final tulip = Tulip(
+          position: Vector2(110, 250),
+          triggerPin: Peg(position: Vector2(88, 208)));
+      final other = Tulip(
+          position: Vector2(290, 250),
+          triggerPin: Peg(position: Vector2(312, 208)));
+      final mockLevel = MockLevel();
+      when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([tulip, other]);
+      when(mockLevel.slots).thenReturn([]);
+      when(mockGameState.activeBalls).thenReturn([ball, bounced]);
+      when(mockGameState.currentLevel).thenReturn(mockLevel);
+      when(mockPhysicsEngine.checkPegCollisions(any, any)).thenReturn([]);
+      when(mockPhysicsEngine.checkSlotCollisions(any, any)).thenReturn([]);
+      when(mockPhysicsEngine.checkFeatureCollisions(any, any)).thenReturn([
+        (ball: ball, feature: tulip, caught: true),
+        (ball: bounced, feature: other, caught: false),
+      ]);
+      when(mockBallLauncher.launch()).thenReturn(ball);
+
+      feltManager.launchBall();
+      await play(const Duration(milliseconds: 20));
+
+      verify(mockPhysicsEngine.updateFeatures([tulip, other], any))
+          .called(greaterThan(0));
+      // Every step reports the catch here, since the physics is a stand-in
+      verify(mockGameState.payTulip(tulip)).called(greaterThan(0));
+      verifyNever(mockGameState.payTulip(other));
+      expect(audio.played.skip(1).first, 'tulipCatch');
+      expect(haptics.felt.first, 'prizePeg');
+    });
+
+    testLoop(
         'Given balls landing in a 50 and a 2,000 slot When the loop sees them Then each slot is heard and reported by its points',
         () async {
       useRecorders();
@@ -676,6 +737,7 @@ void main() {
           position: Vector2(300, 550), width: 50, height: 60, pointValue: 2000);
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([low, high]);
       when(mockGameState.activeBalls).thenReturn([ball]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
@@ -829,6 +891,7 @@ void main() {
       // Given: Running game
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
       when(mockBallLauncher.launch()).thenReturn(Ball(
@@ -853,6 +916,7 @@ void main() {
       // Given: Paused game
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
       when(mockBallLauncher.launch()).thenReturn(Ball(
@@ -877,6 +941,7 @@ void main() {
       // Given: Running game
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
       when(mockBallLauncher.launch()).thenReturn(Ball(
@@ -903,6 +968,7 @@ void main() {
       // Given: Running game
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
       when(mockBallLauncher.launch()).thenReturn(Ball(
@@ -967,8 +1033,11 @@ void main() {
       when(mockStorage.prizePegHintDue).thenReturn(false);
 
       when(mockStorage.getBestScore(any)).thenAnswer((_) async => null);
+      when(mockStorage.storedStars).thenReturn(const {});
+      when(mockStorage.saveStars(any, any)).thenAnswer((_) async {});
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockLevel.levelNumber).thenReturn(2);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
@@ -997,6 +1066,8 @@ void main() {
 
       // Then
       verify(mockStorage.saveHighScore(2, 9000)).called(1);
+      verify(mockStorage.saveStars(2, StarTargets.forLevel(2).starsFor(9000)))
+          .called(1);
       verify(mockAchievements.trackLevelScore(2, 9000)).called(1);
     });
 
@@ -1006,6 +1077,7 @@ void main() {
       // Given: Running game
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
       when(mockBallLauncher.launch()).thenReturn(Ball(
@@ -1031,6 +1103,7 @@ void main() {
       // Given: Running game
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
       when(mockBallLauncher.launch()).thenReturn(Ball(
@@ -1056,6 +1129,7 @@ void main() {
       // Given: No balls
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockLevel.levelNumber).thenReturn(1);
       when(mockGameState.activeBalls).thenReturn([]);
@@ -1084,6 +1158,7 @@ void main() {
       // Given: Balls remaining but none active
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockGameState.activeBalls).thenReturn([]);
       when(mockGameState.ballsRemaining).thenReturn(10);
@@ -1112,6 +1187,7 @@ void main() {
       // Given: no balls active and none remaining, and the last ball's popup on screen
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockLevel.levelNumber).thenReturn(1);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
@@ -1141,6 +1217,7 @@ void main() {
       // Given
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockLevel.levelNumber).thenReturn(1);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
@@ -1176,6 +1253,7 @@ void main() {
         // Given
         final mockLevel = MockLevel();
         when(mockLevel.pegs).thenReturn([]);
+        when(mockLevel.features).thenReturn([]);
         when(mockLevel.slots).thenReturn([]);
         when(mockLevel.levelNumber).thenReturn(1);
         when(mockGameState.currentLevel).thenReturn(mockLevel);
@@ -1468,6 +1546,50 @@ void main() {
     }, timeout: const Timeout(Duration(minutes: 2)));
 
     testLoop(
+        'Given rounds on a fresh install When they end Then their stars are stored and Next Level opens only after a star',
+        () async {
+      SharedPreferences.setMockInitialValues({});
+      final storage =
+          StorageService(prefs: await SharedPreferences.getInstance());
+      final manager = GameManager(storageService: storage);
+      addTearDown(manager.dispose);
+      host(manager);
+      Future<void> playRoundInto(int value) async {
+        final slot = manager.gameState.currentLevel!.slots
+            .firstWhere((slot) => slot.pointValue == value);
+        while (manager.gameState.ballsRemaining > 0) {
+          await landIn(manager, slot);
+        }
+        await ticks(3);
+      }
+
+      // Twenty balls of 50 win no star; twenty of 2,000 win every one
+      manager.startGame();
+      await playRoundInto(50);
+      expect(manager.nextLevelOpen, isFalse);
+      expect(await manager.starsByLevel(), {1: 0});
+
+      manager.resetGame();
+      await playRoundInto(2000);
+      expect(manager.nextLevelOpen, isTrue);
+      expect(storage.storedStars, {1: StarTargets.maxStars});
+
+      manager.resetGame();
+      expect(manager.nextLevelOpen, isFalse,
+          reason: 'not known again until the round ends');
+      await playRoundInto(50);
+      expect(manager.nextLevelOpen, isTrue,
+          reason: 'the level already had a star');
+      expect(storage.storedStars, {1: StarTargets.maxStars},
+          reason: 'a worse round takes no star away');
+
+      manager.nextLevel();
+      await playRoundInto(50);
+      expect(manager.nextLevelOpen, isFalse);
+      expect(await manager.starsByLevel(), {1: StarTargets.maxStars, 2: 0});
+    }, timeout: const Timeout(Duration(minutes: 2)));
+
+    testLoop(
         'Given no stored score When the first round ends without a point Then it is not announced as a best',
         () async {
       // Nothing is stored yet, so zero is technically the level's best. The
@@ -1651,6 +1773,246 @@ void main() {
       expect(state.phase, GamePhase.gameOver);
     });
   });
+  group('Fever in play', () {
+    // The real loop with a real game state: the fever starts with the bonus,
+    // runs down only while a ball is in play, and doubles what a landing pays,
+    // which the popup and the screen reader both give
+    Future<void> ticks(int count) =>
+        play(Duration(milliseconds: 16 * count + 8));
+
+    GameManager game() {
+      final manager = GameManager();
+      addTearDown(manager.dispose);
+      host(manager);
+      manager.startGame();
+      return manager;
+    }
+
+    Future<void> landIn(GameManager manager, Slot slot) async {
+      manager.gameState.launchBall(Ball(
+          position: Vector2(slot.position.x, slot.top - 4),
+          velocity: Vector2(0, 300)));
+      manager.resumeGame();
+      await ticks(3);
+    }
+
+    testLoop(
+        'Given the fever on When a ball lands in a 2,000 slot Then it pays 4,000, shown and announced as such',
+        () async {
+      final manager = game();
+      final state = manager.gameState;
+      final edge =
+          state.currentLevel!.slots.firstWhere((s) => s.pointValue == 2000);
+      state.triggerSpecialBonus();
+      // The bonus balls would land too; only the one placed here is wanted
+      for (final ball in state.activeBalls) {
+        state.removeBall(ball);
+      }
+
+      await landIn(manager, edge);
+
+      expect(state.levelScore, 4000);
+      expect(state.feverPoints, 2000);
+      expect(manager.lastLanding.value!.points, 4000);
+      expect(state.floatingTexts.map((text) => text.text), contains('+4000'));
+      manager.stopLoop();
+      await play(const Duration(seconds: 3));
+    });
+
+    testLoop(
+        'Given the fever on and no ball in play When time passes Then the fever waits for the next ball',
+        () async {
+      final manager = game();
+      final state = manager.gameState;
+      state.triggerSpecialBonus();
+      for (final ball in state.activeBalls) {
+        state.removeBall(ball);
+      }
+
+      await play(const Duration(seconds: 3));
+
+      expect(state.feverRemaining, 1.0);
+      manager.stopLoop();
+    });
+  });
+
+  group('Music', () {
+    // The manager says what the music is for and how far it drops; the
+    // service, with no music files here, plays nothing and keeps what it
+    // was told. What each scene and duck sounds like is tested in
+    // music_service_test.dart
+    late MusicService music;
+
+    setUp(() {
+      music = MusicService(listAssets: () async => []);
+      when(mockGameState.feverActive).thenReturn(false);
+      when(mockGameState.isPaused).thenReturn(false);
+      when(mockGameState.phase).thenReturn(GamePhase.ready);
+    });
+
+    tearDown(() => music.dispose());
+
+    GameManager managerWith(MusicService music, {GameState? state}) {
+      final manager = GameManager(
+        gameState: state ?? mockGameState,
+        physicsEngine: state == null ? mockPhysicsEngine : null,
+        ballLauncher: state == null ? mockBallLauncher : null,
+        music: music,
+        audioService: _RecordingAudio(),
+      );
+      addTearDown(manager.dispose);
+      return manager;
+    }
+
+    test('Given a new manager Then the menu music plays at full level', () {
+      managerWith(music);
+
+      expect(music.scene, MusicScene.menu);
+      expect(music.duck, MusicDuck.none);
+    });
+
+    test(
+        'Given storage not loaded yet Then the music stays silent until the saved settings say otherwise',
+        () async {
+      managerWith(music);
+      expect(music.enabled, isFalse,
+          reason: 'a player who turned sound off must not hear the menu');
+
+      SharedPreferences.setMockInitialValues({});
+      final storage =
+          StorageService(prefs: await SharedPreferences.getInstance());
+      when(mockGameState.singleBallLaunch).thenReturn(true);
+      final late = MusicService(listAssets: () async => []);
+      addTearDown(late.dispose);
+      managerWith(late).attachServices(storageService: storage);
+
+      expect(late.enabled, isTrue);
+      expect(late.volume, const GameSettings().musicVolume);
+    });
+
+    testLoop(
+        'Given a screen hosting the board Then the round music plays, and the menu music once it lets go',
+        () async {
+      final manager = managerWith(music);
+
+      host(manager);
+      expect(music.scene, MusicScene.round);
+
+      manager.detachVsync(clock);
+      expect(music.scene, MusicScene.menu);
+    });
+
+    testLoop(
+        'Given a round When the game pauses Then the music drops low, and comes back on Resume',
+        () async {
+      final manager = managerWith(music);
+      host(manager);
+
+      when(mockGameState.isPaused).thenReturn(true);
+      manager.pauseGame();
+      expect(music.duck, MusicDuck.paused);
+
+      when(mockGameState.isPaused).thenReturn(false);
+      manager.resumeGame();
+      expect(music.duck, MusicDuck.none);
+    });
+
+    testLoop(
+        'Given the round over When the summary shows Then the music drops a little, and Replay brings it back',
+        () async {
+      final manager = managerWith(music);
+      host(manager);
+
+      when(mockGameState.phase).thenReturn(GamePhase.gameOver);
+      manager.resumeGame();
+      expect(music.duck, MusicDuck.summary);
+
+      when(mockGameState.phase).thenReturn(GamePhase.ready);
+      manager.resetGame();
+      expect(music.duck, MusicDuck.none);
+      expect(music.scene, MusicScene.round);
+    });
+
+    testLoop(
+        'Given the summary showing When the player goes back to the menu Then the menu music plays at full level',
+        () async {
+      final manager = managerWith(music);
+      host(manager);
+      when(mockGameState.phase).thenReturn(GamePhase.gameOver);
+      manager.resumeGame();
+
+      manager.detachVsync(clock);
+
+      expect(music.scene, MusicScene.menu);
+      expect(music.duck, MusicDuck.none);
+    });
+
+    test(
+        'Given the settings Then sound off silences the music and its volume is applied at once',
+        () async {
+      final manager = managerWith(music);
+
+      await manager.updateSettings(
+          (current) => current.copyWith(soundOn: false, musicVolume: 0.3));
+
+      expect(music.enabled, isFalse);
+      expect(music.volume, 0.3);
+      await manager.updateSettings(
+          (current) => current.copyWith(soundOn: true, musicVolume: 0.9));
+      expect(music.enabled, isTrue);
+      expect(music.volume, 0.9);
+    });
+
+    // A real round: the bonus starts the fever music in the frame it
+    // triggers, the fever ends in the loop and the round music returns
+    Future<(GameManager, _RecordingAudio)> bonusRound(
+        MusicService music) async {
+      final audio = _RecordingAudio();
+      final manager = GameManager(music: music, audioService: audio);
+      addTearDown(manager.dispose);
+      host(manager);
+      manager.startGame();
+      final level = manager.gameState.currentLevel!;
+      // Every prize peg collected but the last, and a ball falling onto it
+      final prize = level.specialPegs.last;
+      for (final peg in level.specialPegs) {
+        if (peg != prize) peg.hasBeenHit = true;
+      }
+      manager.gameState.launchBall(Ball(
+          position: prize.position - Vector2(0, prize.radius + 9),
+          velocity: Vector2(0, 120)));
+      manager.resumeGame();
+      await play(const Duration(milliseconds: 50));
+      return (manager, audio);
+    }
+
+    testLoop(
+        'Given the music has no stinger When the bonus triggers Then the fever music plays and the bonus sound effect is heard, and the round music returns when Replay ends it',
+        () async {
+      final (manager, audio) = await bonusRound(music);
+
+      expect(manager.gameState.feverActive, isTrue);
+      expect(music.scene, MusicScene.fever);
+      expect(audio.played, contains('bonusTrigger'));
+
+      // Replay ends the fever, as every transition does
+      manager.resetGame();
+      expect(music.scene, MusicScene.round);
+    });
+
+    testLoop(
+        'Given the music has a stinger When the bonus triggers Then the stinger replaces the bonus sound effect',
+        () async {
+      final stinger = _MusicWithStinger();
+      addTearDown(stinger.dispose);
+
+      final (_, audio) = await bonusRound(stinger);
+
+      expect(stinger.scene, MusicScene.fever);
+      expect(audio.played, isNot(contains('bonusTrigger')));
+    });
+  });
+
   group('Achievements earned in play', () {
     /// Combo King and Lucky Shot could not be won: their rules asked for the
     /// impossible and the game never told the service about them (#85). These
@@ -1770,6 +2132,10 @@ void main() {
       for (final peg in manager.gameState.currentLevel!.specialPegs) {
         first = await touch(manager, peg, ball: first);
       }
+      // The lowest prize peg is just above the slots: lift the first ball
+      // clear of them, so that it is still in play when the bonus ball lands
+      first!.position.setValues(GameConstants.boardWidth / 2, 150);
+      first.velocity.setZero();
       final edge = manager.gameState.currentLevel!.slots
           .firstWhere((slot) => slot.pointValue == 2000);
       Future<void> drop(Ball ball) async {
@@ -1784,7 +2150,7 @@ void main() {
       expect(bonusBall.hasLanded, isTrue);
       expect(unlocked(service, 'lucky_shot'), isFalse);
 
-      await drop(first!);
+      await drop(first);
       expect(first.hasLanded, isTrue);
       expect(unlocked(service, 'lucky_shot'), isTrue);
     });
@@ -1851,6 +2217,7 @@ void main() {
       ];
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn(prizes);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.specialPegs).thenReturn(prizes);
       when(mockLevel.slots).thenReturn([]);
       when(mockLevel.allSpecialPegsHit).thenReturn(false);
@@ -1877,6 +2244,7 @@ void main() {
           Peg(position: Vector2(210, 210), radius: 10.0, type: PegType.special);
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([prize]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.specialPegs).thenReturn([prize, prize]);
       when(mockLevel.slots).thenReturn([]);
       when(mockLevel.allSpecialPegsHit).thenReturn(false);
@@ -1957,6 +2325,60 @@ void main() {
       expect(hinted.prizePegHint, isNull);
     });
   });
+  group('starsByLevel', () {
+    test(
+        'Given high scores stored before stars existed Then they award the stars they earn, and the levels those open',
+        () async {
+      // A player's storage from before #116: score tables and nothing else
+      final one = StarTargets.forLevel(1);
+      final two = StarTargets.forLevel(2);
+      final five = StarTargets.forLevel(5);
+      SharedPreferences.setMockInitialValues({});
+      final storage =
+          StorageService(prefs: await SharedPreferences.getInstance());
+      await storage.saveHighScore(1, one.two);
+      await storage.saveHighScore(2, two.one - 1);
+      await storage.saveHighScore(5, five.three + 400);
+      final manager = GameManager(storageService: storage);
+      addTearDown(manager.dispose);
+
+      final stars = await manager.starsByLevel();
+
+      expect(stars, {1: 2, 2: 0, 5: 3});
+      expect(storage.storedStars, {1: 2, 5: 3},
+          reason: 'stars won by old scores are stored once read');
+      await storage.clearData();
+      expect(await manager.starsByLevel(), {1: 2, 5: 3},
+          reason: 'clearing the scores keeps them');
+      expect(
+          [for (int level = 1; level <= 7; level++) level]
+              .where((level) => StarTargets.levelIsOpen(level, stars)),
+          [1, 2, 6]);
+    });
+
+    test(
+        'Given stored stars that the best score would not win today Then the stored stars stand',
+        () async {
+      SharedPreferences.setMockInitialValues({});
+      final storage =
+          StorageService(prefs: await SharedPreferences.getInstance());
+      await storage.saveHighScore(3, 100);
+      await storage.saveStars(3, 2);
+      await storage.saveStars(24, 1);
+      final manager = GameManager(storageService: storage);
+      addTearDown(manager.dispose);
+
+      expect(await manager.starsByLevel(), {3: 2, 24: 1});
+    });
+
+    test('Given no storage Then it returns an empty map', () async {
+      final manager = GameManager();
+      addTearDown(manager.dispose);
+
+      expect(await manager.starsByLevel(), isEmpty);
+    });
+  });
+
   group('bestScoresByLevel', () {
     test(
         'Given stored scores on some levels Then it returns the best of each, and no entry for a level never played',
@@ -2034,6 +2456,17 @@ class _RecordingAudio extends AudioService {
 
   @override
   Future<void> playBonusTrigger() async => played.add('bonusTrigger');
+
+  @override
+  Future<void> playTulipCatch() async => played.add('tulipCatch');
+}
+
+/// Music with no files that says its fever stinger would sound.
+class _MusicWithStinger extends MusicService {
+  _MusicWithStinger() : super(listAssets: () async => []);
+
+  @override
+  bool get playsFeverStinger => true;
 }
 
 /// Haptics that vibrate nothing and record what they were asked for.

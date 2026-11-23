@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:vector_math/vector_math_64.dart';
 import 'package:flutter/material.dart';
 import 'ball.dart';
+import 'board_feature.dart';
+import 'daily_board.dart';
 import 'level.dart';
 import 'slot.dart';
 import 'confetti_particle.dart';
@@ -31,6 +33,8 @@ class GameState extends ChangeNotifier {
   GamePhase _phase = GamePhase.loading;
   bool _specialBonusTriggered = false;
   int _bonusBallsToAdd = 0;
+  double _feverSecondsLeft = 0.0;
+  int _feverPoints = 0;
 
   /// Whether a ball can only be launched once no ball is in play.
   ///
@@ -75,6 +79,18 @@ class GameState extends ChangeNotifier {
   List<Ball> get activeBalls => List.unmodifiable(_activeBalls);
   GamePhase get phase => _phase;
   bool get specialBonusTriggered => _specialBonusTriggered;
+
+  /// Whether the fever is on: the bonus has triggered, and for
+  /// [GameConstants.feverSeconds] of play after it every slot pays
+  /// [GameConstants.feverMultiplier] times its value.
+  bool get feverActive => _feverSecondsLeft > 0.0;
+
+  /// The share of the fever still to run, from 1.0 when it starts to 0.0.
+  double get feverRemaining => _feverSecondsLeft / GameConstants.feverSeconds;
+
+  /// The points the fever has added on this level, over what the slots pay
+  /// without it.
+  int get feverPoints => _feverPoints;
   double get bonusOverlayOpacity => _bonusOverlayOpacity;
 
   /// The one gate for launching a ball.
@@ -92,10 +108,20 @@ class GameState extends ChangeNotifier {
       List.unmodifiable(_confettiParticles);
   bool get ballCountHighlighted => _ballCountHighlighted;
 
-  void loadLevel(int levelNumber) {
+  DailyBoard? _daily;
+
+  /// The daily board being played, or null on an ordinary level.
+  DailyBoard? get daily => _daily;
+
+  /// Loads level [levelNumber], or the [daily] board, which plays with the
+  /// level its date picks (see [DailyBoard.levelNumber]).
+  void loadLevel(int levelNumber, {DailyBoard? daily}) {
     _levelStartScore = _score;
-    _currentLevelNumber = levelNumber;
-    _currentLevel = Level.generate(levelNumber, 400, 600);
+    _daily = daily;
+    _currentLevelNumber = daily?.levelNumber ?? levelNumber;
+    _currentLevel = daily?.generate() ??
+        Level.generate(
+            levelNumber, GameConstants.boardWidth, GameConstants.boardHeight);
     // A ball still in play belongs to the level being left
     _activeBalls.clear();
     _phase = GamePhase.ready;
@@ -103,14 +129,18 @@ class GameState extends ChangeNotifier {
     launcherBusy = false;
     _specialBonusTriggered = false;
     _bonusBallsToAdd = 0;
+    _feverPoints = 0;
+    _tulipBalls = 0;
     _clearEffects();
     notifyListeners();
   }
 
-  void startNewGame({int level = 1}) {
+  /// Starts a new run on [level], or on the [daily] board, with a full set
+  /// of balls and no score.
+  void startNewGame({int level = 1, DailyBoard? daily}) {
     _score = 0;
     _ballsRemaining = _totalBalls;
-    loadLevel(level);
+    loadLevel(level, daily: daily);
   }
 
   void launchBall(Ball ball) {
@@ -127,6 +157,47 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Scores a ball landing in [slot] and returns the points it won: the
+  /// slot's value, multiplied while the fever is on.
+  int scoreLanding(Slot slot) {
+    final points = feverActive
+        ? slot.pointValue * GameConstants.feverMultiplier
+        : slot.pointValue;
+    _feverPoints += points - slot.pointValue;
+    addScore(points);
+    return points;
+  }
+
+  /// Pays out the balls a [tulip] gives for the ball it has just caught:
+  /// [GameConstants.tulipPayoutBalls] more to launch, a gold popup over the
+  /// tulip, and the ball count lit as it is for the bonus.
+  void payTulip(Tulip tulip) {
+    _ballsRemaining += GameConstants.tulipPayoutBalls;
+    _tulipBalls += GameConstants.tulipPayoutBalls;
+    _ballCountHighlighted = true;
+    _ballCountHighlightTimer = _ballCountHighlightDuration;
+    addFloatingText(
+      '+${GameConstants.tulipPayoutBalls} balls',
+      Offset(
+          tulip.position.x, tulip.position.y - GameConstants.tulipRadius - 16),
+      GameConstants.bonusBallColor,
+      fontSize: 16,
+    );
+  }
+
+  int _tulipBalls = 0;
+
+  /// The balls tulips have paid out on this level.
+  int get tulipBalls => _tulipBalls;
+
+  /// Runs the fever down by [deltaTime] seconds of play. The game loop calls
+  /// it only while a ball is in play.
+  void updateFever(double deltaTime) {
+    if (feverActive) {
+      _feverSecondsLeft = math.max(0.0, _feverSecondsLeft - deltaTime);
+    }
+  }
+
   void removeBall(Ball ball) {
     _activeBalls.remove(ball);
 
@@ -141,6 +212,10 @@ class GameState extends ChangeNotifier {
         _phase = GamePhase.ready;
       } else {
         _phase = GamePhase.gameOver;
+        // A fever still running has no ball left to pay, and an open tulip
+        // none to catch; they would otherwise stay up behind the summary
+        _feverSecondsLeft = 0.0;
+        _closeTulips();
       }
     }
     notifyListeners();
@@ -152,6 +227,7 @@ class GameState extends ChangeNotifier {
     _specialBonusTriggered = true;
     _bonusOverlayOpacity = 1.0; // Show bonus overlay
     _bonusBallsToAdd = GameConstants.bonusBallsFor(_currentLevelNumber);
+    _feverSecondsLeft = GameConstants.feverSeconds;
 
     // Spawn bonus balls immediately
     final level = _currentLevel;
@@ -294,18 +370,29 @@ class GameState extends ChangeNotifier {
     launcherBusy = false;
     _specialBonusTriggered = false;
     _bonusBallsToAdd = 0;
+    _feverPoints = 0;
+    _tulipBalls = 0;
     _clearEffects();
     notifyListeners();
   }
 
-  /// Removes all transient visual effects (popups, confetti, bonus overlay).
+  /// Removes all transient visual effects (popups, confetti, bonus overlay),
+  /// ends the fever and closes the tulips.
   void _clearEffects() {
+    _feverSecondsLeft = 0.0;
+    _closeTulips();
     _floatingTexts.clear();
     _confettiParticles.clear();
     _ballCountHighlighted = false;
     _ballCountHighlightTimer = 0.0;
     _bonusDisplayTimer?.cancel();
     _bonusOverlayOpacity = 0.0;
+  }
+
+  void _closeTulips() {
+    for (final tulip in _currentLevel?.tulips ?? const <Tulip>[]) {
+      tulip.close();
+    }
   }
 
   void pauseGame() {

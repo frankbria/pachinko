@@ -2,11 +2,16 @@ import 'dart:math' as math;
 import 'package:vector_math/vector_math_64.dart';
 import '../models/ball.dart';
 import '../models/ball_launcher.dart';
+import '../models/board_feature.dart';
 import '../models/peg.dart';
 import '../models/slot.dart';
 import '../utils/constants.dart';
 import 'audio_service.dart';
 import 'haptics_service.dart';
+
+/// A ball meeting a board feature on one step: it bounced off it, or, for
+/// an open tulip, fell in and was [caught].
+typedef FeatureHit = ({Ball ball, BoardFeature feature, bool caught});
 
 class PhysicsEngine {
   final AudioService? _audioService;
@@ -167,6 +172,7 @@ class PhysicsEngine {
       for (final peg in pegs) {
         if (peg.checkCollision(ball.position, ball.radius)) {
           final impactSpeed = _resolvePegCollision(ball, peg);
+          if (impactSpeed > 0) peg.timesStruck++;
 
           // Every bounce flashes and sounds. Only a peg's first hit is
           // reported: that is what collects a prize peg
@@ -189,22 +195,22 @@ class PhysicsEngine {
 
   /// Bounces [ball] off [peg] and returns the speed at which it met the peg
   /// along the line between them: 0 when it was already moving away.
-  double _resolvePegCollision(Ball ball, Peg peg) {
-    // Calculate collision normal
-    final collisionNormal = peg.getCollisionNormal(ball.position);
+  double _resolvePegCollision(Ball ball, Peg peg) => _bounceOffCircle(
+      ball,
+      peg.getCollisionNormal(ball.position),
+      (peg.radius + ball.radius) - (ball.position - peg.position).length);
 
-    // Separate the ball from the peg
-    final overlap =
-        (peg.radius + ball.radius) - (ball.position - peg.position).length;
+  /// Bounces [ball] off a fixed circle that it overlaps by [overlap] along
+  /// [collisionNormal] (from the circle to the ball), with a small random
+  /// turn so that no pattern repeats exactly. Returns the speed at which it
+  /// met the circle along the normal: 0 when it was already moving away.
+  double _bounceOffCircle(Ball ball, Vector2 collisionNormal, double overlap) {
+    // Separate the ball from the circle
     if (overlap > 0) {
       ball.position.add(collisionNormal * overlap);
     }
 
-    // Calculate relative velocity
-    final relativeVelocity = ball.velocity.clone();
-
-    // Calculate relative velocity in collision normal direction
-    final velocityAlongNormal = relativeVelocity.dot(collisionNormal);
+    final velocityAlongNormal = ball.velocity.dot(collisionNormal);
 
     // Do not resolve if velocities are separating
     if (velocityAlongNormal > 0) return 0;
@@ -220,12 +226,8 @@ class PhysicsEngine {
         ? GameConstants.entryPinRestitution
         : GameConstants.pinRestitution;
 
-    // Calculate impulse scalar
     final impulseScalar = -(1 + restitution) * velocityAlongNormal;
-
-    // Apply impulse
-    final impulse = collisionNormal * impulseScalar;
-    ball.velocity.add(impulse);
+    ball.velocity.add(collisionNormal * impulseScalar);
     if (inEntryRows) {
       final along = ball.velocity.dot(collisionNormal);
       final slide = ball.velocity - collisionNormal * along;
@@ -238,6 +240,110 @@ class PhysicsEngine {
     final rotationMatrix = Matrix2.rotation(randomAngle);
     ball.velocity = rotationMatrix * ball.velocity;
     return -velocityAlongNormal;
+  }
+
+  /// How much of its speed into a feature's bar a ball keeps as it bounces
+  /// off: less than off a pin, because a bar is a broad, flat face.
+  static const double barRestitution = 0.6;
+
+  /// Moves every feature on by [deltaTime] seconds of play: a tulip opens
+  /// when its trigger pin has been hit since the last step, or runs its open
+  /// time down, a windmill turns and the centre gate rocks. The game calls
+  /// this once per step while a ball is in play.
+  void updateFeatures(List<BoardFeature> features, double deltaTime) {
+    for (final feature in features) {
+      switch (feature) {
+        case Tulip():
+          if (feature.update(deltaTime)) _audioService?.playTulipOpen();
+        case TurningFeature():
+          feature.advance(deltaTime);
+      }
+    }
+  }
+
+  /// Bounces each ball in play off the [features] it touches, and lets an
+  /// open tulip catch a ball that falls into its mouth: that ball leaves
+  /// play. Returns every ball that met a feature on this step.
+  List<FeatureHit> checkFeatureCollisions(
+      List<Ball> balls, List<BoardFeature> features) {
+    final hits = <FeatureHit>[];
+    for (final ball in balls) {
+      for (final feature in features) {
+        if (!ball.isActive || ball.hasLanded) break;
+        final hit = switch (feature) {
+          Tulip() => _meetTulip(ball, feature),
+          TurningFeature() => _meetBars(ball, feature),
+        };
+        if (hit != null) hits.add(hit);
+      }
+    }
+    return hits;
+  }
+
+  /// A ball touching [tulip] falls in if it is open and the ball comes from
+  /// above, and otherwise bounces off its body as off a pin.
+  FeatureHit? _meetTulip(Ball ball, Tulip tulip) {
+    final offset = ball.position - tulip.position;
+    final reach = GameConstants.tulipRadius + ball.radius;
+    if (offset.length > reach) return null;
+    final normal = offset.normalized();
+    if (tulip.catchesAt(normal)) {
+      tulip.catchBall();
+      ball.isActive = false;
+      return (ball: ball, feature: tulip, caught: true);
+    }
+    final impactSpeed = _bounceOffCircle(ball, normal, reach - offset.length);
+    _sound(tulip, () => _audioService?.playPegHit(impactSpeed));
+    return (ball: ball, feature: tulip, caught: false);
+  }
+
+  /// Bounces [ball] off each bar of [feature] it touches. A bar moves, so
+  /// the ball bounces off it as off a wall moving at the speed of the point
+  /// it meets: a turning blade throws a ball on.
+  FeatureHit? _meetBars(Ball ball, TurningFeature feature) {
+    const thickness = GameConstants.featureBarHalfThickness;
+    double? impactSpeed;
+    for (final bar in feature.bars) {
+      final along = bar.end - bar.start;
+      final share = ((ball.position - bar.start).dot(along) / along.length2)
+          .clamp(0.0, 1.0);
+      final nearest = bar.start + along * share;
+      final offset = ball.position - nearest;
+      final distance = offset.length;
+      if (distance >= ball.radius + thickness || distance == 0) continue;
+      final normal = offset / distance;
+      ball.position.add(normal * (ball.radius + thickness - distance));
+
+      // The speed of the bar where the ball meets it: the turn about the
+      // pivot, at right angles to the arm from the pivot
+      final arm = nearest - feature.pivot;
+      final barVelocity = Vector2(-arm.y, arm.x) * feature.angularVelocity;
+      final into = (ball.velocity - barVelocity).dot(normal);
+      if (into < 0) {
+        ball.velocity.add(normal * (-(1 + barRestitution) * into));
+      }
+      impactSpeed = math.max(impactSpeed ?? 0.0, math.max(0.0, -into));
+    }
+    if (impactSpeed == null) return null;
+    final speed = impactSpeed;
+    _sound(feature, () {
+      switch (feature) {
+        case Windmill():
+          _audioService?.playWindmillHit(speed);
+        case CentreGate():
+          _audioService?.playGateHit(speed);
+      }
+    });
+    return (ball: ball, feature: feature, caught: false);
+  }
+
+  /// Sounds a bounce off [feature] and ticks the phone, unless it sounded a
+  /// moment ago (see [BoardFeature.soundRepeatSeconds]).
+  void _sound(BoardFeature feature, void Function() play) {
+    if (feature.soundCooldown > 0.0) return;
+    feature.soundCooldown = BoardFeature.soundRepeatSeconds;
+    play();
+    _haptics?.pin();
   }
 
   List<Slot> checkSlotCollisions(List<Ball> balls, List<Slot> slots) {

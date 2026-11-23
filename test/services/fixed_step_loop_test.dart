@@ -100,7 +100,8 @@ void main() {
   });
 
   /// Plays [powers] one ball at a time on a new game of [level] and says
-  /// which slot each ball landed in, counted from the left.
+  /// which slot each ball landed in, counted from the left, or -1 for a
+  /// launch whose ball fell between two slots.
   Future<List<int>> landingSlots(WidgetTester tester, List<double> powers,
       {required int level}) async {
     final manager = hostedGame(tester, level: level);
@@ -113,9 +114,11 @@ void main() {
       while (!manager.gameState.canLaunchBall) {
         await tester.pump(const Duration(milliseconds: 16));
       }
+      final landedBefore = landed.length;
       for (int i = 0; i < slots.length; i++) {
         if (slots[i].ballCount > before[i]) landed.add(i);
       }
+      if (landed.length == landedBefore) landed.add(-1);
     }
     manager.stopLoop();
     // The bonus announcement takes itself down on a timer of its own

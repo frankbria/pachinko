@@ -41,19 +41,23 @@ The board changes colour every five levels. These are levels 1, 6, 11 and 16:
    |:----:|:---:|:--:|:----:|:--:|:---:|:----:|
 
    The two 2,000 slots are against the walls and barely wider than the ball. About one ball in nine lands in one.
-4. **Win the bonus.** Each level has two to four gold prize pegs, with a lamp in the dome for each. Hit them all and the bonus drops extra balls from the top: 5 on level 1, one more for every two levels, 15 at most.
-5. **Finish.** A round starts with 20 balls. When the last one lands, the summary shows the level's score, how many balls landed in each kind of slot, the prize pegs you collected, and whether it is your best for that level. From there: replay, go on to the next level, or return to the menu.
+4. **Win the bonus.** Each level has five gold prize pegs down the middle of the field, with a lamp in the dome for each. Hitting them all is rare, about two rounds in five, and rarer on later levels. When you do, the bonus drops extra balls from the top (5 on level 1, one more for every two levels, 15 at most) and starts a fever: for eight seconds of play every slot pays double.
+5. **Finish.** A round starts with 20 balls. When the last one lands, the summary shows the level's score, how many balls landed in each kind of slot, the prize pegs you collected, what the fever paid, whether it is your best for that level, and the stars it won with how far it was from the next ("2 stars, 1,800 short of 3"). From there: replay, go on to the next level once it is open, or return to the menu.
 
 ## What is in the game
 
-- **Levels without end.** Three peg layouts (triangle, random, hexagonal) take turns, and Next Level has no upper limit. The level picker opens any of the first 20 and shows your best score on each.
+- **Levels without end.** Three peg layouts (triangle, random, hexagonal) take turns, and Next Level has no upper limit. The layouts get harder up to level 20: the pins close in, and the prize pegs line up so that each shields the next, so the bonus comes less often as it grows, and a later level does not simply pay more. The level picker shows the first 20 with your stars and best score on each.
+- **Stars and locks.** Each level has a score for one, two and three stars, set so that about three rounds in five win one star, one in four two, and one in twenty all three. One star opens the next level; level 1 is always open, and a locked level cannot be started.
+- **Board features.** From level 3 the board has things to aim at. A gold tulip opens when the pin above it is hit, and a ball that falls into it while it is open pays out two more balls. A brass windmill turns and throws balls aside, and on every fifth level a gate rocks over the centre slot, turning balls away while it is level and guiding them in while it is steep. Tulips come on odd levels and a windmill on even ones, and after level 20 the tulips are on every level.
+- **A daily board.** Daily Board on the menu plays one board a day, the same for every player: its pins come from the date in UTC, so it changes at midnight UTC wherever you are, and the same launches land the same way on every phone. The menu shows your best on today's board and your streak of days played. Daily scores can be posted to a Google Play Games leaderboard; that is built but switched off until the game is set up in Play Console, and until then no score leaves the phone.
 - **Four colour bands.** Midnight, Lagoon, Plum and Ember, five levels each, then round again.
-- **18 achievements**, announced by a toast over whatever screen you are on. Some are milestones (First Launch, Marathon Runner), some take a good round (High Roller: 20,000 in one level), and some take luck or aim (Lucky Shot: the first ball of a round in a 2,000 slot; Combo King: every prize peg on a level with one ball).
+- **18 achievements**, announced by a toast over whatever screen you are on. Some are milestones (First Launch, Marathon Runner), some take a good round (High Roller: 24,000 in one level), and some take luck or aim (Lucky Shot: the first ball of a round in a 2,000 slot; Combo King: every prize peg on a level with one ball).
 - **High scores.** The ten best scores for each level are kept on the device.
 - **One ball at a time, or not.** By default the next ball waits for the one in play to land. A setting turns that off, and then you can launch as many as you like. The recording above was made with it off.
 - **Sound** for the launch, the pins, the prize pegs, the slots and the bonus: a pin sounds louder and higher the harder it is hit, and a slot by its value.
+- **Music** by Frank Bria, ready to play once its tracks are in `assets/music/`: a loop for the menu, one for a round that crossfades in when play starts, and a stinger into a fever loop when the bonus triggers. It drops low while the game is paused and a little under the round summary, and has its own volume in Settings. Until the tracks are added the game plays without music.
 - **Vibration** on a phone: a light tick for a pin, stronger for a prize peg, a 1,000 or 2,000 slot and the bonus.
-- **Settings for comfort.** Sound can be turned off or made quieter, vibration turned off, the launcher moved to the left for a left-handed player (the board is drawn reflected and plays the same), and motion reduced: no confetti, prize pegs that glow without shimmering, and a short trail behind the ball. Reduced motion follows the phone's own setting until you change it.
+- **Settings for comfort.** Sound can be turned off or made quieter, the music too, vibration turned off, the launcher moved to the left for a left-handed player (the board is drawn reflected and plays the same), and motion reduced: no confetti, prize pegs that glow without shimmering, and a short trail behind the ball. Reduced motion follows the phone's own setting until you change it.
 - **A screen reader** hears the score, the balls left and the level, and where each ball lands ("1,000 points, centre slot").
 - **Pause.** The game also pauses itself when the app goes to the background, and waits for you to resume.
 - **A first round that teaches.** On your first round a ghost hand pulls the plunger to show the drag, until your first launch. The first time you hit a prize peg, a callout under the lamps says how many there are to hit for the bonus. Each shows once on a device. The game screen's help button pauses the game and opens How to Play.
@@ -102,7 +106,7 @@ flutter analyze                       # must report nothing
 dart format lib test integration_test tool test_driver
 ```
 
-- **Tests.** More than 750 unit and widget tests and 10 golden image tests run on every pull request. 20 integration tests play the game on an Android emulator: `flutter test integration_test -d emulator-5554 --timeout 120s`.
+- **Tests.** More than 1,000 unit and widget tests and 19 golden image tests run on every pull request. 21 integration tests play the game on an Android emulator: `flutter test integration_test -d emulator-5554 --timeout 120s`.
 - **CI gates**, in order: analyzer, formatting, generated mocks up to date, tests, coverage of at least 85% on the lines a pull request changes, and golden tests. A second job builds the Android app in profile mode.
 - **Balance.** `flutter test tool/scoring_simulation_test.dart --dart-define=LEVELS=60 --dart-define=ROUNDS=20` plays whole rounds through the real generator, launcher and physics and prints where balls land, how often the bonus triggers and what rounds score. Run it before and after any change to levels, scoring or the bonus.
 - **Workflow.** Work on a branch, use conventional commits (`feat:`, `fix:`, `docs:`), and open a pull request to `master`.
@@ -114,8 +118,8 @@ dart format lib test integration_test tool test_driver
 ```
 lib/
 ├── main.dart     # App start and providers
-├── models/       # Ball, peg, slot, level, launcher, game state, achievements, high scores
-├── services/     # Physics engine, game loop, audio, storage, achievements
+├── models/       # Ball, peg, slot, level, daily board, launcher, game state, achievements, high scores
+├── services/     # Physics engine, game loop, audio, storage, achievements, the daily leaderboard
 ├── screens/      # Menu, game, high scores, achievements, settings
 ├── widgets/      # The board and its painter, effects, round summary, toasts
 └── utils/        # Constants and colours, theme, peg layouts
@@ -131,6 +135,6 @@ The screenshots come from the `Screenshots` workflow, which runs `integration_te
 
 ## License
 
-[MIT](LICENSE). The sound effects have their own terms, listed in [`assets/sounds/LICENSING.md`](assets/sounds/LICENSING.md), and the Oxanium typeface is under the [Open Font License](assets/fonts/OFL.txt).
+[MIT](LICENSE). The sound effects have their own terms, listed in [`assets/sounds/LICENSING.md`](assets/sounds/LICENSING.md), the music is the author's ([`assets/music/LICENSING.md`](assets/music/LICENSING.md)), and the Oxanium typeface is under the [Open Font License](assets/fonts/OFL.txt).
 
 Questions and bug reports: [GitHub Issues](https://github.com/frankbria/pachinko/issues).

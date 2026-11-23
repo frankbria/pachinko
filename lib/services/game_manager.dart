@@ -7,23 +7,29 @@ import 'package:vector_math/vector_math_64.dart' as vm;
 import '../models/ball.dart';
 import '../models/ball_landing.dart';
 import '../models/ball_launcher.dart';
+import '../models/board_feature.dart';
+import '../models/daily_board.dart';
 import '../models/game_settings.dart';
 import '../models/game_state.dart';
 import '../models/peg.dart';
 import '../models/slot.dart';
+import '../models/star_targets.dart';
 import '../widgets/floating_text.dart';
 import '../utils/constants.dart';
 import 'physics_engine.dart';
 import 'audio_service.dart';
+import 'music_service.dart';
 import 'haptics_service.dart';
 import 'storage_service.dart';
 import 'achievement_service.dart';
+import 'daily_leaderboard.dart';
 
 class GameManager extends ChangeNotifier {
   final GameState _gameState;
   final PhysicsEngine _physicsEngine;
   final BallLauncher _ballLauncher;
   final AudioService? _audioService;
+  final MusicService? _music;
   final HapticsService? _haptics;
   StorageService? _storageService;
   AchievementService? _achievementService;
@@ -50,6 +56,10 @@ class GameManager extends ChangeNotifier {
   /// Whether the round just finished beat the level's best. Null until the
   /// stored scores have been read, and when there is no storage.
   bool? _roundIsNewBest;
+
+  /// Whether the current level had a star before the round just finished,
+  /// once storage has answered.
+  bool _levelHadStar = false;
   bool _disposed = false;
 
   /// Counts the rounds this manager has started. An answer from storage
@@ -88,6 +98,17 @@ class GameManager extends ChangeNotifier {
 
   final ValueNotifier<BallLanding?> _lastLanding = ValueNotifier(null);
 
+  /// Where daily scores are posted, or null while the leaderboard is off.
+  final DailyLeaderboard? _leaderboard;
+
+  /// The time now, which says which day's board is today's.
+  final DateTime Function() _clock;
+
+  /// The post to the leaderboard under way, if any. Posts run one at a
+  /// time, so that one finishing late cannot clear a better score kept
+  /// while it ran.
+  Future<void>? _posting;
+
   /// Creates a GameManager with optional dependency injection.
   ///
   /// Dependencies default to production instances if not provided,
@@ -97,10 +118,16 @@ class GameManager extends ChangeNotifier {
     PhysicsEngine? physicsEngine,
     BallLauncher? ballLauncher,
     AudioService? audioService,
+    MusicService? music,
     HapticsService? haptics,
     StorageService? storageService,
     AchievementService? achievementService,
+    DailyLeaderboard? leaderboard,
+    DateTime Function() clock = DateTime.now,
   })  : _audioService = audioService,
+        _music = music,
+        _leaderboard = leaderboard,
+        _clock = clock,
         _haptics = haptics,
         _storageService = storageService,
         _achievementService = achievementService,
@@ -113,7 +140,13 @@ class GameManager extends ChangeNotifier {
       _gameState.singleBallLaunch = storageService.singleBallLaunch;
       _applySettings(storageService.settings);
       _readHints(storageService);
+      unawaited(postPendingDailyScore());
+    } else {
+      // Silent until the saved settings arrive (attachServices) or the
+      // player changes one: the player may have turned sound off
+      _music?.enabled = false;
     }
+    _updateMusic();
   }
 
   /// Reads which first-round hints this install has still to show.
@@ -143,6 +176,7 @@ class GameManager extends ChangeNotifier {
       return;
     }
     _storageService = storageService;
+    unawaited(postPendingDailyScore());
     final shownBefore =
         (_gameState.singleBallLaunch, _launchHintDue, _settings);
     _readHints(storageService);
@@ -201,6 +235,52 @@ class GameManager extends ChangeNotifier {
     };
   }
 
+  /// The stars won on each level that has a score or stored stars, for the
+  /// level picker and its locks. A level's stars are the more of those
+  /// stored and those its best score wins on today's targets, so scores
+  /// from before stars existed award theirs, and are stored from then on.
+  /// Empty when there is no storage.
+  Future<Map<int, int>> starsByLevel() async {
+    final storage = _storageService;
+    if (storage == null) return const {};
+    final stored = storage.storedStars;
+    final levels = {...await storage.levelsWithScores(), ...stored.keys};
+    final stars = await Future.wait([
+      for (final level in levels)
+        storage.getBestScore(level).then((best) => math.max(stored[level] ?? 0,
+            StarTargets.forLevel(level).starsFor(best?.score ?? 0))),
+    ]);
+    final byLevel = Map.fromIterables(levels, stars);
+    // Stars won by scores alone are stored, so that clearing the scores later
+    // keeps them
+    await Future.wait([
+      for (final MapEntry(key: level, value: won) in byLevel.entries)
+        if (won > (stored[level] ?? 0)) storage.saveStars(level, won),
+    ]);
+    return byLevel;
+  }
+
+  /// Today's daily board, by the UTC date.
+  DailyBoard get today => DailyBoard.on(_clock());
+
+  /// The best score of a daily round finished today, or null when there was
+  /// none or there is no storage.
+  int? get dailyBestToday => _storageService?.dailyBest(today.day);
+
+  /// The player's streak of days with a daily round finished, as it stands
+  /// today: zero once a day has been missed, and without storage.
+  int get dailyStreak => _storageService?.dailyStreak.lengthOn(today.day) ?? 0;
+
+  /// Whether the round summary offers Next Level: the level after this one
+  /// is open, because this round won a star or the level already had one.
+  /// Never on the daily board, which has no next level.
+  bool get nextLevelOpen =>
+      _gameState.daily == null &&
+      (_levelHadStar ||
+          StarTargets.forLevel(_gameState.currentLevelNumber)
+                  .starsFor(_gameState.levelScore) >=
+              1);
+
   /// Sets whether a ball may only be launched once no ball is in play,
   /// applies it to the game at once and saves it for the next start.
   Future<void> setSingleBallLaunch(bool value) async {
@@ -245,6 +325,9 @@ class GameManager extends ChangeNotifier {
     _audioService
       ?..enabled = settings.soundOn
       ..setVolume(settings.soundVolume);
+    _music
+      ?..enabled = settings.soundOn
+      ..setVolume(settings.musicVolume);
     _haptics?.enabled = settings.vibrationOn;
   }
 
@@ -270,6 +353,7 @@ class GameManager extends ChangeNotifier {
     _vsync = vsync;
     _ticker = vsync.createTicker(_onFrame);
     if (wasRunning) _startGameLoop();
+    _updateMusic();
   }
 
   /// Stops the game loop and lets go of [vsync]'s clock, if it is the one
@@ -280,16 +364,54 @@ class GameManager extends ChangeNotifier {
     _ticker?.dispose();
     _ticker = null;
     _vsync = null;
+    _updateMusic();
+  }
+
+  /// What the music is for: a round while a screen hosts the board (from
+  /// [attachVsync] to [detachVsync]), the fever while it runs, and otherwise
+  /// the menu.
+  MusicScene get _musicScene {
+    if (_vsync == null) return MusicScene.menu;
+    return _gameState.feverActive ? MusicScene.fever : MusicScene.round;
+  }
+
+  /// How far the music drops: low while the game is paused, a little under
+  /// the round summary.
+  MusicDuck get _musicDuck {
+    if (_vsync == null) return MusicDuck.none;
+    if (_gameState.isPaused) return MusicDuck.paused;
+    if (_gameState.phase == GamePhase.gameOver) return MusicDuck.summary;
+    return MusicDuck.none;
+  }
+
+  /// Tells the music what is going on now. The service changes nothing when
+  /// asked for what it is already playing, so this runs on every change.
+  void _updateMusic() {
+    _music
+      ?..playScene(_musicScene)
+      ..setDuck(_musicDuck);
+  }
+
+  /// Notifies listeners, after bringing the music up to date: every change
+  /// of play that the music follows (a transition, pause, the bonus, the
+  /// fever ending in the loop, the last ball landing) notifies.
+  @override
+  void notifyListeners() {
+    _updateMusic();
+    super.notifyListeners();
   }
 
   /// The seed for the bounces of the round [round] of [level], so that the
   /// same level, round and launches play out the same way.
   static int physicsSeedFor(int level, int round) => level * 1000003 + round;
 
-  /// Begins round [_round] on the current level with its own seed.
+  /// Begins round [_round] on the current level with its own seed. Every
+  /// round of the daily board has the board's seed, so the same launches
+  /// play out the same way on every phone and in every round of the day.
   void _beginRound() {
     _round++;
-    _physicsEngine.seed(physicsSeedFor(_gameState.currentLevelNumber, _round));
+    _physicsEngine.seed(_gameState.daily?.seed ??
+        physicsSeedFor(_gameState.currentLevelNumber, _round));
   }
 
   /// Whether the round just finished beat the level's best score. Null while
@@ -306,14 +428,16 @@ class GameManager extends ChangeNotifier {
     _ballLauncher.reset();
     _levelResultSaved = false;
     _roundIsNewBest = null;
+    _levelHadStar = false;
     _firstBall = null;
     _firstBallSeen = false;
     _prizePegHint = null;
   }
 
-  void startGame({int level = 1}) {
+  /// Starts a new run on [level], or on the [daily] board.
+  void startGame({int level = 1, DailyBoard? daily}) {
     _clearRoundTracking();
-    _gameState.startNewGame(level: level);
+    _gameState.startNewGame(level: level, daily: daily);
     _beginRound();
     _startGameLoop();
     notifyListeners();
@@ -467,6 +591,12 @@ class GameManager extends ChangeNotifier {
 
     if (balls.isEmpty) return;
 
+    // The fever lasts for seconds of play, so it runs down only here, with a
+    // ball in play; that also keeps the loop running for its meter
+    _gameState.updateFever(deltaTime);
+    // The features move with play too, so a seeded round repeats exactly
+    _physicsEngine.updateFeatures(level.features, deltaTime);
+
     // Bonus balls only join once a ball has hit pegs, so the first ball in
     // play this round is the first one launched
     if (!_firstBallSeen) {
@@ -486,6 +616,10 @@ class GameManager extends ChangeNotifier {
     // Check peg collisions (only for free balls)
     final hitPegs = _physicsEngine.checkPegCollisions(freeBalls, level.pegs);
     _handlePegHits(hitPegs);
+
+    final featureHits =
+        _physicsEngine.checkFeatureCollisions(freeBalls, level.features);
+    _handleTulipCatches(featureHits);
 
     // Check slot collisions (only for free balls)
     final hitSlots = _physicsEngine.checkSlotCollisions(freeBalls, level.slots);
@@ -522,6 +656,17 @@ class GameManager extends ChangeNotifier {
     }
   }
 
+  /// Pays out for each ball an open tulip caught on this step.
+  void _handleTulipCatches(List<FeatureHit> hits) {
+    for (final hit in hits) {
+      final tulip = hit.feature;
+      if (!hit.caught || tulip is! Tulip) continue;
+      _gameState.payTulip(tulip);
+      _audioService?.playTulipCatch();
+      _haptics?.prizePeg();
+    }
+  }
+
   /// At the first prize peg hit on this install, tells the player how many
   /// there are to collect for the bonus.
   void _showPrizePegHintOnce() {
@@ -533,7 +678,7 @@ class GameManager extends ChangeNotifier {
 
   void _handleSlotHits(List<Slot> hitSlots) {
     for (final slot in hitSlots) {
-      _gameState.addScore(slot.pointValue);
+      final points = _gameState.scoreLanding(slot);
       _audioService?.playSlotScore(slot.pointValue);
       _haptics?.slot(slot.pointValue);
 
@@ -542,13 +687,13 @@ class GameManager extends ChangeNotifier {
       _gameState.lightSlot(slot);
       final row = _gameState.currentLevel?.slots ?? const <Slot>[];
       _lastLanding.value = BallLanding(
-        points: slot.pointValue,
+        points: points,
         slotIndex: row.indexOf(slot),
         slotCount: row.length,
       );
-      final size = FloatingText.sizeFor(slot.pointValue);
+      final size = FloatingText.sizeFor(points);
       _gameState.addFloatingText(
-        '+${slot.pointValue}',
+        '+$points',
         Offset(slot.position.x, slot.top - size * 1.4),
         slot.color,
         fontSize: size,
@@ -567,7 +712,10 @@ class GameManager extends ChangeNotifier {
 
     if (level.allSpecialPegsHit) {
       _gameState.triggerSpecialBonus();
-      _audioService?.playBonusTrigger();
+      // With music playing, the fever stinger is the fanfare
+      if (!(_music?.playsFeverStinger ?? false)) {
+        _audioService?.playBonusTrigger();
+      }
       _haptics?.bonus();
 
       // Spawn confetti at center of board
@@ -608,10 +756,20 @@ class GameManager extends ChangeNotifier {
   }
 
   /// Saves the points won on the current level as that level's high score.
+  /// A daily round is recorded as the day's instead, and counts for no
+  /// level's scores or stars, nor for the achievements that go by a level's
+  /// result; those earned in play count on it as on any round.
   void _saveHighScore() {
     final storageService = _storageService;
     final level = _gameState.currentLevel?.levelNumber ?? 1;
     final score = _gameState.levelScore;
+    final daily = _gameState.daily;
+    if (daily != null) {
+      if (storageService != null) {
+        _recordDailyRound(storageService, daily, score);
+      }
+      return;
+    }
 
     if (storageService != null) {
       _recordScore(storageService, level, score);
@@ -622,19 +780,76 @@ class GameManager extends ChangeNotifier {
     _achievementService?.trackLevelScore(level, score);
   }
 
-  /// Saves [score] for [level], and works out first whether it beats the
-  /// level's best so that the round summary can say so.
+  /// Saves [score] for [level] and the stars it wins, and works out first
+  /// whether it beats the level's best and whether the level already had a
+  /// star, so that the round summary can say so and offer Next Level.
   Future<void> _recordScore(
       StorageService storage, int level, int score) async {
     final round = _round;
     // No score stored counts as a best of zero: a first round without a point
     // is saved, but the summary does not call it a best
     final best = (await storage.getBestScore(level))?.score ?? 0;
+    final targets = StarTargets.forLevel(level);
+    final starsBefore =
+        math.max(storage.storedStars[level] ?? 0, targets.starsFor(best));
     await storage.saveHighScore(level, score);
+    await storage.saveStars(
+        level, math.max(starsBefore, targets.starsFor(score)));
     // The player may have moved on, or left, while storage answered
     if (_disposed || round != _round) return;
     _roundIsNewBest = score > best;
+    _levelHadStar = starsBefore >= 1;
     notifyListeners();
+  }
+
+  /// Records a daily round of [score] on [board]: the day's best and the
+  /// streak, and a new best for the day is posted to the leaderboard, or
+  /// kept to post later. Then the summary can say whether it was a best.
+  Future<void> _recordDailyRound(
+      StorageService storage, DailyBoard board, int score) async {
+    final round = _round;
+    final best = storage.dailyBest(board.day) ?? 0;
+    await storage.recordDailyRound(board.day, score);
+    if (score > best && _leaderboard != null) {
+      await storage.savePendingDailyScore(board.day, score);
+      await postPendingDailyScore();
+    }
+    if (_disposed || round != _round) return;
+    _roundIsNewBest = score > best;
+    notifyListeners();
+  }
+
+  /// Posts the daily score kept for the leaderboard, if there is one. A
+  /// score from an earlier day is dropped, because that day's board is over;
+  /// one that fails to post (the player is offline or not signed in) is kept
+  /// and tried again at the next start or the next best of the day. A call
+  /// made while a post is under way waits for it, then posts what is kept.
+  Future<void> postPendingDailyScore() async {
+    for (var running = _posting; running != null; running = _posting) {
+      await running;
+    }
+    final post = _postPending();
+    _posting = post;
+    try {
+      await post;
+    } finally {
+      if (identical(_posting, post)) _posting = null;
+    }
+  }
+
+  Future<void> _postPending() async {
+    final storage = _storageService;
+    final leaderboard = _leaderboard;
+    if (storage == null || leaderboard == null) return;
+    final pending = storage.pendingDailyScore;
+    if (pending == null) return;
+    final board = today;
+    final done = pending.day != board.day ||
+        await leaderboard.submit(board, pending.score);
+    // A better score may have been kept while this one was being posted
+    if (done && storage.pendingDailyScore == pending) {
+      await storage.clearPendingDailyScore();
+    }
   }
 
   void nextLevel() {

@@ -124,8 +124,107 @@ class GameConstants {
 
   // Game constants
   static const int ballsPerRound = 20;
-  static const int minSpecialPegs = 2;
-  static const int maxSpecialPegs = 4;
+
+  /// The prize pegs on every level. With all of them to collect, the bonus
+  /// comes in 35 to 50% of rounds on every band of levels, measured with
+  /// `tool/scoring_simulation_test.dart` (#113).
+  static const int prizePegsPerLevel = 5;
+
+  /// Where prize pegs are placed: a zigzag column down the middle of the
+  /// field, low down, the first at [prizeColumnTopY] and each next one a
+  /// step lower and on the other side of [prizeColumnX] by the sway, moved by
+  /// up to [prizeColumnJitter] either way. A ball that reaches one has
+  /// usually been turned aside by the one above it, which is what makes
+  /// collecting them all rare; set with `tool/scoring_simulation_test.dart`
+  /// (#113). The step and the sway change with the level (#115): on level 1
+  /// they are [prizeColumnStep] and [prizeColumnSway], from
+  /// [hardestLayoutLevel] on [prizeColumnStepHardest] and
+  /// [prizeColumnSwayHardest] (`Level.prizeColumnStepFor` and
+  /// `Level.prizeColumnSwayFor`).
+  static const double prizeColumnX = boardWidth / 2;
+  static const double prizeColumnTopY = 340.0;
+  static const double prizeColumnStep = 38.0;
+  static const double prizeColumnSway = 31.0;
+  static const double prizeColumnJitter = 8.0;
+
+  /// The prize column from [hardestLayoutLevel] on. The pegs stand further
+  /// apart down the column as levels rise, and closer to its middle line:
+  /// the sway is what sets the bonus rate. Spread wider, the pegs stand in
+  /// separate streams of balls and the bonus comes more often (a sway of 20
+  /// gave it in about a quarter of rounds, 45 in more than half); kept close,
+  /// each shades the next. From 31 on level 1 to 25.5 the bonus comes in
+  /// about 42% of rounds on levels 1 to 10 and 36% on levels 41 to 60, which
+  /// pays for the bonus growing with the level (#115).
+  static const double prizeColumnSwayHardest = 25.5;
+  static const double prizeColumnStepHardest = 42.0;
+
+  /// The level from which the layouts and the prize column are at their
+  /// hardest (#115). It is the level at which the bonus stops growing
+  /// ([bonusBallsMax]), so the layouts get harder for as long as the bonus
+  /// gets richer.
+  static const int hardestLayoutLevel = 20;
+
+  /// The daily board (#117) plays with the layout, features, colours and
+  /// bonus of one of these levels, picked by the date: never the first two,
+  /// which have no features, and the hardest layouts at most.
+  static const int dailyFirstLevel = 3;
+  static const int dailyLastLevel = hardestLayoutLevel;
+
+  /// The Google Play Games leaderboard that daily scores are posted to. The
+  /// leaderboard is off while this is empty, which it is until the game and
+  /// its leaderboard are set up in Play Console (see the owner's steps on
+  /// #117): no score leaves the phone and nothing signs in to Play Games.
+  static const String dailyLeaderboardId = '';
+
+  /// How far [levelNumber] is along the difficulty curve: 0 on level 1,
+  /// rising evenly to 1 at [hardestLayoutLevel], and 1 on every level after.
+  static double difficultyFor(int levelNumber) =>
+      ((levelNumber - 1) / (hardestLayoutLevel - 1)).clamp(0.0, 1.0);
+
+  /// The value [levelNumber] takes between [easiest], on level 1, and
+  /// [hardest], from [hardestLayoutLevel] on.
+  static double alongDifficulty(
+          int levelNumber, double easiest, double hardest) =>
+      easiest + (hardest - easiest) * difficultyFor(levelNumber);
+
+  /// The hexagonal layout: pins [hexagonalSpacing] apart along a row and rows
+  /// [hexagonalRowStep] apart, each pin moved by up to half of
+  /// [hexagonalJitter] either way, on level 1; the `Hardest` values from
+  /// [hardestLayoutLevel] on (#115). Closer rows fit one more row in the
+  /// same height, and closer, more jittered pins scatter a ball more.
+  static const double hexagonalSpacing = 45.0;
+  static const double hexagonalSpacingHardest = 42.0;
+  static const double hexagonalRowStep = 38.0;
+  static const double hexagonalRowStepHardest = 36.0;
+  static const double hexagonalJitter = 10.0;
+  static const double hexagonalJitterHardest = 14.0;
+
+  /// The triangle layout, in the same way: pins [triangleSpacing] apart,
+  /// rows [triangleRowStep] apart and [triangleJitter] of jitter on level 1.
+  static const double triangleSpacing = 50.0;
+  static const double triangleSpacingHardest = 46.0;
+  static const double triangleRowStep = 40.0;
+  static const double triangleRowStepHardest = 37.0;
+  static const double triangleJitter = 8.0;
+  static const double triangleJitterHardest = 12.0;
+
+  /// How far above the bottom of the board the random layout's pins stop:
+  /// 230 px on level 1 (pins down to y = 370 on the 600 px board) and 265 px
+  /// (y = 335) from [hardestLayoutLevel] on, so
+  /// that on later levels more of the prize column stands in open field and
+  /// fewer pins turn balls onto it (#115). Down to y = 400, as before, they
+  /// stood among the prize pegs and the bonus came in two rounds of three on
+  /// random levels. The field above fills by level 2, so the number of pins
+  /// no longer grows with the level.
+  static const double randomLayoutBottomMargin = 230.0;
+  static const double randomLayoutBottomMarginHardest = 265.0;
+
+  /// How much a slot pays during the fever that follows the bonus.
+  static const int feverMultiplier = 2;
+
+  /// How long the fever lasts, in seconds of play: it runs down only while a
+  /// ball is in play, so neither pausing nor waiting to launch uses it up.
+  static const double feverSeconds = 8.0;
   static const int bonusBallsBase = 5;
 
   /// The most balls a bonus drops. The bonus grows with the level and
@@ -138,6 +237,67 @@ class GameConstants {
     final grown = bonusBallsBase + levelNumber ~/ 2;
     return grown < bonusBallsMax ? grown : bonusBallsMax;
   }
+
+  // Board features (#114): which levels have which is Level.featureKindsFor.
+  // Where they stand and how they behave were set with
+  // `tool/scoring_simulation_test.dart`, so that the bonus still comes in 35
+  // to 50% of rounds on every band of levels.
+
+  /// A tulip's body, and where the two stand: in the pins, one each side of
+  /// the prize column. Lower down they stood in the two streams of balls
+  /// down the sides and knocked them inwards onto the prize pegs, and the
+  /// bonus came in four rounds out of five. Each tulip's trigger pin is
+  /// [tulipTriggerOffsetX] outwards and [tulipTriggerRise] up from it, so a
+  /// ball can still fall into its mouth from straight above.
+  static const double tulipRadius = 12.0;
+  static const double tulipLeftX = 110.0;
+  static const double tulipRightX = 290.0;
+  static const double tulipY = 250.0;
+  static const double tulipTriggerOffsetX = 22.0;
+  static const double tulipTriggerRise = 42.0;
+  static const double tulipTriggerRadius = 9.5;
+
+  /// How long a tulip stays open after its trigger pin is hit, in seconds of
+  /// play, unless it catches a ball first.
+  static const double tulipOpenSeconds = 0.6;
+
+  /// How far from straight up, in radians, a ball can meet an open tulip and
+  /// still fall into its mouth.
+  static const double tulipMouthHalfAngle = 0.4;
+
+  /// The balls a tulip pays for each ball it catches: about four a round on
+  /// a level with tulips. Paid balls are more chances at the prize pegs, so
+  /// this moves the bonus rate.
+  static const int tulipPayoutBalls = 2;
+
+  /// A windmill: four blades of [windmillBladeLength] from a hub at
+  /// ([windmillX], [windmillY]), turning at [windmillSpin] radians a second
+  /// of play. It turns anticlockwise, so its top throws balls out towards
+  /// the wall and not in towards the prize pegs.
+  static const double windmillX = 100.0;
+  static const double windmillY = 320.0;
+  static const double windmillBladeLength = 24.0;
+  static const int windmillBlades = 4;
+  static const double windmillSpin = -3.0;
+
+  /// Half the thickness of a windmill blade and of the centre gate's bar.
+  static const double featureBarHalfThickness = 2.5;
+
+  /// The centre gate: a bar of half length [centreGateHalfLength] that
+  /// rocks about a pivot at the mouth of the centre slot, [centreGateY]
+  /// down, up to [centreGateSwing] radians either way of level and back
+  /// every [centreGatePeriod] seconds of play. Level, it turns balls away
+  /// from the slot; steep, it guides them down its length into it.
+  static const double centreGateY = 530.0;
+  static const double centreGateHalfLength = 18.0;
+  static const double centreGateSwing = 1.05;
+  static const double centreGatePeriod = 3.2;
+
+  /// The step down the prize column on a level with the centre gate, in
+  /// place of [prizeColumnStep]: shorter, so that the lowest prize peg leaves
+  /// a ball room past the gate. Lifting the whole column instead made the
+  /// bonus come in seven rounds out of ten on those levels.
+  static const double centreGateColumnStep = 32.0;
 
   // Bonus balls drop from the top of the playfield, above the first peg row
   static const double bonusBallSpawnY = 70.0;
@@ -270,6 +430,12 @@ class GameStrings {
       'Wait for the ball in play to land before launching the next. Turn off to launch as many as you like.';
   static const String soundEffects = 'Sound effects';
   static const String volume = 'Volume';
+  static const String musicVolume = 'Music volume';
+  static const String credits = 'Credits';
+
+  /// Who made the music and the sounds, as the settings screen credits them.
+  static const String creditLines = 'Music by Frank Bria\n'
+      'Prize peg chime by mokasza, Freesound.org (CC BY 4.0)';
   static const String vibration = 'Vibration';
   static const String vibrationHint =
       'A tick for a pin, stronger for a prize peg, a high slot and the bonus';
@@ -294,8 +460,43 @@ class GameStrings {
   static const String replay = 'Replay';
   static const String menu = 'Menu';
   static const String newBest = 'New best for this level';
+  static const String newDailyBest = 'New best for today';
+
+  /// The daily board's name, on its sign and in the header's level tile.
+  static const String daily = 'Daily';
+  static const String dailyBoard = 'Daily Board';
+
+  /// What the menu says under the Daily Board button: today's best, or that
+  /// today's board is still to play, and the streak of days. [best] is
+  /// already written with its thousands grouped.
+  static String dailyStatus(String? best, int streak) {
+    final today = best == null ? 'Not played today' : "Today's best $best";
+    return switch (streak) {
+      0 => today,
+      1 => '$today · Streak 1 day',
+      _ => '$today · Streak $streak days',
+    };
+  }
+
+  /// The stars a round won and how far it was from the next: "2 stars, 1,800
+  /// short of 3", or "3 stars". [pointsShort] is already written with its
+  /// thousands grouped, and null when there is no next star.
+  static String starsWon(int stars, String? pointsShort) {
+    final won = switch (stars) {
+      0 => 'No stars',
+      1 => '1 star',
+      _ => '$stars stars',
+    };
+    return pointsShort == null
+        ? won
+        : '$won, $pointsShort short of ${stars + 1}';
+  }
+
+  static const String levelLocked = 'Locked';
+  static const String levelLockedHint = 'Win a star on the level before';
   static const String prizePegs = 'Prize pegs';
   static const String bonusBalls = 'Bonus balls';
+  static const String feverPoints = 'Fever ×${GameConstants.feverMultiplier}';
   static const String levelComplete = 'Level Complete!';
   static const String gameOver = 'Game Over';
   static const String score = 'Score';

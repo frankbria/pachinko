@@ -3,12 +3,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
+import 'package:pachinko_game/models/daily_board.dart';
 import 'package:pachinko_game/models/game_settings.dart';
 import 'package:pachinko_game/screens/menu_screen.dart';
 import 'package:pachinko_game/services/game_manager.dart';
 import 'package:pachinko_game/models/game_state.dart';
 import 'package:pachinko_game/models/ball_launcher.dart';
 import 'package:pachinko_game/utils/constants.dart';
+import 'package:pachinko_game/utils/game_theme.dart';
 
 // Generate mocks for GameManager, GameState, and BallLauncher
 @GenerateMocks([GameManager, GameState, BallLauncher])
@@ -29,18 +31,24 @@ void main() {
     // Read by the level picker for the best score on each level
     when(mockGameManager.bestScoresByLevel())
         .thenAnswer((_) async => const <int, int>{});
+    // A star on levels 1 and 2 opens levels 1 to 3; 4 and on are locked
+    when(mockGameManager.starsByLevel())
+        .thenAnswer((_) async => const <int, int>{1: 1, 2: 2});
     when(mockGameManager.ballLauncher).thenReturn(mockBallLauncher);
     // No first-round hint: those are tested in first_round_hints_test.dart
     when(mockGameManager.showsLaunchHint).thenReturn(false);
     when(mockGameManager.settings).thenReturn(const GameSettings());
     when(mockGameManager.lastLanding).thenReturn(ValueNotifier(null));
     when(mockGameManager.prizePegHint).thenReturn(null);
+    when(mockGameManager.dailyBestToday).thenReturn(null);
+    when(mockGameManager.dailyStreak).thenReturn(0);
 
     // Stub GameState properties
     when(mockGameState.score).thenReturn(0);
     when(mockGameState.ballsRemaining).thenReturn(20);
     when(mockGameState.currentLevel).thenReturn(null);
     when(mockGameState.currentLevelNumber).thenReturn(1);
+    when(mockGameState.daily).thenReturn(null);
     when(mockGameState.activeBalls).thenReturn([]);
     when(mockGameState.canLaunchBall).thenReturn(true);
     when(mockGameState.phase).thenReturn(GamePhase.ready);
@@ -247,6 +255,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Gold pegs'), findsOneWidget);
+      expect(find.textContaining('every slot pays ×2'), findsOneWidget);
       expect(find.textContaining(RegExp('orange', caseSensitive: false)),
           findsNothing);
     });
@@ -298,6 +307,71 @@ void main() {
 
       // Verify GameManager.startGame was called with level 3
       verify(mockGameManager.startGame(level: 3)).called(1);
+    });
+
+    /// GIVEN levels 1 and 2 have stars
+    /// WHEN the player taps level 4, whose level before has none
+    /// THEN nothing starts, and the tile shows a lock instead of stars
+    testWidgets(
+        'givenLevelSelectDialogOpen_whenUserTapsLockedLevel_thenNothingStarts',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+      await tester.tap(find.text('Select Level'));
+      await tester.pumpAndSettle();
+
+      Finder tile(int level) => find
+          .ancestor(of: find.text('$level'), matching: find.byType(Semantics))
+          .first;
+      expect(find.descendant(of: tile(4), matching: find.byIcon(Icons.lock)),
+          findsOneWidget);
+      expect(find.descendant(of: tile(3), matching: find.byIcon(Icons.lock)),
+          findsNothing);
+      expect(find.descendant(of: tile(2), matching: find.byIcon(Icons.star)),
+          findsNWidgets(2));
+      expect(
+          find.descendant(
+              of: tile(2), matching: find.byIcon(Icons.star_border)),
+          findsOneWidget);
+
+      await tester.tap(find.text('4'));
+      await tester.pump();
+
+      verifyNever(mockGameManager.startGame(level: anyNamed('level')));
+      expect(find.byType(AlertDialog), findsOneWidget);
+    });
+
+    /// GIVEN a player who has won no star yet
+    /// WHEN the picker opens
+    /// THEN only level 1 is open
+    testWidgets('givenNoStars_whenPickerOpens_thenOnlyLevel1IsOpen',
+        (WidgetTester tester) async {
+      when(mockGameManager.starsByLevel())
+          .thenAnswer((_) async => const <int, int>{});
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+      await tester.tap(find.text('Select Level'));
+      await tester.pumpAndSettle();
+
+      expect(
+          find.descendant(
+              of: find
+                  .ancestor(
+                      of: find.text('2'), matching: find.byType(Semantics))
+                  .first,
+              matching: find.byIcon(Icons.lock)),
+          findsOneWidget);
+      expect(
+          tester
+              .getSemantics(find
+                  .ancestor(
+                      of: find.text('2'), matching: find.byType(Semantics))
+                  .first)
+              .value,
+          GameStrings.levelLocked);
+
+      // A screen reader's double tap is the node's tap action
+      tester.semantics.tap(find.semantics.byLabel('Level 1'));
+      await tester.pump();
+      verify(mockGameManager.startGame(level: 1)).called(1);
     });
 
     /// GIVEN level select dialog is open
@@ -407,5 +481,67 @@ void main() {
       // Verify correct level parameter passed via Provider
       verify(mockGameManager.startGame(level: 2)).called(1);
     });
+  });
+
+  group('Daily board', () {
+    testWidgets(
+        'given no daily round today and no streak, then the menu says today\'s board is still to play',
+        (tester) async {
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+
+      expect(find.text(GameStrings.dailyBoard), findsOneWidget);
+      expect(find.text('Not played today'), findsOneWidget);
+    });
+
+    testWidgets(
+        'given today\'s best and a streak, then the menu shows both, in the score\'s gold',
+        (tester) async {
+      when(mockGameManager.dailyBestToday).thenReturn(12500);
+      when(mockGameManager.dailyStreak).thenReturn(3);
+
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+
+      final status = find.text("Today's best 12,500 · Streak 3 days");
+      expect(status, findsOneWidget);
+      expect(tester.widget<Text>(status).style?.color,
+          GameConstants.secondaryColor);
+    });
+
+    test('the status says one day, and leaves out a broken streak', () {
+      expect(
+          GameStrings.dailyStatus(null, 1), 'Not played today · Streak 1 day');
+      expect(GameStrings.dailyStatus('900', 0), "Today's best 900");
+    });
+
+    testWidgets(
+        'given the menu, when Daily Board is tapped, then today\'s board is started',
+        (tester) async {
+      final today = DailyBoard.on(DateTime.utc(2026, 11, 23));
+      when(mockGameManager.today).thenReturn(today);
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+
+      await tester.ensureVisible(find.text(GameStrings.dailyBoard));
+      await tester.tap(find.text(GameStrings.dailyBoard));
+      await tester.pump();
+
+      verify(mockGameManager.startGame(daily: today)).called(1);
+    });
+
+    testWidgets('the menu with today\'s best and a streak matches its golden',
+        (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.625;
+      addTearDown(tester.view.reset);
+      when(mockGameManager.dailyBestToday).thenReturn(12500);
+      when(mockGameManager.dailyStreak).thenReturn(3);
+
+      await tester.pumpWidget(ChangeNotifierProvider<GameManager>.value(
+        value: mockGameManager,
+        child: MaterialApp(theme: buildGameTheme(), home: const MenuScreen()),
+      ));
+
+      await expectLater(find.byType(MenuScreen),
+          matchesGoldenFile('../widgets/goldens/menu_daily.png'));
+    }, tags: ['golden']);
   });
 }

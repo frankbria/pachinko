@@ -17,6 +17,13 @@ class Peg {
   bool isHighlighted;
   bool hasBeenHit;
 
+  /// How many times a ball moving into the peg has struck it on this level,
+  /// counted by the physics on every bounce. A tulip watches its trigger
+  /// pin's count to open on each hit; unlike the flash, it does not depend
+  /// on the board's animation, so a seeded round plays out the same way
+  /// with or without a screen.
+  int timesStruck = 0;
+
   // Animation state
   bool isAnimating = false;
   double pulseProgress = 0.0; // 0.0 to 1.0 for pulse animation
@@ -88,6 +95,7 @@ class Peg {
 
   void reset() {
     hasBeenHit = false;
+    timesStruck = 0;
     isAnimating = false;
     pulseProgress = 0.0;
     shimmerIntensity = 0.0;

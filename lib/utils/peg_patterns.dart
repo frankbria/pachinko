@@ -60,6 +60,11 @@ class PegPatterns {
       Random random, int levelNumber, double boardWidth, double boardHeight) {
     final pegs = <Peg>[];
     final pegCount = 30 + (levelNumber * 3);
+    final lowestY = boardHeight -
+        GameConstants.alongDifficulty(
+            levelNumber,
+            GameConstants.randomLayoutBottomMargin,
+            GameConstants.randomLayoutBottomMarginHardest);
 
     for (int i = 0; i < pegCount; i++) {
       double x = 0, y = 0;
@@ -69,7 +74,7 @@ class PegPatterns {
 
       while (!validPosition && attempts < 50) {
         x = 60 + random.nextDouble() * (boardWidth - 120);
-        y = 120 + random.nextDouble() * (boardHeight - 320);
+        y = 120 + random.nextDouble() * (lowestY - 120);
 
         // Check launch channel
         final inLaunchChannel = x > GameConstants.launchChannelStartX - 30 &&
@@ -100,9 +105,12 @@ class PegPatterns {
   static List<Peg> generateHexagonalPattern(
       Random random, int levelNumber, double boardWidth, double boardHeight) {
     final pegs = <Peg>[];
-    const baseSpacing = 45.0;
-    const rowOffset = 38.0;
-    const hexSpacing = baseSpacing;
+    final hexSpacing = GameConstants.alongDifficulty(levelNumber,
+        GameConstants.hexagonalSpacing, GameConstants.hexagonalSpacingHardest);
+    final rowOffset = GameConstants.alongDifficulty(levelNumber,
+        GameConstants.hexagonalRowStep, GameConstants.hexagonalRowStepHardest);
+    final jitter = GameConstants.alongDifficulty(levelNumber,
+        GameConstants.hexagonalJitter, GameConstants.hexagonalJitterHardest);
 
     const startY = 140.0;
     final endY = boardHeight - 200;
@@ -126,7 +134,7 @@ class PegPatterns {
             y < GameConstants.launchChannelStartY + 30;
 
         if (!inLaunchChannel) {
-          _addJitteredPeg(pegs, random, x, y, 10);
+          _addJitteredPeg(pegs, random, x, y, jitter);
         }
       }
     }
@@ -137,7 +145,12 @@ class PegPatterns {
   static List<Peg> generateTrianglePattern(
       Random random, int levelNumber, double boardWidth, double boardHeight) {
     final pegs = <Peg>[];
-    const spacing = 50.0;
+    final spacing = GameConstants.alongDifficulty(levelNumber,
+        GameConstants.triangleSpacing, GameConstants.triangleSpacingHardest);
+    final rowStep = GameConstants.alongDifficulty(levelNumber,
+        GameConstants.triangleRowStep, GameConstants.triangleRowStepHardest);
+    final jitter = GameConstants.alongDifficulty(levelNumber,
+        GameConstants.triangleJitter, GameConstants.triangleJitterHardest);
     const startY = 150.0;
     final endY = boardHeight - 220;
     final centerX = boardWidth / 2;
@@ -160,13 +173,13 @@ class PegPatterns {
               currentY < GameConstants.launchChannelStartY + 30;
 
           if (!inLaunchChannel) {
-            _addJitteredPeg(pegs, random, x, currentY, 8);
+            _addJitteredPeg(pegs, random, x, currentY, jitter);
           }
         }
       }
 
       row++;
-      currentY += spacing * 0.8; // Slightly tighter vertical spacing
+      currentY += rowStep;
     }
 
     return pegs;

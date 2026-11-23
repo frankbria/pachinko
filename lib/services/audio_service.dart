@@ -1,6 +1,8 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 
+import 'platform_calls.dart';
+
 /// A sound effect the game plays, with its asset and how many copies of it
 /// can sound at once.
 enum SoundEffect {
@@ -93,23 +95,8 @@ class AudioService {
   /// Set by [dispose]. No sound is loaded or started afterwards.
   bool _disposed = false;
 
-  /// Platform calls that have started and not finished. [dispose] waits for
-  /// them: a player disposed in the middle of one goes on receiving platform
-  /// events on streams that are closed, which the plugin reports as an error
-  /// no caller can catch.
-  final Set<Future<void>> _inFlight = {};
-
-  /// Runs [calls] and keeps it in [_inFlight] until it ends, whether it
-  /// succeeds or fails.
-  Future<void> _tracked(Future<void> calls) async {
-    final settled = calls.then<void>((_) {}, onError: (Object _) {});
-    _inFlight.add(settled);
-    try {
-      await calls;
-    } finally {
-      _inFlight.remove(settled);
-    }
-  }
+  /// Loads and starts in flight, which [dispose] waits for.
+  final PlatformCalls _calls = PlatformCalls();
 
   /// The tone of a pin hit at [impactSpeed]: from soft and low at rest to
   /// loud and high at [pegHitFullSpeed] and above.
@@ -168,7 +155,7 @@ class AudioService {
     }
     _players.add(player);
     try {
-      await _tracked(_load(effect, player));
+      await _calls.track(_load(effect, player));
     } catch (e) {
       debugPrint('AudioService: could not load ${effect.asset}: $e');
       return false;
@@ -210,7 +197,7 @@ class AudioService {
     if (player == null) return;
     _starting.add(player);
     try {
-      await _tracked(_start(player, tone));
+      await _calls.track(_start(player, tone));
     } catch (e) {
       debugPrint('AudioService: could not play ${effect.asset}: $e');
     } finally {
@@ -247,6 +234,39 @@ class AudioService {
   Future<void> playSlotScore(int points) =>
       _play(SoundEffect.slotScore, slotToneFor(points));
 
+  /// The tone of a windmill blade met at [impactSpeed]: a pin's tone (see
+  /// [pegHitToneFor]) played lower, a wooden knock.
+  static SoundTone windmillToneFor(double impactSpeed) {
+    final pin = pegHitToneFor(impactSpeed);
+    return (volume: pin.volume, playbackRate: pin.playbackRate * 0.6);
+  }
+
+  /// The tone of the centre gate met at [impactSpeed]: the slot's sound,
+  /// low and as loud as a pin met at that speed would be.
+  static SoundTone gateToneFor(double impactSpeed) =>
+      (volume: pegHitToneFor(impactSpeed).volume * 0.8, playbackRate: 0.7);
+
+  /// The tone of a tulip opening: the prize chime, high and soft.
+  static const SoundTone tulipOpenTone = (volume: 0.6, playbackRate: 1.5);
+
+  /// The tone of a tulip catching a ball: the prize chime, low and full.
+  static const SoundTone tulipCatchTone = (volume: 1.0, playbackRate: 0.8);
+
+  /// Plays a tulip opening, when its trigger pin is hit.
+  Future<void> playTulipOpen() => _play(SoundEffect.specialPeg, tulipOpenTone);
+
+  /// Plays a tulip catching a ball, which pays out balls.
+  Future<void> playTulipCatch() =>
+      _play(SoundEffect.specialPeg, tulipCatchTone);
+
+  /// Plays a ball meeting a windmill blade at [impactSpeed].
+  Future<void> playWindmillHit(double impactSpeed) =>
+      _play(SoundEffect.pegHit, windmillToneFor(impactSpeed));
+
+  /// Plays a ball meeting the centre gate at [impactSpeed].
+  Future<void> playGateHit(double impactSpeed) =>
+      _play(SoundEffect.slotScore, gateToneFor(impactSpeed));
+
   /// Plays the bonus fanfare.
   Future<void> playBonusTrigger() => _play(SoundEffect.bonusTrigger, _plain);
 
@@ -261,7 +281,7 @@ class AudioService {
   /// Disposes every player. The app does not await it, so it never throws,
   /// and a player that fails to dispose does not keep the others alive.
   ///
-  /// Waits for loads and starts in flight first (see [_inFlight]). Sounds
+  /// Waits for loads and starts in flight first (see [PlatformCalls]). Sounds
   /// asked for afterwards are ignored. Calling it again returns the same
   /// teardown.
   Future<void> dispose() => _disposal ??= _dispose();
@@ -270,7 +290,7 @@ class AudioService {
 
   Future<void> _dispose() async {
     _disposed = true;
-    await Future.wait(_inFlight.toList());
+    await _calls.settled();
     for (final player in _players) {
       try {
         await player.dispose();

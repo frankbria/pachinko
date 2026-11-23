@@ -13,7 +13,8 @@ Future<void> showHowToPlay(BuildContext context) => showDialog<void>(
             mainAxisSize: MainAxisSize.min,
             children: [
               _heading(Icons.flag, 'Objective'),
-              _body('Score as many points as possible with 20 balls.'),
+              _body('Score as many points as possible with 20 balls. Each '
+                  'level has three star scores; one star opens the next level.'),
               _heading(Icons.touch_app, 'Controls'),
               _body(
                   '• Drag from the launcher: the longer the drag, the more power\n'
@@ -22,6 +23,7 @@ Future<void> showHowToPlay(BuildContext context) => showDialog<void>(
                   '• Pegs change the ball\'s direction'),
               _heading(Icons.auto_awesome, 'Special Features'),
               _body('• Gold pegs are prizes: hit them all for bonus balls\n'
+                  '• The bonus brings a fever: for a few seconds of play every slot pays ×${GameConstants.feverMultiplier}\n'
                   '• Edge slots give the most points and are the hardest to reach\n'
                   '• The centre slot gives good points'),
               _heading(Icons.emoji_events, 'Scoring'),

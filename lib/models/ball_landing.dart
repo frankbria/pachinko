@@ -4,7 +4,8 @@
 /// Each landing is a new object, without value equality, so that two
 /// landings in the same slot in a row are each heard.
 class BallLanding {
-  /// The points the slot is worth.
+  /// The points the landing won: the slot's value, multiplied during the
+  /// fever.
   final int points;
 
   /// Where the slot is in the row, from 0 at the left.

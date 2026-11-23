@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/daily_board.dart';
 import '../models/game_settings.dart';
 import '../models/high_score.dart';
+import '../models/star_targets.dart';
 
 /// Service for persisting high scores to local storage.
 ///
@@ -36,17 +38,19 @@ class StorageService {
 
   static const String _soundOnKey = 'setting_sound_on';
   static const String _soundVolumeKey = 'setting_sound_volume';
+  static const String _musicVolumeKey = 'setting_music_volume';
   static const String _vibrationOnKey = 'setting_vibration_on';
   static const String _reducedMotionKey = 'setting_reduced_motion';
   static const String _leftHandedKey = 'setting_left_handed';
 
-  /// The player's sound, vibration, motion and launcher settings, or the defaults of a
+  /// The player's sound, music, vibration, motion and launcher settings, or the defaults of a
   /// new install for any not chosen yet.
   GameSettings get settings {
     const defaults = GameSettings();
     return GameSettings(
       soundOn: _prefs.getBool(_soundOnKey) ?? defaults.soundOn,
       soundVolume: _prefs.getDouble(_soundVolumeKey) ?? defaults.soundVolume,
+      musicVolume: _prefs.getDouble(_musicVolumeKey) ?? defaults.musicVolume,
       vibrationOn: _prefs.getBool(_vibrationOnKey) ?? defaults.vibrationOn,
       reducedMotion: _prefs.getBool(_reducedMotionKey),
       leftHanded: _prefs.getBool(_leftHandedKey) ?? defaults.leftHanded,
@@ -58,6 +62,7 @@ class StorageService {
   Future<void> saveSettings(GameSettings settings) async {
     await _prefs.setBool(_soundOnKey, settings.soundOn);
     await _prefs.setDouble(_soundVolumeKey, settings.soundVolume);
+    await _prefs.setDouble(_musicVolumeKey, settings.musicVolume);
     await _prefs.setBool(_vibrationOnKey, settings.vibrationOn);
     await _prefs.setBool(_leftHandedKey, settings.leftHanded);
     final reducedMotion = settings.reducedMotion;
@@ -86,6 +91,108 @@ class StorageService {
   /// Records that the prize peg callout has been shown.
   Future<void> savePrizePegHintShown() async {
     await _prefs.setBool(_prizePegHintShownKey, true);
+  }
+
+  /// What every stored key of a level's stars starts with.
+  static const String _starsKeyPrefix = 'stars_level_';
+
+  /// The stars stored for each level that has any, by level number. Stars
+  /// are stored separately from the scores so that clearing the scores, or
+  /// raising a level's targets later, takes no star or unlock away.
+  Map<int, int> get storedStars {
+    try {
+      return {
+        for (final key in _prefs.getKeys())
+          if (key.startsWith(_starsKeyPrefix))
+            if (int.tryParse(key.substring(_starsKeyPrefix.length))
+                case final level?)
+              level: _prefs.getInt(key) ?? 0,
+      };
+    } catch (e) {
+      debugPrint('Error reading stars: $e');
+      return {};
+    }
+  }
+
+  /// Records that [level] has won [stars], unless it already has more. A
+  /// failure is logged, not thrown: nothing waits on the save.
+  Future<void> saveStars(int level, int stars) async {
+    try {
+      final key = '$_starsKeyPrefix$level';
+      if (stars > (_prefs.getInt(key) ?? 0)) await _prefs.setInt(key, stars);
+    } catch (e) {
+      debugPrint('Error saving stars: $e');
+    }
+  }
+
+  static const String _dailyBestDayKey = 'daily_best_day';
+  static const String _dailyBestScoreKey = 'daily_best_score';
+  static const String _dailyStreakDayKey = 'daily_streak_last_day';
+  static const String _dailyStreakLengthKey = 'daily_streak_length';
+  static const String _dailyPendingDayKey = 'daily_pending_day';
+  static const String _dailyPendingScoreKey = 'daily_pending_score';
+
+  /// The best score of a daily round finished on [day], or null when none
+  /// was. Only the latest day's best is kept.
+  int? dailyBest(int day) => _prefs.getInt(_dailyBestDayKey) == day
+      ? _prefs.getInt(_dailyBestScoreKey)
+      : null;
+
+  /// The player's streak of days with a daily round finished.
+  DailyStreak get dailyStreak => DailyStreak(
+        lastDay: _prefs.getInt(_dailyStreakDayKey) ?? DailyStreak.none.lastDay,
+        length: _prefs.getInt(_dailyStreakLengthKey) ?? DailyStreak.none.length,
+      );
+
+  /// Records a daily round of [score] finished on the board of [day]: the
+  /// day's best when it beats it, unless a later day's best is stored, and
+  /// the streak. A failure is logged, not thrown: nothing waits on the save.
+  Future<void> recordDailyRound(int day, int score) async {
+    try {
+      final bestDay = _prefs.getInt(_dailyBestDayKey);
+      if (bestDay == null ||
+          day > bestDay ||
+          day == bestDay && score > (dailyBest(day) ?? 0)) {
+        await _prefs.setInt(_dailyBestDayKey, day);
+        await _prefs.setInt(_dailyBestScoreKey, score);
+      }
+      final streak = dailyStreak.playedOn(day);
+      await _prefs.setInt(_dailyStreakDayKey, streak.lastDay);
+      await _prefs.setInt(_dailyStreakLengthKey, streak.length);
+    } catch (e) {
+      debugPrint('Error saving the daily round: $e');
+    }
+  }
+
+  /// The daily score still to post to the leaderboard, with the day it was
+  /// won on, or null when there is none.
+  ({int day, int score})? get pendingDailyScore {
+    final day = _prefs.getInt(_dailyPendingDayKey);
+    final score = _prefs.getInt(_dailyPendingScoreKey);
+    return day == null || score == null ? null : (day: day, score: score);
+  }
+
+  /// Keeps [score], won on [day], to post to the leaderboard once it can be,
+  /// in place of any score kept before.
+  /// A failure is logged, not thrown.
+  Future<void> savePendingDailyScore(int day, int score) async {
+    try {
+      await _prefs.setInt(_dailyPendingDayKey, day);
+      await _prefs.setInt(_dailyPendingScoreKey, score);
+    } catch (e) {
+      debugPrint('Error keeping the daily score: $e');
+    }
+  }
+
+  /// Forgets the score kept for the leaderboard, once posted or too late.
+  /// A failure is logged, not thrown.
+  Future<void> clearPendingDailyScore() async {
+    try {
+      await _prefs.remove(_dailyPendingDayKey);
+      await _prefs.remove(_dailyPendingScoreKey);
+    } catch (e) {
+      debugPrint('Error clearing the daily score: $e');
+    }
   }
 
   /// Initializes StorageService with production SharedPreferences.
@@ -192,10 +299,18 @@ class StorageService {
   /// Clears all high score data from storage.
   ///
   /// Only removes keys that start with 'highscores_level_'.
-  /// Other app data is preserved.
+  /// Other app data is preserved, the stars and so the open levels too:
+  /// first each level's scores are turned into the stars they win, which a
+  /// table stored before stars existed has not been yet.
   /// Handles errors gracefully by logging without throwing exceptions.
   Future<void> clearData() async {
     try {
+      for (final level in await levelsWithScores()) {
+        if (await getBestScore(level) case final best?) {
+          await saveStars(
+              level, StarTargets.forLevel(level).starsFor(best.score));
+        }
+      }
       final keys = _prefs.getKeys();
       for (final key in keys) {
         if (key.startsWith(_levelKeyPrefix)) {

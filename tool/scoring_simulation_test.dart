@@ -8,27 +8,36 @@
 //     flutter test tool/scoring_simulation_test.dart \
 //       --dart-define=LEVELS=60 --dart-define=ROUNDS=20
 //
-// and read the lines that start with SIM and BAND. The lines that start with
-// AIM say whether launch power is aim (#112): for each of levels 1 to
-// AIM_LEVELS (30), points per ball in each 5-point band of power against
-// points per ball over all power, with AIM_BALLS (100) balls per band. That
-// table takes most of the run's few minutes. To compare two commits,
+// and read the lines that start with SIM and BAND. The STARS lines give each
+// level's star targets (#116) and the share of rounds that win them; the
+// targets in StarTargets come from a run with LEVELS=50 and ROUNDS=200. A
+// BAND line gives the spread of round scores on its levels (p10 to p99): the
+// difficulty curve (#115) is that p50 stays flat from band to band while the
+// bonus grows. The lines that start with AIM say whether launch power is aim
+// (#112): for each of levels 1 to AIM_LEVELS (30), points per ball in each
+// 5-point band of power against points per ball over all power, with
+// AIM_BALLS (100) balls per band. That table takes most of the run's few
+// minutes. To compare two commits,
 // copy this file into a checkout of each: it uses what GameState,
-// BallLauncher, PhysicsEngine and Level have offered since #6, and the fixed
-// step and seeding added in #108. For a commit older than #108, run that
-// commit's own copy of the tool.
+// BallLauncher, PhysicsEngine and Level have offered since #6, the fixed
+// step and seeding added in #108, and the fever added in #113. For an older
+// commit, run that commit's own copy of the tool.
 //
 // The round is stepped the way GameManager._updatePhysics steps it, in the
-// game's fixed steps, and each round's bounces are seeded as the game seeds
-// them (GameManager.physicsSeedFor), so a run gives the same figures every
-// time. Launch power is uniform on 0 to 100, which a player's is not.
+// game's fixed steps, with the fever running down while balls are in play and
+// each landing scored by GameState.scoreLanding. Each round's bounces are
+// seeded as the game seeds them (GameManager.physicsSeedFor), so a run gives
+// the same figures every time. Launch power is uniform on 0 to 100, which a
+// player's is not.
 import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pachinko_game/models/ball.dart';
 import 'package:pachinko_game/models/ball_launcher.dart';
+import 'package:pachinko_game/models/board_feature.dart';
 import 'package:pachinko_game/models/game_state.dart';
 import 'package:pachinko_game/models/level.dart';
 import 'package:pachinko_game/models/peg.dart';
+import 'package:pachinko_game/models/star_targets.dart';
 import 'package:pachinko_game/services/achievement_service.dart';
 import 'package:pachinko_game/services/game_manager.dart';
 import 'package:pachinko_game/services/physics_engine.dart';
@@ -49,6 +58,25 @@ class Tally {
   /// rounds whose first ball landed in a 2,000 slot (Lucky Shot).
   int comboRounds = 0, luckyRounds = 0;
 
+  /// What rounds with the bonus scored in all, and what the fever added to
+  /// them, against what rounds without it scored.
+  int bonusRoundScore = 0, feverPoints = 0;
+
+  /// Per feature kind: rounds on a level with it, and the balls that met it
+  /// with what they landed for, against every ball on those levels.
+  final featureRounds = <FeatureKind, int>{};
+  final featureBalls = <FeatureKind, int>{};
+  final featureLanded = <FeatureKind, int>{};
+  final featureLandedPoints = <FeatureKind, int>{};
+  final levelLanded = <FeatureKind, int>{};
+  final levelLandedPoints = <FeatureKind, int>{};
+
+  /// Balls landed in the centre slot on levels with the centre gate.
+  int gateLevelCentre = 0;
+
+  /// Tulips opened, balls they caught and balls they paid out.
+  int tulipOpens = 0, tulipCatches = 0, tulipBalls = 0;
+
   /// Every round's score, for the percentiles.
   final scores = <int>[];
   final slots = <int, int>{50: 0, 200: 0, 1000: 0, 2000: 0};
@@ -66,9 +94,24 @@ class Tally {
     pegs += o.pegs;
     over10k += o.over10k;
     scores.addAll(o.scores);
+    stars.addAll(o.stars);
     comboRounds += o.comboRounds;
     luckyRounds += o.luckyRounds;
+    bonusRoundScore += o.bonusRoundScore;
+    feverPoints += o.feverPoints;
     best = max(best, o.best);
+    void sum(Map<FeatureKind, int> into, Map<FeatureKind, int> from) =>
+        from.forEach((k, v) => into[k] = (into[k] ?? 0) + v);
+    sum(featureRounds, o.featureRounds);
+    sum(featureBalls, o.featureBalls);
+    sum(featureLanded, o.featureLanded);
+    sum(featureLandedPoints, o.featureLandedPoints);
+    sum(levelLanded, o.levelLanded);
+    sum(levelLandedPoints, o.levelLandedPoints);
+    gateLevelCentre += o.gateLevelCentre;
+    tulipOpens += o.tulipOpens;
+    tulipCatches += o.tulipCatches;
+    tulipBalls += o.tulipBalls;
     o.slots.forEach((k, v) => slots[k] = slots[k]! + v);
     for (int i = 0; i < byPosition.length; i++) {
       byPosition[i] += o.byPosition[i];
@@ -78,10 +121,54 @@ class Tally {
   String share(int n) => '${(100 * n / rounds).toStringAsFixed(1)}%';
   String band(String name) =>
       '$name | ${share(bonusRounds)} | ${(balls / rounds).toStringAsFixed(1)} | ${(score / rounds).round()} | '
-      '${share(over10k)} | ${percentile(50)} | ${percentile(90)} | ${percentile(99)} | '
+      '${share(over10k)} | ${percentile(10)} | ${percentile(25)} | ${percentile(50)} | ${percentile(90)} | ${percentile(99)} | '
       '${share(reaching(AchievementService.highRollerScore))} | '
       '${share(reaching(AchievementService.scoreMasterScore))} | '
       '${share(comboRounds)} | ${share(luckyRounds)} | $best';
+
+  /// Mean score of rounds with the bonus and without it, and what the fever
+  /// added to a bonus round.
+  String fever(String name) {
+    final others = rounds - bonusRounds;
+    String mean(int total, int count) =>
+        count == 0 ? '-' : '${(total / count).round()}';
+    return '$name | ${mean(bonusRoundScore, bonusRounds)} | '
+        '${mean(score - bonusRoundScore, others)} | '
+        '${mean(feverPoints, bonusRounds)}';
+  }
+
+  /// How often balls meet a feature of [kind] and what they land for
+  /// afterwards, against every ball on the levels that have it.
+  String feature(FeatureKind kind) {
+    final rounds = featureRounds[kind] ?? 0;
+    if (rounds == 0) return '${kind.name} | 0 | - | - | -';
+    String per(int n) => (n / rounds).toStringAsFixed(2);
+    String mean(int total, int count) =>
+        count == 0 ? '-' : (total / count).toStringAsFixed(0);
+    var line = '${kind.name} | $rounds | ${per(featureBalls[kind] ?? 0)} | '
+        '${mean(featureLandedPoints[kind] ?? 0, featureLanded[kind] ?? 0)} | '
+        '${mean(levelLandedPoints[kind] ?? 0, levelLanded[kind] ?? 0)}';
+    if (kind == FeatureKind.tulips) {
+      line += ' | opens ${per(tulipOpens)} | catches ${per(tulipCatches)} | '
+          'balls paid ${per(tulipBalls)}';
+    }
+    if (kind == FeatureKind.centreGate) {
+      final landed = levelLanded[kind] ?? 0;
+      line += ' | centre slot '
+          '${landed == 0 ? '-' : (100 * gateLevelCentre / landed).toStringAsFixed(1)}%';
+    }
+    return line;
+  }
+
+  /// Rounds and the stars each won on its level's targets (#116).
+  final stars = <int>[];
+
+  /// The share of rounds that won at least one, two and three stars.
+  String starShares(String name) => '$name | ${[
+        1,
+        2,
+        3
+      ].map((n) => share(stars.where((s) => s >= n).length)).join(' | ')}';
 
   /// How many rounds scored at least [threshold].
   int reaching(int threshold) =>
@@ -109,12 +196,17 @@ void main() {
   // PegPatterns.getPatternForLevel picks the pattern from the level number
   const names = {1: 'triangle', 2: 'random', 0: 'hexagonal'};
 
-  Ball launchedBall(double power) {
+  /// Carries a ball launched at [power] up the channel, calling
+  /// [onTravelStep] for each step it spends there: the game counts those
+  /// steps as play, so the fever runs down during them.
+  Ball launchedBall(double power, void Function() onTravelStep) {
     final launcher = BallLauncher();
     launcher.startCharging();
     launcher.updateCharging(power);
     final ball = launcher.launch()!;
-    while (!launcher.updateBallPath(dt)) {}
+    while (!launcher.updateBallPath(dt)) {
+      onTravelStep();
+    }
     return ball;
   }
 
@@ -128,10 +220,39 @@ void main() {
     final engine = PhysicsEngine()
       ..seed(GameManager.physicsSeedFor(levelNumber, round));
     final powers = Random(seed);
+    final features = level.features;
+    final kinds = Level.featureKindsFor(levelNumber);
+    for (final kind in kinds) {
+      tally.featureRounds[kind] = 1;
+    }
+    final tulips = level.tulips.toList();
+    // The kinds of feature each ball has met
+    final met = <Ball, Set<FeatureKind>>{};
+    // Balls a tulip caught, which leave play without landing
+    final caught = <Ball>{};
+    // Balls whose landing has been credited to the features they met
+    final credited = <Ball>{};
+    FeatureKind kindOf(BoardFeature feature) => switch (feature) {
+          Tulip() => FeatureKind.tulips,
+          Windmill() => FeatureKind.windmill,
+          CentreGate() => FeatureKind.centreGate,
+        };
+
+    /// One step of the features, counting the tulips that open on it.
+    void stepFeatures() {
+      final wasOpen = [for (final tulip in tulips) tulip.isOpen];
+      engine.updateFeatures(features, dt);
+      for (int i = 0; i < tulips.length; i++) {
+        if (!wasOpen[i] && tulips[i].isOpen) tally.tulipOpens++;
+      }
+    }
 
     Ball? firstOfRound;
     while (state.ballsRemaining > 0) {
-      final launched = launchedBall(powers.nextDouble() * 100);
+      final launched = launchedBall(powers.nextDouble() * 100, () {
+        state.updateFever(dt);
+        stepFeatures();
+      });
       final firstBall = firstOfRound ??= launched;
       state.launchBall(launched);
       int frames = 0;
@@ -146,8 +267,21 @@ void main() {
           }
           break;
         }
+        state.updateFever(dt);
+        stepFeatures();
         engine.updateBalls(balls, dt);
         final hitPegs = engine.checkPegCollisions(balls, level.pegs);
+        for (final hit in engine.checkFeatureCollisions(balls, features)) {
+          if ((met[hit.ball] ??= {}).add(kindOf(hit.feature))) {
+            final kind = kindOf(hit.feature);
+            tally.featureBalls[kind] = (tally.featureBalls[kind] ?? 0) + 1;
+          }
+          if (hit.caught && hit.feature is Tulip) {
+            tally.tulipCatches++;
+            caught.add(hit.ball);
+            state.payTulip(hit.feature as Tulip);
+          }
+        }
         if (hitPegs.any((peg) => peg.type == PegType.special) &&
             level.allSpecialPegsHit &&
             !state.specialBonusTriggered) {
@@ -168,14 +302,37 @@ void main() {
               slot.containsPoint(firstBall.position)) {
             tally.luckyRounds = 1;
           }
-          state.addScore(slot.pointValue);
+          state.scoreLanding(slot);
           tally.slots[slot.pointValue] = tally.slots[slot.pointValue]! + 1;
+          for (final kind in kinds) {
+            tally.levelLanded[kind] = (tally.levelLanded[kind] ?? 0) + 1;
+            tally.levelLandedPoints[kind] =
+                (tally.levelLandedPoints[kind] ?? 0) + slot.pointValue;
+          }
+          if (kinds.contains(FeatureKind.centreGate) &&
+              level.slots.indexOf(slot) == level.slots.length ~/ 2) {
+            tally.gateLevelCentre++;
+          }
+          // The ball that landed here: one this step, in this slot, not yet
+          // counted; two can land in one slot on the same step
+          final landed = balls
+              .where((ball) =>
+                  ball.hasLanded &&
+                  slot.containsPoint(ball.position) &&
+                  !credited.contains(ball))
+              .firstOrNull;
+          if (landed != null) credited.add(landed);
+          for (final kind in met[landed] ?? const <FeatureKind>{}) {
+            tally.featureLanded[kind] = (tally.featureLanded[kind] ?? 0) + 1;
+            tally.featureLandedPoints[kind] =
+                (tally.featureLandedPoints[kind] ?? 0) + slot.pointValue;
+          }
           tally.byPosition[level.slots.indexOf(slot)]++;
         }
         for (final ball in balls) {
           if (!ball.isActive) {
             tally.balls++;
-            if (!ball.hasLanded) tally.gap++;
+            if (!ball.hasLanded && !caught.contains(ball)) tally.gap++;
             state.removeBall(ball);
           }
         }
@@ -185,6 +342,10 @@ void main() {
     tally.best = state.score;
     if (state.score >= 10000) tally.over10k = 1;
     tally.scores.add(state.score);
+    tally.stars.add(StarTargets.forLevel(levelNumber).starsFor(state.score));
+    if (tally.bonusRounds == 1) tally.bonusRoundScore = state.score;
+    tally.feverPoints = state.feverPoints;
+    tally.tulipBalls = state.tulipBalls;
     state.dispose();
     return tally;
   }
@@ -192,12 +353,23 @@ void main() {
   /// The points one ball launched at [power] on [level] wins: 0 when it
   /// leaves play without landing or comes to rest in the field. [seed] seeds
   /// its bounces.
+  //
+  // shortcut: a ball a tulip catches counts 0 here although it pays
+  // tulipPayoutBalls balls, so bands that feed a tulip read low; count the
+  // payout if a level's best band is ever a tulip's.
   int pointsForBall(Level level, double power, int seed) {
     final engine = PhysicsEngine()..seed(seed);
-    final ball = launchedBall(power);
+    level.reset();
+    final ball =
+        launchedBall(power, () => engine.updateFeatures(level.features, dt));
     for (int step = 0; step < maxFrames && ball.isActive; step++) {
+      engine.updateFeatures(level.features, dt);
       engine.updateBalls([ball], dt);
       engine.checkPegCollisions([ball], level.pegs);
+      if (engine.checkFeatureCollisions(
+          [ball], level.features).any((hit) => hit.caught)) {
+        return 0;
+      }
       final landed = engine.checkSlotCollisions([ball], level.slots);
       if (landed.isNotEmpty) return landed.first.pointValue;
     }
@@ -272,9 +444,17 @@ void main() {
       'levels 21-40': Tally(),
       'levels 41-60': Tally()
     };
+    // Levels 1 to 20 each, and every later level together: the star targets
+    final byLevel = <int, Tally>{};
+    final afterHardest = Tally();
     for (int n = 1; n <= levels; n++) {
       for (int r = 0; r < rounds; r++) {
         final t = playRound(n, r + 1, n * 1000 + r);
+        if (n <= GameConstants.hardestLayoutLevel) {
+          (byLevel[n] ??= Tally()).add(t);
+        } else {
+          afterHardest.add(t);
+        }
         byPattern[n % 3]!.add(t);
         all.add(t);
         bands[n <= 10
@@ -300,13 +480,57 @@ void main() {
     print('SIM ${all.row('all')}');
     // ignore: avoid_print
     print(
-        'BAND levels | bonus rounds | balls/round | score/round | rounds over 10k | p50 | p90 | p99 | High Roller | Score Master | Combo King | Lucky Shot | best round');
+        'BAND levels | bonus rounds | balls/round | score/round | rounds over 10k | p10 | p25 | p50 | p90 | p99 | High Roller | Score Master | Combo King | Lucky Shot | best round');
     bands.forEach((name, tally) {
       // ignore: avoid_print
       if (tally.rounds > 0) print('BAND ${tally.band(name)}');
     });
     // ignore: avoid_print
     print('BAND ${all.band('all')}');
+    // ignore: avoid_print
+    print(
+        'FEVER levels | score of a round with the bonus | without it | fever points in a bonus round');
+    bands.forEach((name, tally) {
+      // ignore: avoid_print
+      if (tally.rounds > 0) print('FEVER ${tally.fever(name)}');
+    });
+    // ignore: avoid_print
+    print('FEVER ${all.fever('all')}');
+    // ignore: avoid_print
+    print(
+        'FEATURE kind | rounds on a level with it | balls meeting it a round | '
+        'mean slot value of those balls | of every ball on those levels');
+    for (final kind in FeatureKind.values) {
+      // ignore: avoid_print
+      print('FEATURE ${all.feature(kind)}');
+    }
+    // The star targets are these percentiles rounded to the nearest 500, and
+    // the table in StarTargets is copied from the last column
+    int nearest500(int score) => (score / 500).round() * 500;
+    String targets(Tally tally) {
+      final rounded = [40, 75, 95].map((p) => nearest500(tally.percentile(p)));
+      return '${tally.percentile(40)} | ${tally.percentile(75)} | '
+          '${tally.percentile(95)} | StarTargets(${rounded.join(', ')}),';
+    }
+
+    // ignore: avoid_print
+    print('STARS level | p40 | p75 | p95 | targets');
+    byLevel.forEach((n, tally) {
+      // ignore: avoid_print
+      print('STARS $n | ${targets(tally)}');
+    });
+    if (afterHardest.rounds > 0) {
+      // ignore: avoid_print
+      print('STARS ${GameConstants.hardestLayoutLevel + 1}-$levels | '
+          '${targets(afterHardest)}');
+    }
+    // ignore: avoid_print
+    print(
+        'STARS levels | 1 star or more | 2 or more | 3, on the shipped targets');
+    bands.forEach((name, tally) {
+      // ignore: avoid_print
+      if (tally.rounds > 0) print('STARS ${tally.starShares(name)}');
+    });
     // ignore: avoid_print
     print('ROW left to right | ${all.byPosition.map(all.pct).join(' | ')}');
   }, timeout: const Timeout(Duration(minutes: 20)));

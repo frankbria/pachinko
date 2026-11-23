@@ -1,4 +1,4 @@
-/// The player's choices for sound, vibration, motion and the launcher's side, as the settings
+/// The player's choices for sound, music, vibration, motion and the launcher's side, as the settings
 /// screen shows them and `StorageService` keeps them.
 ///
 /// Immutable: a change is a new value from [copyWith], given to
@@ -9,6 +9,10 @@ class GameSettings {
 
   /// How loud sound effects are, 0 to 1.
   final double soundVolume;
+
+  /// How loud the music is, 0 to 1. With [soundOn] off there is no music
+  /// either.
+  final double musicVolume;
 
   /// Whether the phone vibrates for what happens on the board.
   final bool vibrationOn;
@@ -23,11 +27,12 @@ class GameSettings {
   /// it is the same.
   final bool leftHanded;
 
-  /// The settings of a new install: sound and vibration on at full volume,
-  /// motion as the system has it, and the launcher on the right.
+  /// The settings of a new install: sound and vibration on, effects at full
+  /// volume and music at 70%, motion as the system has it, and the launcher on the right.
   const GameSettings({
     this.soundOn = true,
     this.soundVolume = 1.0,
+    this.musicVolume = 0.7,
     this.vibrationOn = true,
     this.reducedMotion,
     this.leftHanded = false,
@@ -42,6 +47,7 @@ class GameSettings {
   GameSettings copyWith({
     bool? soundOn,
     double? soundVolume,
+    double? musicVolume,
     bool? vibrationOn,
     bool? reducedMotion,
     bool? leftHanded,
@@ -49,6 +55,7 @@ class GameSettings {
       GameSettings(
         soundOn: soundOn ?? this.soundOn,
         soundVolume: soundVolume ?? this.soundVolume,
+        musicVolume: musicVolume ?? this.musicVolume,
         vibrationOn: vibrationOn ?? this.vibrationOn,
         reducedMotion: reducedMotion ?? this.reducedMotion,
         leftHanded: leftHanded ?? this.leftHanded,
@@ -59,16 +66,17 @@ class GameSettings {
       other is GameSettings &&
       other.soundOn == soundOn &&
       other.soundVolume == soundVolume &&
+      other.musicVolume == musicVolume &&
       other.vibrationOn == vibrationOn &&
       other.reducedMotion == reducedMotion &&
       other.leftHanded == leftHanded;
 
   @override
   String toString() => 'GameSettings(soundOn: $soundOn, '
-      'soundVolume: $soundVolume, vibrationOn: $vibrationOn, '
+      'soundVolume: $soundVolume, musicVolume: $musicVolume, vibrationOn: $vibrationOn, '
       'reducedMotion: $reducedMotion, leftHanded: $leftHanded)';
 
   @override
-  int get hashCode =>
-      Object.hash(soundOn, soundVolume, vibrationOn, reducedMotion, leftHanded);
+  int get hashCode => Object.hash(soundOn, soundVolume, musicVolume,
+      vibrationOn, reducedMotion, leftHanded);
 }

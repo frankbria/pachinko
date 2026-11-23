@@ -1,9 +1,11 @@
 import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pachinko_game/models/board_feature.dart';
 import 'package:pachinko_game/models/level.dart';
 import 'package:pachinko_game/models/peg.dart';
 import 'package:pachinko_game/models/slot.dart';
 import 'package:pachinko_game/utils/constants.dart';
+import 'package:pachinko_game/utils/peg_patterns.dart';
 import 'package:vector_math/vector_math_64.dart';
 
 /// Distance from [point] to the nearest of 400 points along the curved top
@@ -26,6 +28,11 @@ double distanceToTopCurve(Vector2 point) {
   }
   return nearest;
 }
+
+/// The gap, edge to edge, between a circle of [radius] at [position] and the
+/// disc [feature] can reach at any position it moves through.
+double featureGap(BoardFeature feature, Vector2 position, double radius) =>
+    (position - feature.centre).length - radius - feature.reach;
 
 void main() {
   group('Level Initialization -', () {
@@ -207,17 +214,17 @@ void main() {
     test('given level 2, when generated, then uses random pattern', () {
       // Given / When
       final level2 = Level.generate(2, 400.0, 600.0);
-      final level5 = Level.generate(5, 400.0, 600.0);
+      final level11 = Level.generate(11, 400.0, 600.0);
 
-      // Then - random pattern generates pegs
-      // Random pattern formula: 30 + (levelNumber * 3)
-      // Level 2: 30 + (2 * 3) = 36 base pegs (before special pegs)
-      // Level 5: 30 + (5 * 3) = 45 base pegs (before special pegs)
+      // Then - random pattern generates pegs, and its pins stop higher up
+      // the board on a later level (#115)
       expect(level2.pegs, isNotEmpty);
-      expect(level5.pegs, isNotEmpty);
-
-      // Level 5 should have more pegs than level 2
-      expect(level5.pegs.length, greaterThan(level2.pegs.length));
+      expect(level11.pegs, isNotEmpty);
+      double lowestPin(int levelNumber) => PegPatterns.generateRandomPattern(
+              Random(levelNumber), levelNumber, 400.0, 600.0)
+          .map((peg) => peg.position.y)
+          .reduce(max);
+      expect(lowestPin(11), lessThan(lowestPin(2)));
     });
 
     test(
@@ -249,15 +256,71 @@ void main() {
   });
 
   group('Special Peg Placement -', () {
-    test('given generated level, when created, then has 2-4 special pegs', () {
-      // Given / When
-      // Using level 1 (Triangle pattern) which has more spacing for special pegs
+    test('given generated level, when created, then has its five prize pegs',
+        () {
       final level = Level.generate(1, 400.0, 600.0);
 
-      // Then - special peg count formula: 2 + random.nextInt(3) = 2-4
-      // Note: May be less if 50-attempt limit hit due to dense peg layout
-      expect(level.specialPegs.length, greaterThanOrEqualTo(2));
-      expect(level.specialPegs.length, lessThanOrEqualTo(4));
+      expect(level.specialPegs, hasLength(GameConstants.prizePegsPerLevel));
+    });
+
+    test(
+        'given levels 1 to 100, when generated, then the prize pegs zigzag down the middle of the field',
+        () {
+      /// Each prize peg is in its own row of the column, on alternate sides,
+      /// so a ball that reaches one has usually been turned aside by the one
+      /// above it: that is what makes the bonus rare (#113)
+      /// On a level with the centre gate the column is shorter, so that its
+      /// lowest peg leaves room past the gate (#114). Its step and sway
+      /// change with the level (#115)
+      const reach = GameConstants.prizeColumnJitter + 1e-9;
+      for (int n = 1; n <= 100; n++) {
+        final level = Level.generate(n, 400.0, 600.0);
+        final step = Level.prizeColumnStepFor(n,
+            centreGate: level.features.any((feature) => feature is CentreGate));
+        final sway = Level.prizeColumnSwayFor(n);
+        for (int i = 0; i < level.specialPegs.length; i++) {
+          final peg = level.specialPegs[i].position;
+          final side = i.isEven ? -1 : 1;
+          expect(
+              peg.x, closeTo(GameConstants.prizeColumnX + side * sway, reach),
+              reason: 'level $n, prize peg $i');
+          expect(
+              peg.y, closeTo(GameConstants.prizeColumnTopY + i * step, reach),
+              reason: 'level $n, prize peg $i');
+        }
+      }
+    });
+
+    test(
+        'given later levels, then the prize pegs stand further apart down the column and closer to its middle line',
+        () {
+      /// Further apart down the column, as #115 asks; closer to the middle,
+      /// because a wide zigzag puts each peg in its own stream of balls and
+      /// the bonus comes more often, not less (measured with the scoring tool)
+      expect(Level.prizeColumnStepFor(1, centreGate: false),
+          GameConstants.prizeColumnStep);
+      expect(Level.prizeColumnSwayFor(1), GameConstants.prizeColumnSway);
+      for (int n = 2; n <= GameConstants.hardestLayoutLevel; n++) {
+        expect(Level.prizeColumnStepFor(n, centreGate: false),
+            greaterThan(Level.prizeColumnStepFor(n - 1, centreGate: false)),
+            reason: 'level $n');
+        expect(Level.prizeColumnSwayFor(n),
+            lessThan(Level.prizeColumnSwayFor(n - 1)),
+            reason: 'level $n');
+      }
+      expect(Level.prizeColumnStepFor(60, centreGate: false),
+          GameConstants.prizeColumnStepHardest);
+      expect(
+          Level.prizeColumnSwayFor(60), GameConstants.prizeColumnSwayHardest);
+    });
+
+    test(
+        'given a level with the centre gate, then the column step stays short at every level',
+        () {
+      for (final n in [5, 20, 60]) {
+        expect(Level.prizeColumnStepFor(n, centreGate: true),
+            GameConstants.centreGateColumnStep);
+      }
     });
 
     test(
@@ -376,13 +439,13 @@ void main() {
     });
 
     test(
-        'given levels 1 to 100, when generated, then each has 2 to 4 prize pegs',
+        'given levels 1 to 100, when generated, then each has all its prize pegs',
         () {
       /// A dense field can leave no free spot for a prize peg. A level without
       /// one has no bonus, so the generator clears room when it has to.
       for (int n = 1; n <= 100; n++) {
         final level = Level.generate(n, 400.0, 600.0);
-        expect(level.specialPegs.length, inInclusiveRange(2, 4),
+        expect(level.specialPegs, hasLength(GameConstants.prizePegsPerLevel),
             reason: 'level $n');
         expect(level.pegs.where((peg) => peg.type == PegType.special),
             level.specialPegs,
@@ -396,9 +459,25 @@ void main() {
       /// Making room for a prize peg removes the regular pegs around it. The
       /// generator takes the least crowded of its candidates, which usually
       /// costs one peg; taking any candidate thins a triangle level to 19.
+      /// The pegs a board feature takes the place of (#114) are counted back,
+      /// and its trigger pins left out, so this measures the prize pegs alone.
       for (int n = 1; n <= 100; n++) {
         final level = Level.generate(n, 400.0, 600.0);
-        expect(level.pegs.length - level.specialPegs.length,
+        final pattern =
+            PegPatterns.getPatternForLevel(Random(n), n, 400.0, 600.0);
+        final triggers = level.tulips.map((tulip) => tulip.triggerPin);
+        final givenToFeatures = pattern.where((peg) =>
+            level.features.any((feature) =>
+                featureGap(feature, peg.position, peg.radius) <
+                GameConstants.minPegGap) ||
+            triggers.any((pin) =>
+                PegPatterns.gapTo(pin, peg.position, peg.radius) <
+                GameConstants.minPegGap));
+        expect(
+            level.pegs.length -
+                level.specialPegs.length -
+                triggers.length +
+                givenToFeatures.length,
             greaterThanOrEqualTo(24),
             reason: 'level $n');
       }
@@ -737,9 +816,8 @@ void main() {
       // Then - level should still be valid even if special peg placement failed
       expect(level.pegs, isNotEmpty);
       expect(level.slots.length, equals(7));
-      // Special peg count may be 0-4 depending on successful placements
-      expect(level.specialPegs.length, greaterThanOrEqualTo(0));
-      expect(level.specialPegs.length, lessThanOrEqualTo(4));
+      expect(level.specialPegs.length,
+          lessThanOrEqualTo(GameConstants.prizePegsPerLevel));
     });
 
     test('given generated level, when inspected, then has playable peg count',
@@ -877,6 +955,137 @@ void main() {
       for (final slot in level.slots) {
         expect(slot.ballCount, equals(0));
       }
+    });
+  });
+
+  group('Board Features -', () {
+    test(
+        'given the rule, then the first levels bring the features in one by one',
+        () {
+      expect(Level.featureKindsFor(1), isEmpty);
+      expect(Level.featureKindsFor(2), isEmpty);
+      expect(Level.featureKindsFor(3), {FeatureKind.tulips});
+      expect(Level.featureKindsFor(4), {FeatureKind.windmill});
+      expect(Level.featureKindsFor(5),
+          {FeatureKind.tulips, FeatureKind.centreGate});
+      expect(Level.featureKindsFor(10),
+          {FeatureKind.windmill, FeatureKind.centreGate});
+      expect(Level.featureKindsFor(20),
+          {FeatureKind.windmill, FeatureKind.centreGate});
+      expect(Level.featureKindsFor(21), {FeatureKind.tulips});
+      expect(Level.featureKindsFor(22),
+          {FeatureKind.tulips, FeatureKind.windmill});
+      expect(Level.featureKindsFor(30), FeatureKind.values.toSet());
+    });
+
+    test(
+        'given levels 1 to 100, when generated, then each has the features its rule gives',
+        () {
+      for (int n = 1; n <= 100; n++) {
+        final level = Level.generate(n, 400.0, 600.0);
+        final kinds = Level.featureKindsFor(n);
+        expect(
+            level.tulips, hasLength(kinds.contains(FeatureKind.tulips) ? 2 : 0),
+            reason: 'level $n');
+        expect(level.features.whereType<Windmill>(),
+            hasLength(kinds.contains(FeatureKind.windmill) ? 1 : 0),
+            reason: 'level $n');
+        expect(level.features.whereType<CentreGate>(),
+            hasLength(kinds.contains(FeatureKind.centreGate) ? 1 : 0),
+            reason: 'level $n');
+      }
+    });
+
+    test(
+        'given levels 1 to 100, when generated, then a ball fits past every feature at every position it moves through',
+        () {
+      /// The disc a feature can reach holds every position its blades or bar
+      /// move through, so a ball's room outside the disc is room at every one
+      /// of them (#114). The tulip's own trigger pin is held to it too.
+      for (int n = 1; n <= 100; n++) {
+        final level = Level.generate(n, 400.0, 600.0);
+        for (final feature in level.features) {
+          final name = '${feature.runtimeType} on level $n';
+          final room = GameConstants.minPegGap;
+          expect(
+              feature.centre.x -
+                  feature.reach -
+                  GameConstants.fieldLeftBoundaryX,
+              greaterThanOrEqualTo(room),
+              reason: '$name and the left wall');
+          expect(
+              GameConstants.fieldRightBoundaryX -
+                  feature.centre.x -
+                  feature.reach,
+              greaterThanOrEqualTo(room),
+              reason: '$name and the right wall');
+          expect(distanceToTopCurve(feature.centre) - feature.reach,
+              greaterThanOrEqualTo(room),
+              reason: '$name and the curved top boundary');
+          for (final peg in level.pegs) {
+            expect(featureGap(feature, peg.position, peg.radius),
+                greaterThanOrEqualTo(room),
+                reason: '$name and the ${peg.type.name} peg at '
+                    '(${peg.position.x.round()}, ${peg.position.y.round()})');
+          }
+          for (final other in level.features) {
+            if (identical(other, feature)) continue;
+            expect(featureGap(feature, other.centre, other.reach),
+                greaterThanOrEqualTo(room),
+                reason: '$name and ${other.runtimeType}');
+          }
+        }
+      }
+    });
+
+    test(
+        'given a level with tulips, then each has a pin of the level above it and outwards to open it',
+        () {
+      final level = Level.generate(3, 400.0, 600.0);
+      final tulips = level.tulips.toList();
+      expect(tulips, hasLength(2));
+      for (final tulip in tulips) {
+        expect(level.pegs, contains(same(tulip.triggerPin)));
+        expect(tulip.triggerPin.type, PegType.normal);
+        expect(tulip.triggerPin.position.y, lessThan(tulip.position.y));
+        final outwards = tulip.position.x < GameConstants.boardWidth / 2
+            ? lessThan(tulip.position.x)
+            : greaterThan(tulip.position.x);
+        expect(tulip.triggerPin.position.x, outwards);
+      }
+    });
+
+    test(
+        'given a level with the centre gate, then it stands over the centre slot',
+        () {
+      final level = Level.generate(5, 400.0, 600.0);
+      final gate = level.features.whereType<CentreGate>().single;
+      final centreSlot = level.slots[level.slots.length ~/ 2];
+      expect(gate.pivot.x, centreSlot.position.x);
+      expect(gate.pivot.y, centreSlot.top);
+      expect(gate.reach * 2, lessThan(centreSlot.width));
+    });
+
+    test(
+        'given a level whose features have moved, when reset, then they start again',
+        () {
+      final level = Level.generate(30, 400.0, 600.0);
+      final tulip = level.tulips.first;
+      final windmill = level.features.whereType<Windmill>().single;
+      final gate = level.features.whereType<CentreGate>().single;
+      tulip.triggerPin.timesStruck++;
+      tulip.update(0.01);
+      tulip.catchBall();
+      windmill.advance(0.5);
+      gate.advance(0.5);
+
+      level.reset();
+
+      expect(tulip.isOpen, isFalse);
+      expect(tulip.catches, 0);
+      expect(tulip.triggerPin.timesStruck, 0);
+      expect(windmill.angle, 0.0);
+      expect(gate.time, 0.0);
     });
   });
 }

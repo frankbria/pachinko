@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:pachinko_game/models/game_state.dart';
 import 'package:pachinko_game/models/ball.dart';
+import 'package:pachinko_game/models/board_feature.dart';
 import 'package:pachinko_game/utils/constants.dart';
 import 'package:vector_math/vector_math_64.dart';
 
@@ -528,6 +529,92 @@ void main() {
         expect(ball.position.x,
             lessThan(GameConstants.fieldRightBoundaryX - ball.radius));
       }
+    });
+  });
+
+  group('Fever -', () {
+    // The fever is the bonus's second half: for feverSeconds of play after
+    // the bonus triggers every slot pays feverMultiplier times its value.
+    // These tests drive it directly, as the game loop and the scoring tool do
+    late GameState gameState;
+
+    setUp(() {
+      gameState = GameState()..startNewGame(level: 1);
+    });
+
+    tearDown(() => gameState.dispose());
+
+    test('before the bonus there is no fever and a slot pays its value', () {
+      final slot = gameState.currentLevel!.slots.first;
+
+      expect(gameState.feverActive, isFalse);
+      expect(gameState.feverRemaining, 0.0);
+      expect(gameState.scoreLanding(slot), slot.pointValue);
+      expect(gameState.score, slot.pointValue);
+      expect(gameState.feverPoints, 0);
+    });
+
+    test('the bonus starts the fever, and a landing pays the multiple', () {
+      final slot = gameState.currentLevel!.slots[3];
+
+      gameState.triggerSpecialBonus();
+
+      expect(gameState.feverActive, isTrue);
+      expect(gameState.feverRemaining, 1.0);
+      final points = gameState.scoreLanding(slot);
+      expect(points, slot.pointValue * GameConstants.feverMultiplier);
+      expect(gameState.score, points);
+      expect(gameState.feverPoints, points - slot.pointValue);
+    });
+
+    test('the fever ends after its set length of play, and pays no more', () {
+      final slot = gameState.currentLevel!.slots[3];
+      gameState.triggerSpecialBonus();
+
+      gameState.updateFever(GameConstants.feverSeconds / 2);
+      expect(gameState.feverRemaining, closeTo(0.5, 1e-9));
+      expect(gameState.feverActive, isTrue);
+
+      gameState.updateFever(GameConstants.feverSeconds / 2 + 0.01);
+      expect(gameState.feverActive, isFalse);
+      expect(gameState.feverRemaining, 0.0);
+      expect(gameState.scoreLanding(slot), slot.pointValue);
+    });
+
+    test('the last ball landing ends a fever that has time left', () {
+      gameState.triggerSpecialBonus();
+      for (final ball in gameState.activeBalls) {
+        gameState.removeBall(ball);
+      }
+      while (gameState.ballsRemaining > 0) {
+        final ball = Ball(position: Vector2(200, 300));
+        gameState.launchBall(ball);
+        gameState.removeBall(ball);
+      }
+
+      expect(gameState.phase, GamePhase.gameOver);
+      expect(gameState.feverActive, isFalse);
+      expect(gameState.feverRemaining, 0.0);
+    });
+
+    test('Restart ends the fever and takes back what it paid', () {
+      gameState.triggerSpecialBonus();
+      gameState.scoreLanding(gameState.currentLevel!.slots[0]);
+
+      gameState.resetLevel();
+
+      expect(gameState.feverActive, isFalse);
+      expect(gameState.feverPoints, 0);
+    });
+
+    test('a new level ends the fever and starts its tally again', () {
+      gameState.triggerSpecialBonus();
+      gameState.scoreLanding(gameState.currentLevel!.slots[0]);
+
+      gameState.nextLevel();
+
+      expect(gameState.feverActive, isFalse);
+      expect(gameState.feverPoints, 0);
     });
   });
 
@@ -1691,6 +1778,81 @@ void main() {
       // Then
       expect(gameState.score, equals(0));
       expect(gameState.levelScore, equals(0));
+    });
+  });
+
+  /// A tulip pays out balls for a ball it catches (#114), and is closed by
+  /// whatever ends the round or the level, like the other effects.
+  group('Tulip payout -', () {
+    late GameState gameState;
+
+    setUp(() => gameState = GameState()..startNewGame(level: 3));
+    tearDown(() => gameState.dispose());
+
+    Tulip openTulip() {
+      final tulip = gameState.currentLevel!.tulips.first;
+      tulip.triggerPin.timesStruck++;
+      tulip.update(0.0);
+      return tulip;
+    }
+
+    test(
+        'given a catch, then the tulip pays its balls with a gold popup over it',
+        () {
+      final tulip = gameState.currentLevel!.tulips.first;
+      var notified = 0;
+      gameState.addListener(() => notified++);
+
+      gameState.payTulip(tulip);
+
+      expect(gameState.ballsRemaining,
+          GameConstants.ballsPerRound + GameConstants.tulipPayoutBalls);
+      expect(gameState.tulipBalls, GameConstants.tulipPayoutBalls);
+      expect(gameState.ballCountHighlighted, isTrue);
+      final popup = gameState.floatingTexts.single;
+      expect(popup.text, '+${GameConstants.tulipPayoutBalls} balls');
+      expect(popup.color, GameConstants.bonusBallColor);
+      expect(popup.startPosition.dx, tulip.position.x);
+      expect(popup.startPosition.dy, lessThan(tulip.position.y));
+      expect(notified, greaterThan(0));
+    });
+
+    test(
+        'given a tulip open, when the level restarts, then it is closed and the payout forgotten',
+        () {
+      final tulip = openTulip();
+      gameState.payTulip(tulip);
+      final again = openTulip();
+
+      gameState.resetLevel();
+
+      expect(again.isOpen, isFalse);
+      expect(gameState.tulipBalls, 0);
+    });
+
+    test(
+        'given a payout, when the next level loads, then the payout is forgotten',
+        () {
+      gameState.payTulip(gameState.currentLevel!.tulips.first);
+
+      gameState.nextLevel();
+
+      expect(gameState.tulipBalls, 0);
+    });
+
+    test('given a tulip open, when the last ball leaves play, then it closes',
+        () {
+      final ball = Ball(position: Vector2(100, 100));
+      for (int i = 0; i < GameConstants.ballsPerRound; i++) {
+        gameState.launchBall(ball);
+        if (i < GameConstants.ballsPerRound - 1) gameState.removeBall(ball);
+      }
+      final tulip = openTulip();
+
+      gameState.removeBall(ball);
+
+      expect(gameState.phase, GamePhase.gameOver);
+      expect(tulip.isOpen, isFalse);
     });
   });
 }

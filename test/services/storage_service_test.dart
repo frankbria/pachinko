@@ -5,6 +5,7 @@ import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pachinko_game/models/game_settings.dart';
 import 'package:pachinko_game/models/high_score.dart';
+import 'package:pachinko_game/models/star_targets.dart';
 import 'package:pachinko_game/services/storage_service.dart';
 
 import 'storage_service_test.mocks.dart';
@@ -377,6 +378,7 @@ void main() {
       const chosen = GameSettings(
           soundOn: false,
           soundVolume: 0.3,
+          musicVolume: 0.45,
           vibrationOn: false,
           reducedMotion: true,
           leftHanded: true);
@@ -399,5 +401,152 @@ void main() {
 
       expect(storage.settings.reducedMotion, isFalse);
     });
+  });
+
+  group('StorageService - stars when storage fails', () {
+    test(
+        'given storage that throws, then stars read as none and a save does not throw',
+        () async {
+      when(mockPrefs.getKeys()).thenThrow(Exception('Storage error'));
+      when(mockPrefs.getInt(any)).thenThrow(Exception('Storage error'));
+
+      expect(storageService.storedStars, isEmpty);
+      await expectLater(storageService.saveStars(1, 2), completes);
+    });
+  });
+
+  group('StorageService - stars', () {
+    late StorageService storage;
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({'other_app_key': 3});
+      storage = StorageService(prefs: await SharedPreferences.getInstance());
+    });
+
+    test('given nothing won, then no level has stored stars', () {
+      expect(storage.storedStars, isEmpty);
+    });
+
+    test('given stars saved on two levels, then each is read back', () async {
+      await storage.saveStars(1, 2);
+      await storage.saveStars(27, 1);
+
+      expect(storage.storedStars, {1: 2, 27: 1});
+    });
+
+    test('given a level with more stars, then fewer do not replace them',
+        () async {
+      await storage.saveStars(3, StarTargets.maxStars);
+      await storage.saveStars(3, 1);
+
+      expect(storage.storedStars[3], StarTargets.maxStars);
+    });
+
+    test(
+        'given scores stored before stars existed, when cleared, then the stars they won are kept',
+        () async {
+      // Clear may come before anything has read the stars from the scores
+      final one = StarTargets.forLevel(1);
+      await storage.saveHighScore(1, one.two);
+      await storage.saveHighScore(2, 10);
+
+      await storage.clearData();
+
+      expect(await storage.levelsWithScores(), isEmpty);
+      expect(storage.storedStars, {1: 2});
+    });
+
+    test('given the scores cleared, then the stars and the open levels stay',
+        () async {
+      await storage.saveHighScore(1, 12000);
+      await storage.saveStars(1, 1);
+
+      await storage.clearData();
+
+      expect(await storage.levelsWithScores(), isEmpty);
+      expect(storage.storedStars, {1: 1});
+    });
+  });
+
+  group('StorageService - daily board', () {
+    late StorageService storage;
+    const day = 20000;
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      storage = StorageService(prefs: await SharedPreferences.getInstance());
+    });
+
+    test('given no daily round, then there is no best and no streak', () {
+      expect(storage.dailyBest(day), isNull);
+      expect(storage.dailyStreak.length, 0);
+      expect(storage.pendingDailyScore, isNull);
+    });
+
+    test('given two rounds on a day, then the better is the day\'s best',
+        () async {
+      await storage.recordDailyRound(day, 9000);
+      await storage.recordDailyRound(day, 12000);
+      await storage.recordDailyRound(day, 7000);
+
+      expect(storage.dailyBest(day), 12000);
+      expect(storage.dailyBest(day + 1), isNull,
+          reason: 'the next day has a best of its own');
+    });
+
+    test(
+        'given a round on the next day, then its best replaces the day before\'s',
+        () async {
+      await storage.recordDailyRound(day, 12000);
+      await storage.recordDailyRound(day + 1, 3000);
+
+      expect(storage.dailyBest(day + 1), 3000);
+      expect(storage.dailyBest(day), isNull);
+    });
+
+    test(
+        'given a round finished on yesterday\'s board after today\'s, then today\'s best stays',
+        () async {
+      await storage.recordDailyRound(day + 1, 3000);
+      await storage.recordDailyRound(day, 15000);
+
+      expect(storage.dailyBest(day + 1), 3000);
+    });
+
+    test(
+        'given rounds on days in a row and after a gap, then the streak follows',
+        () async {
+      await storage.recordDailyRound(day, 1000);
+      await storage.recordDailyRound(day + 1, 1000);
+      expect(storage.dailyStreak.lengthOn(day + 1), 2);
+
+      await storage.recordDailyRound(day + 3, 1000);
+      expect(storage.dailyStreak.lengthOn(day + 3), 1);
+    });
+
+    test(
+        'given a score kept for the leaderboard, then it is read back and cleared',
+        () async {
+      await storage.savePendingDailyScore(day, 8000);
+      expect(storage.pendingDailyScore, (day: day, score: 8000));
+
+      await storage.clearPendingDailyScore();
+      expect(storage.pendingDailyScore, isNull);
+    });
+  });
+
+  test(
+      'StorageService - daily board, given storage that fails, then a round is not thrown',
+      () async {
+    final failing = MockSharedPreferences();
+    when(failing.getInt(any)).thenThrow(Exception('Storage error'));
+    final storage = StorageService(prefs: failing);
+
+    await expectLater(storage.recordDailyRound(20000, 5000), completes);
+
+    when(failing.setInt(any, any)).thenThrow(Exception('Storage error'));
+    when(failing.remove(any)).thenThrow(Exception('Storage error'));
+    await expectLater(storage.savePendingDailyScore(20000, 5000), completes);
+    await expectLater(storage.clearPendingDailyScore(), completes);
   });
 }
