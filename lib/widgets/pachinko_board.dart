@@ -3,6 +3,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 import 'package:vector_math/vector_math_64.dart' as vm;
 import '../services/game_manager.dart';
+import '../services/physics_engine.dart';
 import '../models/game_state.dart';
 import '../models/level.dart';
 import '../models/peg.dart';
@@ -469,11 +470,18 @@ class _PachinkoBoardPainter extends CustomPainter {
     }
   }
 
-  /// The launch channel as the power meter, while the player drags.
+  /// The launch channel as the power meter, and the mark on the dome where
+  /// a ball launched now would enter the field, while the player drags.
   void _drawLaunchPowerIndicator(Canvas canvas, {required bool mirrored}) {
     final launcher = gameManager.ballLauncher;
-    paintLaunchPower(canvas, launcher.launchPower / launcher.maxPower,
-        mirrored: mirrored);
+    final ratio = launcher.launchPower / launcher.maxPower;
+    paintLaunchPower(canvas, ratio, mirrored: mirrored);
+    final level = gameManager.gameState.currentLevel;
+    paintEntryMarker(
+        canvas,
+        PhysicsEngine.entryXFor(launcher.launchPower,
+            pegs: level?.pegs ?? const []),
+        ratio);
   }
 
   void _drawFloatingText(Canvas canvas, FloatingText floatingText,

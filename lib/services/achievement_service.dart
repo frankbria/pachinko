@@ -28,13 +28,15 @@ class AchievementService extends ChangeNotifier {
   /// it in the scoring simulation (`tool/scoring_simulation_test.dart`);
   /// the first value, 50,000, was beyond any round (#72, #82). Raised from
   /// 20,000 when the bonus became rarer and brought a fever (#113), and
-  /// lowered from 27,500 when later levels stopped paying more (#115)
-  static const int highRollerScore = 24000;
+  /// lowered from 27,500 when later levels stopped paying more (#115), and
+  /// raised from 24,000 when launch power became aim (#112)
+  static const int highRollerScore = 27000;
 
   /// A level score that unlocks Score Master: about one round in a hundred.
   /// Raised from 25,000 with High Roller (#113), and lowered from 37,500,
-  /// which no round reached once later levels stopped paying more (#115).
-  static const int scoreMasterScore = 32500;
+  /// which no round reached once later levels stopped paying more (#115),
+  /// and raised to it again from 32,500 when launch power became aim (#112).
+  static const int scoreMasterScore = 37500;
 
   /// Private constructor for dependency injection pattern
   AchievementService._(this._prefs);

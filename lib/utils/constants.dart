@@ -23,6 +23,21 @@ class GameConstants {
   /// it per second of play, so it does not change with the step.
   static const double airResistance = 0.999;
   static const double bounceDamping = 0.7;
+
+  /// The share of a ball's speed into a pin that a pin gives back.
+  static const double pinRestitution = 0.8;
+
+  /// A pin met by a ball whose centre is above this height is in the entry
+  /// rows. A pin there catches a ball moving at [entryCatchMinSpeed] or
+  /// more, as one coming in off the dome does: it gives back
+  /// [entryPinRestitution] of its speed into the pin and keeps
+  /// [entryPinGrip] of its speed along it, so the ball falls on from about
+  /// where the launch put it and launch power is aim (#112). A slower ball
+  /// bounces as off any pin, so none comes to balance on one
+  static const double entryRowsBottomY = 230.0;
+  static const double entryPinRestitution = 0.1;
+  static const double entryPinGrip = 0.2;
+  static const double entryCatchMinSpeed = 250.0;
   static const double minVelocity = 10.0;
 
   // Ball constants
@@ -62,10 +77,12 @@ class GameConstants {
   /// How fast a ball leaves the top of the launch channel, moving straight
   /// up, at no power and at full power. From there the physics has it: it
   /// meets the dome and rides it for as long as its speed presses it there.
-  /// The least must carry a ball out of the channel's mouth into the field;
-  /// the most must carry it over the top of the dome to the far side (#96)
-  static const double launchSpeedMin = 350.0;
-  static const double launchSpeedMax = 850.0;
+  /// The least must carry a ball out of the channel's mouth into the field
+  /// (#96); the most carries it under the top of the dome to come down by
+  /// the far wall, short of riding the dome down to its far foot, where the
+  /// wall would turn it back and break the order of entry points (#112)
+  static const double launchSpeedMin = 370.0;
+  static const double launchSpeedMax = 775.0;
 
   // Field boundary constants (playfield area where balls interact with pegs/slots)
   // Left boundary slightly inside the board to align near leftmost slot
@@ -90,6 +107,20 @@ class GameConstants {
       -100.0; // Above the board, so the curve bows upward
   static const double topCurveEndX = 390.0;
   static const double topCurveEndY = 110.0;
+
+  /// The dome's height at [x], between [topCurveStartX] and [topCurveEndX].
+  /// The control point is midway between the ends, so x moves evenly along
+  /// the curve and its parameter is the share of the way across.
+  static double topCurveYAt(double x) {
+    final t = (x - topCurveStartX) / (topCurveEndX - topCurveStartX);
+    return (1 - t) * (1 - t) * topCurveStartY +
+        2 * (1 - t) * t * topCurveControlY +
+        t * t * topCurveEndY;
+  }
+
+  /// Where a launched ball enters the pin field: the height at which it
+  /// comes down past the dome's feet (#112).
+  static const double fieldEntryY = topCurveStartY;
 
   // Game constants
   static const int ballsPerRound = 20;
@@ -121,10 +152,11 @@ class GameConstants {
   /// the sway is what sets the bonus rate. Spread wider, the pegs stand in
   /// separate streams of balls and the bonus comes more often (a sway of 20
   /// gave it in about a quarter of rounds, 45 in more than half); kept close,
-  /// each shades the next. From 31 on level 1 to 25.5 the bonus comes in
-  /// about 42% of rounds on levels 1 to 10 and 36% on levels 41 to 60, which
-  /// pays for the bonus growing with the level (#115).
-  static const double prizeColumnSwayHardest = 25.5;
+  /// each shades the next. From 31 on level 1 to 23 the bonus comes in about
+  /// 48% of rounds on levels 1 to 10 and 40% on levels 21 to 50, which pays
+  /// for the bonus growing with the level (#115). It was 25.5 until launch
+  /// power became aim (#112), whose entry rows put more balls on the column.
+  static const double prizeColumnSwayHardest = 23.0;
   static const double prizeColumnStepHardest = 42.0;
 
   /// The level from which the layouts and the prize column are at their
@@ -227,14 +259,17 @@ class GameConstants {
   static const double tulipTriggerRadius = 9.5;
 
   /// How long a tulip stays open after its trigger pin is hit, in seconds of
-  /// play, unless it catches a ball first.
-  static const double tulipOpenSeconds = 0.6;
+  /// play, unless it catches a ball first. The trigger pin is in the entry
+  /// rows (#112), which drop a caught ball from it onto the tulip: open for
+  /// 0.6 s, tulips caught three times as many balls (5.3 a round) and the
+  /// paid balls lifted the bonus over 50% of rounds.
+  static const double tulipOpenSeconds = 0.2;
 
   /// How far from straight up, in radians, a ball can meet an open tulip and
   /// still fall into its mouth.
   static const double tulipMouthHalfAngle = 0.4;
 
-  /// The balls a tulip pays for each ball it catches: about four a round on
+  /// The balls a tulip pays for each ball it catches: about five a round on
   /// a level with tulips. Paid balls are more chances at the prize pegs, so
   /// this moves the bonus rate.
   static const int tulipPayoutBalls = 2;

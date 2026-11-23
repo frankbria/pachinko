@@ -11,9 +11,13 @@
 // and read the lines that start with SIM and BAND. The STARS lines give each
 // level's star targets (#116) and the share of rounds that win them; the
 // targets in StarTargets come from a run with LEVELS=50 and ROUNDS=200. A
-// BAND line gives the
-// spread of round scores on its levels (p10 to p99): the difficulty curve
-// (#115) is that p50 stays flat from band to band while the bonus grows. To compare two commits,
+// BAND line gives the spread of round scores on its levels (p10 to p99): the
+// difficulty curve (#115) is that p50 stays flat from band to band while the
+// bonus grows. The lines that start with AIM say whether launch power is aim
+// (#112): for each of levels 1 to AIM_LEVELS (30), points per ball in each
+// 5-point band of power against points per ball over all power, with
+// AIM_BALLS (100) balls per band. That table takes most of the run's few
+// minutes. To compare two commits,
 // copy this file into a checkout of each: it uses what GameState,
 // BallLauncher, PhysicsEngine and Level have offered since #6, the fixed
 // step and seeding added in #108, and the fever added in #113. For an older
@@ -23,7 +27,8 @@
 // game's fixed steps, with the fever running down while balls are in play and
 // each landing scored by GameState.scoreLanding. Each round's bounces are
 // seeded as the game seeds them (GameManager.physicsSeedFor), so a run gives
-// the same figures every time. Launch power is uniform on 0 to 100, which a player's is not.
+// the same figures every time. Launch power is uniform on 0 to 100, which a
+// player's is not.
 import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pachinko_game/models/ball.dart';
@@ -344,6 +349,91 @@ void main() {
     state.dispose();
     return tally;
   }
+
+  /// The points one ball launched at [power] on [level] wins: 0 when it
+  /// leaves play without landing or comes to rest in the field. [seed] seeds
+  /// its bounces.
+  //
+  // shortcut: a ball a tulip catches counts 0 here although it pays
+  // tulipPayoutBalls balls, so bands that feed a tulip read low; count the
+  // payout if a level's best band is ever a tulip's.
+  int pointsForBall(Level level, double power, int seed) {
+    final engine = PhysicsEngine()..seed(seed);
+    level.reset();
+    final ball =
+        launchedBall(power, () => engine.updateFeatures(level.features, dt));
+    for (int step = 0; step < maxFrames && ball.isActive; step++) {
+      engine.updateFeatures(level.features, dt);
+      engine.updateBalls([ball], dt);
+      engine.checkPegCollisions([ball], level.pegs);
+      if (engine.checkFeatureCollisions(
+          [ball], level.features).any((hit) => hit.caught)) {
+        return 0;
+      }
+      final landed = engine.checkSlotCollisions([ball], level.slots);
+      if (landed.isNotEmpty) return landed.first.pointValue;
+    }
+    return 0;
+  }
+
+  // Whether aim pays (#112): on each level, points per ball for launches
+  // spread evenly over each band of power, against launches spread over all
+  // power. The best band is picked on one set of bounce seeds and measured
+  // with other powers and other bounce seeds, so that the luck of the draw
+  // that made a band look best does not count towards it.
+  test('aim by power band', () {
+    const aimLevels = int.fromEnvironment('AIM_LEVELS', defaultValue: 30);
+    const ballsPerBand = int.fromEnvironment('AIM_BALLS', defaultValue: 100);
+    const bandWidth = 5;
+    const bands = 100 ~/ bandWidth;
+
+    /// Points per ball in each band, from bounce seeds in [half] (0 or 1).
+    List<double> perBand(Level level, int half) => [
+          for (int band = 0; band < bands; band++)
+            [
+                  for (int i = 0; i < ballsPerBand; i++)
+                    pointsForBall(
+                        level,
+                        band * bandWidth +
+                            bandWidth * (i + 0.25 + 0.5 * half) / ballsPerBand,
+                        level.levelNumber * 1000003 +
+                            band * 10007 +
+                            2 * i +
+                            half)
+                ].reduce((a, b) => a + b) /
+                ballsPerBand
+        ];
+
+    // ignore: avoid_print
+    print('AIM level | uniform | best band | its points | gain | '
+        '${[for (int b = 0; b < bands; b++) b * bandWidth].join(' ')}');
+    int levelsWithAim = 0;
+    double weakest = double.infinity, strongest = -1;
+    for (int n = 1; n <= aimLevels; n++) {
+      final level = Level.generate(
+          n, GameConstants.boardWidth, GameConstants.boardHeight);
+      final picking = perBand(level, 0);
+      final measuring = perBand(level, 1);
+      final uniform = measuring.reduce((a, b) => a + b) / bands;
+      int best = 0;
+      for (int b = 1; b < bands; b++) {
+        if (picking[b] > picking[best]) best = b;
+      }
+      final gain = measuring[best] / uniform - 1;
+      if (gain >= 0.2) levelsWithAim++;
+      weakest = min(weakest, gain);
+      strongest = max(strongest, gain);
+      // ignore: avoid_print
+      print('AIM $n | ${uniform.round()} | ${best * bandWidth}-'
+          '${(best + 1) * bandWidth} | ${measuring[best].round()} | '
+          '${(100 * gain).toStringAsFixed(0)}% | '
+          '${measuring.map((p) => p.round()).join(' ')}');
+    }
+    // ignore: avoid_print
+    print('AIM levels with a band at least 20% better: $levelsWithAim of '
+        '$aimLevels; the weakest gain ${(100 * weakest).toStringAsFixed(0)}%, '
+        'the strongest ${(100 * strongest).toStringAsFixed(0)}%');
+  }, timeout: const Timeout(Duration(minutes: 20)));
 
   test('scoring simulation', () {
     final byPattern = {0: Tally(), 1: Tally(), 2: Tally()};

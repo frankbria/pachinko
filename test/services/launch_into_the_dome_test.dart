@@ -8,8 +8,8 @@ import 'package:pachinko_game/utils/constants.dart';
 
 /// A launched ball leaves the top of the channel under the physics alone and
 /// meets the dome, which guides it and does not throw it back (#96). A weak
-/// launch drops into the field near the channel; a full one rides the dome
-/// over its top to the far side.
+/// launch drops into the field near the channel; a full one flies under the
+/// top of the dome to come down by the far wall (#112).
 ///
 /// These fly a ball with no pegs in the field, frame by frame, from its
 /// release until it has come down past the dome's ends.
@@ -103,9 +103,12 @@ void main() {
   });
 
   test(
-      'given full power, then the ball rides the dome over its top; given half power, then it touches the dome and flies free under it',
+      'given full power or half, then the ball touches the dome and flies free under it, never riding it down to the far foot',
       () {
-    expect(framesOnTheDome(100), greaterThan(25));
+    // A ball that rode the dome down to its far foot would meet the wall
+    // there and be turned back, so more power would enter the field nearer
+    // the channel (#112)
+    expect(framesOnTheDome(100), inInclusiveRange(1, 8));
     expect(framesOnTheDome(50), lessThan(8));
   });
 

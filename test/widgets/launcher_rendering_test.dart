@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:pachinko_game/models/ball_launcher.dart';
 import 'package:pachinko_game/models/level.dart';
 import 'package:pachinko_game/services/game_manager.dart';
+import 'package:pachinko_game/services/physics_engine.dart';
 import 'package:pachinko_game/utils/constants.dart';
 import 'package:pachinko_game/models/slot.dart';
 import 'package:pachinko_game/widgets/floating_text.dart';
@@ -81,6 +82,51 @@ void main() {
         expect(drawn.right, lessThanOrEqualTo(GameConstants.boardWidth));
       }
     }
+  });
+
+  group('The entry marker', () {
+    /// The bounds of the marker drawn for a launch at [percent].
+    Rect marker(int percent) {
+      final canvas = TestRecordingCanvas();
+      paintEntryMarker(
+          canvas, PhysicsEngine.entryXFor(percent.toDouble()), percent / 100);
+      return (recorded(canvas, #drawPath).single.positionalArguments[0] as Path)
+          .getBounds();
+    }
+
+    test(
+        'given any power, then the marker hangs from the dome over the entry point and covers no peg on any level',
+        () {
+      final pegs = [
+        for (int n = 1; n <= 60; n++)
+          for (final peg in Level.generate(
+                  n, GameConstants.boardWidth, GameConstants.boardHeight)
+              .pegs)
+            Rect.fromCircle(
+                center: Offset(peg.position.x, peg.position.y),
+                radius: peg.radius),
+      ];
+
+      for (int percent = 0; percent <= 100; percent++) {
+        final drawn = marker(percent);
+        final entryX = PhysicsEngine.entryXFor(percent.toDouble());
+        // A path is held in single precision
+        expect(drawn.center.dx, closeTo(entryX, 0.01), reason: 'at $percent%');
+        expect(drawn.top, closeTo(GameConstants.topCurveYAt(entryX), 0.01),
+            reason: 'at $percent%');
+        expect(pegs.any(drawn.overlaps), isFalse,
+            reason: 'at $percent%, $drawn');
+      }
+    });
+
+    test('given the power, then the marker is in the colour of the meter', () {
+      final canvas = TestRecordingCanvas();
+      paintEntryMarker(canvas, 200, 1.0);
+      final paint =
+          recorded(canvas, #drawPath).single.positionalArguments[1] as Paint;
+
+      expect(paint.color.toARGB32(), GameConstants.magentaColor.toARGB32());
+    });
   });
 
   test(
@@ -206,6 +252,19 @@ void main() {
         .map((call) => call.positionalArguments[0] as Rect)
         .reduce((a, b) => a.expandToInclude(b));
     expect(lit, fill(ratio));
+    final marker = (recorded(canvas, #drawPath)
+        .map((call) => call.positionalArguments[0] as Path)
+        .map((path) => path.getBounds())
+        .where((bounds) =>
+            (bounds.width - 2 * entryMarkerHalfWidth).abs() < 0.01 &&
+            (bounds.height - entryMarkerDepth).abs() < 0.01)).single;
+    expect(
+        marker.center.dx,
+        closeTo(
+            PhysicsEngine.entryXFor(manager.ballLauncher.launchPower,
+                pegs: manager.gameState.currentLevel!.pegs),
+            0.01),
+        reason: 'the marker is where a launch at this power enters');
     await gesture.up();
     // The release launches a ball; stop the loop it started before the test ends
     manager.stopLoop();

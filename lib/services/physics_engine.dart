@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:vector_math/vector_math_64.dart';
 import '../models/ball.dart';
+import '../models/ball_launcher.dart';
 import '../models/board_feature.dart';
 import '../models/peg.dart';
 import '../models/slot.dart';
@@ -33,6 +34,31 @@ class PhysicsEngine {
       : _audioService = audioService,
         _haptics = haptics,
         _random = random ?? math.Random();
+
+  /// The most the entry point may move between two whole powers: the
+  /// launcher's aim has no jumps (#112).
+  static const double maxEntryStep = 6;
+
+  /// Where a ball launched at [power] enters the pin field: its x where it
+  /// first comes down past [GameConstants.fieldEntryY] or first touches one
+  /// of [pegs], whichever is sooner, flown from the launcher's release by
+  /// these physics in the game's fixed steps. Nothing random acts on a ball
+  /// before its first touch, so a launched ball is exactly there. The board
+  /// marks it while the player charges.
+  static double entryXFor(double power, {Iterable<Peg> pegs = const []}) {
+    final ball = BallLauncher.releasedBall(power);
+    final engine = PhysicsEngine();
+    const step = GameConstants.physicsTimeStep;
+    for (int i = 0; i < 10 * GameConstants.physicsStepsPerSecond; i++) {
+      final above = ball.position.y < GameConstants.fieldEntryY;
+      engine.updateBalls([ball], step);
+      if (above && ball.position.y >= GameConstants.fieldEntryY) break;
+      if (pegs.any((peg) => peg.checkCollision(ball.position, ball.radius))) {
+        break;
+      }
+    }
+    return ball.position.x;
+  }
 
   /// Restarts the bounce deflections from [seed], so that the same launches
   /// from here on give the same bounces.
@@ -189,11 +215,25 @@ class PhysicsEngine {
     // Do not resolve if velocities are separating
     if (velocityAlongNormal > 0) return 0;
 
-    // Calculate restitution (bounciness)
-    const restitution = 0.8;
+    // The pins in the entry rows catch a fast ball coming in off the dome:
+    // they return little of its speed and hold back its slide along them, so
+    // it falls on from about where the launch put it (#112). A slow ball is
+    // not caught, or a caught one would balance on the pin. Below them the
+    // pins are lively, and the fall is luck
+    final inEntryRows = ball.position.y < GameConstants.entryRowsBottomY &&
+        ball.velocity.length >= GameConstants.entryCatchMinSpeed;
+    final restitution = inEntryRows
+        ? GameConstants.entryPinRestitution
+        : GameConstants.pinRestitution;
 
     final impulseScalar = -(1 + restitution) * velocityAlongNormal;
     ball.velocity.add(collisionNormal * impulseScalar);
+    if (inEntryRows) {
+      final along = ball.velocity.dot(collisionNormal);
+      final slide = ball.velocity - collisionNormal * along;
+      ball.velocity =
+          collisionNormal * along + slide * GameConstants.entryPinGrip;
+    }
 
     // Add some randomness to prevent perfect patterns
     final randomAngle = (_random.nextDouble() - 0.5) * 0.2;
