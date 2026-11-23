@@ -171,15 +171,25 @@ class StorageService {
 
   /// Keeps [score], won on [day], to post to the leaderboard once it can be,
   /// in place of any score kept before.
+  /// A failure is logged, not thrown.
   Future<void> savePendingDailyScore(int day, int score) async {
-    await _prefs.setInt(_dailyPendingDayKey, day);
-    await _prefs.setInt(_dailyPendingScoreKey, score);
+    try {
+      await _prefs.setInt(_dailyPendingDayKey, day);
+      await _prefs.setInt(_dailyPendingScoreKey, score);
+    } catch (e) {
+      debugPrint('Error keeping the daily score: $e');
+    }
   }
 
   /// Forgets the score kept for the leaderboard, once posted or too late.
+  /// A failure is logged, not thrown.
   Future<void> clearPendingDailyScore() async {
-    await _prefs.remove(_dailyPendingDayKey);
-    await _prefs.remove(_dailyPendingScoreKey);
+    try {
+      await _prefs.remove(_dailyPendingDayKey);
+      await _prefs.remove(_dailyPendingScoreKey);
+    } catch (e) {
+      debugPrint('Error clearing the daily score: $e');
+    }
   }
 
   /// Initializes StorageService with production SharedPreferences.

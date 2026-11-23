@@ -46,6 +46,7 @@ void main() {
       final tokyo = DailyBoard.on(DateTime.parse('2026-11-24T10:00:00+09:00'));
 
       expect(newYork, tokyo);
+      expect({newYork, tokyo}, hasLength(1));
       expect(newYork.seed, 20261124);
     });
 

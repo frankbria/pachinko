@@ -102,6 +102,11 @@ class GameManager extends ChangeNotifier {
   /// The time now, which says which day's board is today's.
   final DateTime Function() _clock;
 
+  /// The post to the leaderboard under way, if any. Posts run one at a
+  /// time, so that one finishing late cannot clear a better score kept
+  /// while it ran.
+  Future<void>? _posting;
+
   /// Creates a GameManager with optional dependency injection.
   ///
   /// Dependencies default to production instances if not provided,
@@ -765,16 +770,32 @@ class GameManager extends ChangeNotifier {
   /// Posts the daily score kept for the leaderboard, if there is one. A
   /// score from an earlier day is dropped, because that day's board is over;
   /// one that fails to post (the player is offline or not signed in) is kept
-  /// and tried again at the next start or the next best of the day.
+  /// and tried again at the next start or the next best of the day. A call
+  /// made while a post is under way waits for it, then posts what is kept.
   Future<void> postPendingDailyScore() async {
+    for (var running = _posting; running != null; running = _posting) {
+      await running;
+    }
+    final post = _postPending();
+    _posting = post;
+    try {
+      await post;
+    } finally {
+      if (identical(_posting, post)) _posting = null;
+    }
+  }
+
+  Future<void> _postPending() async {
     final storage = _storageService;
     final leaderboard = _leaderboard;
     if (storage == null || leaderboard == null) return;
     final pending = storage.pendingDailyScore;
     if (pending == null) return;
     final board = today;
-    if (pending.day != board.day ||
-        await leaderboard.submit(board, pending.score)) {
+    final done = pending.day != board.day ||
+        await leaderboard.submit(board, pending.score);
+    // A better score may have been kept while this one was being posted
+    if (done && storage.pendingDailyScore == pending) {
       await storage.clearPendingDailyScore();
     }
   }

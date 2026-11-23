@@ -22,7 +22,10 @@ class PlayGamesLeaderboard implements DailyLeaderboard {
   /// The leaderboard's ID from Play Console.
   final String leaderboardId;
 
-  bool _signedIn = false;
+  /// The sign-in, once asked for: posts made while it is under way share it,
+  /// because the plugin answers only the latest of two sign-ins at once. A
+  /// failed sign-in is forgotten, so the next post tries again.
+  Future<void>? _signIn;
 
   PlayGamesLeaderboard(this.leaderboardId);
 
@@ -36,9 +39,12 @@ class PlayGamesLeaderboard implements DailyLeaderboard {
   @override
   Future<bool> submit(DailyBoard board, int score) async {
     try {
-      if (!_signedIn) {
-        await GameAuth.signIn();
-        _signedIn = true;
+      final signIn = _signIn ??= GameAuth.signIn();
+      try {
+        await signIn;
+      } catch (_) {
+        if (identical(_signIn, signIn)) _signIn = null;
+        rethrow;
       }
       await Leaderboards.submitScore(
         score: Score(

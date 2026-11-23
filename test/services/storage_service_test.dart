@@ -542,5 +542,10 @@ void main() {
     final storage = StorageService(prefs: failing);
 
     await expectLater(storage.recordDailyRound(20000, 5000), completes);
+
+    when(failing.setInt(any, any)).thenThrow(Exception('Storage error'));
+    when(failing.remove(any)).thenThrow(Exception('Storage error'));
+    await expectLater(storage.savePendingDailyScore(20000, 5000), completes);
+    await expectLater(storage.clearPendingDailyScore(), completes);
   });
 }

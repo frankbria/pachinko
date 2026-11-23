@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pachinko_game/models/daily_board.dart';
@@ -23,6 +24,18 @@ class RecordingLeaderboard implements DailyLeaderboard {
 /// The daily board as the game plays it (#117): the manager is hosted on the
 /// test's clock, as in fixed_step_loop_test.dart, and its own clock is set
 /// to a fixed moment so that "today" is known.
+/// A leaderboard whose posts finish only when the test says, to overlap two.
+class HeldLeaderboard implements DailyLeaderboard {
+  final posts = <(int, Completer<bool>)>[];
+
+  @override
+  Future<bool> submit(DailyBoard board, int score) {
+    final answer = Completer<bool>();
+    posts.add((score, answer));
+    return answer.future;
+  }
+}
+
 void main() {
   final noon = DateTime.utc(2026, 11, 23, 12);
   final today = DailyBoard.on(noon);
@@ -256,5 +269,35 @@ void main() {
     expect(manager.gameState.daily, isNull);
     expect(manager.gameState.currentLevel!.name, 'Level 2');
     manager.stopLoop();
+  });
+
+  testWidgets(
+      'Given a post under way When a better score is kept and posted Then the first post finishing does not clear it, and the better one is posted',
+      (tester) async {
+    final storage = await storageWith();
+    await storage.savePendingDailyScore(today.day, 5000);
+    final leaderboard = HeldLeaderboard();
+    final manager = GameManager(
+        storageService: storage, leaderboard: leaderboard, clock: () => noon);
+    addTearDown(manager.dispose);
+    await tester.pump();
+    expect(leaderboard.posts.map((post) => post.$1), [5000]);
+
+    // A better round ends while the first post is still under way
+    await storage.savePendingDailyScore(today.day, 9000);
+    final second = manager.postPendingDailyScore();
+    await tester.pump();
+    expect(leaderboard.posts, hasLength(1),
+        reason: 'the second post waits for the first');
+
+    leaderboard.posts.first.$2.complete(true);
+    await tester.pump();
+    expect(storage.pendingDailyScore, (day: today.day, score: 9000),
+        reason: 'the better score was kept while the first was posted');
+    expect(leaderboard.posts.map((post) => post.$1), [5000, 9000]);
+
+    leaderboard.posts.last.$2.complete(true);
+    await second;
+    expect(storage.pendingDailyScore, isNull);
   });
 }

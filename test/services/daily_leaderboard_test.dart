@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pachinko_game/models/daily_board.dart';
@@ -80,5 +81,26 @@ void main() {
       () async {
     expect(
         await PlayGamesLeaderboard('CgkI_daily').submit(board, 12000), isFalse);
+  });
+
+  test(
+      'Given two scores posted at once When sign-in is under way Then they share one sign-in',
+      () async {
+    calls = [];
+    final signedIn = Completer<void>();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      calls.add(call);
+      if (call.method == 'signIn') await signedIn.future;
+      return 'success';
+    });
+    final leaderboard = PlayGamesLeaderboard('CgkI_daily');
+
+    final first = leaderboard.submit(board, 12000);
+    final second = leaderboard.submit(board, 13000);
+    signedIn.complete();
+
+    expect(await Future.wait([first, second]), [true, true]);
+    expect(calls.where((call) => call.method == 'signIn'), hasLength(1));
   });
 }
