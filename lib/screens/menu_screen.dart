@@ -168,7 +168,7 @@ class MenuScreen extends StatelessWidget {
           child: FutureBuilder<List<Map<int, int>>>(
             future: progress,
             builder: (_, snapshot) {
-              // Until storage answers no level is known to be open
+              // Until storage answers only level 1 is known to be open
               final [best, stars] =
                   snapshot.data ?? const <Map<int, int>>[{}, {}];
               return GridView.builder(
@@ -185,8 +185,9 @@ class MenuScreen extends StatelessWidget {
                     levelNumber: levelNumber,
                     best: best[levelNumber],
                     stars: stars[levelNumber] ?? 0,
-                    isOpen: snapshot.hasData &&
-                        StarTargets.levelIsOpen(levelNumber, stars),
+                    isOpen: levelNumber == 1 ||
+                        snapshot.hasData &&
+                            StarTargets.levelIsOpen(levelNumber, stars),
                     onOpen: () {
                       Navigator.of(dialogContext).pop();
                       _startGameFromLevel(context, levelNumber);

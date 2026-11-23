@@ -471,6 +471,11 @@ void main() {
 
       await tester.tap(find.text('Select Level'));
       await settle(tester);
+      final levelTwo = find
+          .ancestor(of: find.text('2'), matching: find.byType(Semantics))
+          .first;
+      expect(tester.getSemantics(levelTwo).value, GameStrings.levelLocked,
+          reason: 'the picker has read the stars and shows level 2 locked');
       await tester.tap(find.text('2'));
       await settle(tester);
       expect(find.byType(GameScreen), findsNothing,

@@ -402,6 +402,18 @@ void main() {
     });
   });
 
+  group('StorageService - stars when storage fails', () {
+    test(
+        'given storage that throws, then stars read as none and a save does not throw',
+        () async {
+      when(mockPrefs.getKeys()).thenThrow(Exception('Storage error'));
+      when(mockPrefs.getInt(any)).thenThrow(Exception('Storage error'));
+
+      expect(storageService.storedStars, isEmpty);
+      await expectLater(storageService.saveStars(1, 2), completes);
+    });
+  });
+
   group('StorageService - stars', () {
     late StorageService storage;
 

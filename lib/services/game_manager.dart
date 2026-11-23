@@ -210,7 +210,8 @@ class GameManager extends ChangeNotifier {
   /// The stars won on each level that has a score or stored stars, for the
   /// level picker and its locks. A level's stars are the more of those
   /// stored and those its best score wins on today's targets, so scores
-  /// from before stars existed award theirs. Empty when there is no storage.
+  /// from before stars existed award theirs, and are stored from then on.
+  /// Empty when there is no storage.
   Future<Map<int, int>> starsByLevel() async {
     final storage = _storageService;
     if (storage == null) return const {};
@@ -221,7 +222,14 @@ class GameManager extends ChangeNotifier {
         storage.getBestScore(level).then((best) => math.max(stored[level] ?? 0,
             StarTargets.forLevel(level).starsFor(best?.score ?? 0))),
     ]);
-    return Map.fromIterables(levels, stars);
+    final byLevel = Map.fromIterables(levels, stars);
+    // Stars won by scores alone are stored, so that clearing the scores later
+    // keeps them
+    await Future.wait([
+      for (final MapEntry(key: level, value: won) in byLevel.entries)
+        if (won > (stored[level] ?? 0)) storage.saveStars(level, won),
+    ]);
+    return byLevel;
   }
 
   /// Whether the round summary offers Next Level: the level after this one

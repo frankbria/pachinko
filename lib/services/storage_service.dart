@@ -94,18 +94,30 @@ class StorageService {
   /// The stars stored for each level that has any, by level number. Stars
   /// are stored separately from the scores so that clearing the scores, or
   /// raising a level's targets later, takes no star or unlock away.
-  Map<int, int> get storedStars => {
+  Map<int, int> get storedStars {
+    try {
+      return {
         for (final key in _prefs.getKeys())
           if (key.startsWith(_starsKeyPrefix))
             if (int.tryParse(key.substring(_starsKeyPrefix.length))
                 case final level?)
               level: _prefs.getInt(key) ?? 0,
       };
+    } catch (e) {
+      debugPrint('Error reading stars: $e');
+      return {};
+    }
+  }
 
-  /// Records that [level] has won [stars], unless it already has more.
+  /// Records that [level] has won [stars], unless it already has more. A
+  /// failure is logged, not thrown: nothing waits on the save.
   Future<void> saveStars(int level, int stars) async {
-    final key = '$_starsKeyPrefix$level';
-    if (stars > (_prefs.getInt(key) ?? 0)) await _prefs.setInt(key, stars);
+    try {
+      final key = '$_starsKeyPrefix$level';
+      if (stars > (_prefs.getInt(key) ?? 0)) await _prefs.setInt(key, stars);
+    } catch (e) {
+      debugPrint('Error saving stars: $e');
+    }
   }
 
   /// Initializes StorageService with production SharedPreferences.

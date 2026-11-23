@@ -2166,6 +2166,11 @@ void main() {
       final stars = await manager.starsByLevel();
 
       expect(stars, {1: 2, 2: 0, 5: 3});
+      expect(storage.storedStars, {1: 2, 5: 3},
+          reason: 'stars won by old scores are stored once read');
+      await storage.clearData();
+      expect(await manager.starsByLevel(), {1: 2, 5: 3},
+          reason: 'clearing the scores keeps them');
       expect(
           [for (int level = 1; level <= 7; level++) level]
               .where((level) => StarTargets.levelIsOpen(level, stars)),
