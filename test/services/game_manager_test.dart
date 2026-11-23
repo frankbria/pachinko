@@ -734,7 +734,7 @@ void main() {
       var notified = 0;
       manager.addListener(() => notified++);
 
-      await manager.updateSettings(quiet);
+      await manager.updateSettings((_) => quiet);
 
       expect(manager.settings, quiet);
       expect(audio.enabled, isFalse);
@@ -777,7 +777,7 @@ void main() {
         'Given a change made before storage loaded When it arrives Then the change stands and is saved',
         () async {
       final manager = managerWith();
-      await manager.updateSettings(quiet);
+      await manager.updateSettings((_) => quiet);
 
       manager.attachServices(storageService: StorageService(prefs: prefs));
       await pumpEventQueue();
@@ -786,6 +786,39 @@ void main() {
       expect(audio.enabled, isFalse);
       expect(StorageService(prefs: prefs).settings, quiet);
     });
+  });
+
+  test(
+      'Given saved settings and one changed before storage loaded When storage arrives Then only that one changes',
+      () async {
+    // The review of #123: replacing the whole of the settings with what the
+    // manager had then would put back the defaults of the ones not touched
+    when(mockGameState.singleBallLaunch).thenReturn(true);
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    const saved =
+        GameSettings(soundOn: false, soundVolume: 0.3, reducedMotion: true);
+    await StorageService(prefs: prefs).saveSettings(saved);
+    final manager = GameManager(
+        gameState: mockGameState,
+        physicsEngine: mockPhysicsEngine,
+        ballLauncher: mockBallLauncher);
+    addTearDown(manager.dispose);
+
+    await manager
+        .updateSettings((current) => current.copyWith(vibrationOn: false));
+    await manager
+        .updateSettings((current) => current.copyWith(soundVolume: 0.5));
+    manager.attachServices(storageService: StorageService(prefs: prefs));
+    await pumpEventQueue();
+
+    const expected = GameSettings(
+        soundOn: false,
+        soundVolume: 0.5,
+        vibrationOn: false,
+        reducedMotion: true);
+    expect(manager.settings, expected);
+    expect(StorageService(prefs: prefs).settings, expected);
   });
 
   group('Pause and Resume Functionality', () {

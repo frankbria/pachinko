@@ -227,7 +227,7 @@ void main() {
           tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
       final manager = GameManager();
       addTearDown(manager.dispose);
-      await manager.updateSettings(GameSettings(reducedMotion: chosen));
+      await manager.updateSettings((_) => GameSettings(reducedMotion: chosen));
       return (manager, await pumpBoard(tester, manager));
     }
 

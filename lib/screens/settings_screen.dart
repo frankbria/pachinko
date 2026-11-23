@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/game_settings.dart';
 import '../services/game_manager.dart';
 import '../utils/constants.dart';
 import '../widgets/achievement_toast_overlay.dart';
@@ -20,10 +19,10 @@ class SettingsScreen extends StatelessWidget {
     final settings = gameManager.settings;
     final reducesMotion = settings.reducesMotion(
         systemDisablesAnimations: MediaQuery.disableAnimationsOf(context));
-    // From the manager's settings at the moment of the change, not those of
-    // the last build: two changes before a rebuild must both stand
-    void change(GameSettings Function(GameSettings current) changed) =>
-        gameManager.updateSettings(changed(gameManager.settings));
+    // Each control changes one setting of the manager's own at the moment of
+    // the change, not of those built here: two changes before a rebuild must
+    // both stand, and so must the stored settings a change does not touch
+    final change = gameManager.updateSettings;
 
     // Toasts start below the app bar: one at the top would lie over the
     // title and the Back button

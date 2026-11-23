@@ -206,11 +206,12 @@ class MockGameManager extends _i1.Mock implements _i7.GameManager {
       ) as _i11.Future<void>);
 
   @override
-  _i11.Future<void> updateSettings(_i2.GameSettings? settings) =>
+  _i11.Future<void> updateSettings(
+          _i2.GameSettings Function(_i2.GameSettings)? change) =>
       (super.noSuchMethod(
         Invocation.method(
           #updateSettings,
-          [settings],
+          [change],
         ),
         returnValue: _i11.Future<void>.value(),
         returnValueForMissingStub: _i11.Future<void>.value(),

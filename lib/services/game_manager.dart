@@ -81,9 +81,10 @@ class GameManager extends ChangeNotifier {
   /// The player's sound, vibration and motion settings, as applied.
   GameSettings _settings = const GameSettings();
 
-  /// Settings the player changed while there was no storage to save them
-  /// to. Saved when storage is attached.
-  GameSettings? _unsavedSettings;
+  /// The changes the player made while there was no storage, as one change.
+  /// Replayed onto the stored settings when storage is attached, so that a
+  /// choice made then stands without undoing the stored ones it did not touch.
+  GameSettings Function(GameSettings stored)? _unsavedChange;
 
   final ValueNotifier<BallLanding?> _lastLanding = ValueNotifier(null);
 
@@ -153,10 +154,11 @@ class GameManager extends ChangeNotifier {
     } else {
       _gameState.singleBallLaunch = storageService.singleBallLaunch;
     }
-    final unsavedSettings = _unsavedSettings;
-    _unsavedSettings = null;
-    if (unsavedSettings != null) {
-      unawaited(storageService.saveSettings(unsavedSettings));
+    final unsavedChange = _unsavedChange;
+    _unsavedChange = null;
+    if (unsavedChange != null) {
+      _applySettings(unsavedChange(storageService.settings));
+      unawaited(storageService.saveSettings(_settings));
     } else {
       _applySettings(storageService.settings);
     }
@@ -216,19 +218,26 @@ class GameManager extends ChangeNotifier {
   /// The player's sound, vibration and motion settings.
   GameSettings get settings => _settings;
 
-  /// Applies [settings] at once (sound, volume and vibration go to their
-  /// services; the board reads reduced motion when it paints) and saves them
-  /// for the next start.
-  Future<void> updateSettings(GameSettings settings) async {
-    _applySettings(settings);
+  /// Applies [change] to the settings at once (sound, volume and vibration
+  /// go to their services; the board reads reduced motion when it paints)
+  /// and saves the result for the next start.
+  ///
+  /// The change is a function of the current settings, not the whole of
+  /// them: made before storage has loaded, it is kept and replayed onto the
+  /// stored settings when storage arrives (see [attachServices]).
+  Future<void> updateSettings(
+      GameSettings Function(GameSettings current) change) async {
+    _applySettings(change(_settings));
     notifyListeners();
     final storage = _storageService;
     if (storage == null) {
-      // Kept until storage arrives: see attachServices
-      _unsavedSettings = settings;
+      final earlier = _unsavedChange;
+      _unsavedChange = earlier == null
+          ? change
+          : (GameSettings stored) => change(earlier(stored));
       return;
     }
-    await storage.saveSettings(settings);
+    await storage.saveSettings(_settings);
   }
 
   void _applySettings(GameSettings settings) {

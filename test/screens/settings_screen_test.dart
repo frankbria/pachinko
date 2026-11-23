@@ -168,8 +168,8 @@ void main() {
     addTearDown(tester.view.reset);
     final manager = managerOn(prefs);
     addTearDown(manager.dispose);
-    await manager
-        .updateSettings(const GameSettings(soundOn: false, soundVolume: 0.6));
+    await manager.updateSettings(
+        (_) => const GameSettings(soundOn: false, soundVolume: 0.6));
     await pump(tester, manager, const SettingsScreen());
 
     await expectLater(find.byType(SettingsScreen),
