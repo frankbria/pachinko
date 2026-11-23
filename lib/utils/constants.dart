@@ -166,9 +166,10 @@ class GameConstants {
   static const double triangleJitterHardest = 12.0;
 
   /// How far above the bottom of the board the random layout's pins stop:
-  /// at 370 px on level 1, rising to 335 px from [hardestLayoutLevel] on, so
+  /// 230 px on level 1 (pins down to y = 370 on the 600 px board) and 265 px
+  /// (y = 335) from [hardestLayoutLevel] on, so
   /// that on later levels more of the prize column stands in open field and
-  /// fewer pins turn balls onto it (#115). Down to 400 px, as before, they
+  /// fewer pins turn balls onto it (#115). Down to y = 400, as before, they
   /// stood among the prize pegs and the bonus came in two rounds of three on
   /// random levels. The field above fills by level 2, so the number of pins
   /// no longer grows with the level.

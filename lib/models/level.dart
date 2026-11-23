@@ -187,7 +187,8 @@ class Level {
               GameConstants.prizeColumnStepHardest);
 
   /// How far either side of the middle the prize pegs on level
-  /// [levelNumber] stand: further on later levels (#115).
+  /// [levelNumber] stand: closer to the middle on later levels, which makes
+  /// the bonus rarer (#115).
   static double prizeColumnSwayFor(int levelNumber) =>
       GameConstants.alongDifficulty(levelNumber, GameConstants.prizeColumnSway,
           GameConstants.prizeColumnSwayHardest);
