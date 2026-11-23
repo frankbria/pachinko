@@ -5,12 +5,14 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vector_math/vector_math_64.dart' show Vector2;
 import 'package:pachinko_game/models/ball.dart';
+import 'package:pachinko_game/models/daily_board.dart';
 import 'package:pachinko_game/models/game_state.dart';
 import 'package:pachinko_game/models/round_summary.dart';
 import 'package:pachinko_game/models/star_targets.dart';
 import 'package:pachinko_game/screens/game_screen.dart';
 import 'package:pachinko_game/services/game_manager.dart';
 import 'package:pachinko_game/services/storage_service.dart';
+import 'package:pachinko_game/utils/constants.dart';
 import 'package:pachinko_game/utils/game_theme.dart';
 import 'package:pachinko_game/widgets/game_card.dart';
 import 'package:pachinko_game/widgets/round_summary_panel.dart';
@@ -206,6 +208,40 @@ void main() {
         matchesGoldenFile('goldens/round_summary_stars.png'));
   }, tags: ['golden']);
 
+  /// The example round, played on the daily board of 23 November 2026.
+  final dailyExample = RoundSummary(
+    levelNumber: 3,
+    daily: DailyBoard.on(DateTime.utc(2026, 11, 23)),
+    score: example.score,
+    tiers: example.tiers,
+    prizePegsCollected: 3,
+    prizePegsTotal: 5,
+    bonusBalls: 0,
+    isNewBest: true,
+  );
+
+  testWidgets(
+      'given a daily round, then the panel is headed with its date, has no stars, and calls a best the day\'s',
+      (tester) async {
+    await pumpPanel(tester, dailyExample, nextLevelOpen: false);
+
+    expect(find.text('Daily Board, 23 Nov 2026'), findsOneWidget);
+    expect(find.text('New best for today'), findsOneWidget);
+    expect(find.byType(StarRow), findsNothing);
+    expect(find.textContaining('star'), findsNothing);
+    expect(find.text('Next Level'), findsNothing);
+  });
+
+  testWidgets('the daily round\'s panel matches its golden', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.625;
+    addTearDown(tester.view.reset);
+    await pumpPanel(tester, dailyExample, nextLevelOpen: false);
+
+    await expectLater(find.byType(RoundSummaryPanel),
+        matchesGoldenFile('goldens/round_summary_daily.png'));
+  }, tags: ['golden']);
+
   test('numbers are grouped in thousands', () {
     expect(groupedThousands(0), '0');
     expect(groupedThousands(550), '550');
@@ -233,13 +269,14 @@ void main() {
       await tester.pump(const Duration(milliseconds: 80));
     }
 
-    Future<void> pumpScreen(WidgetTester tester) async {
+    /// Opens the game screen on level 1, or on today's board when [daily].
+    Future<void> pumpScreen(WidgetTester tester, {bool daily = false}) async {
       SharedPreferences.setMockInitialValues({});
       manager = GameManager(
           storageService:
               StorageService(prefs: await SharedPreferences.getInstance()));
       addTearDown(manager.dispose);
-      manager.startGame();
+      manager.startGame(daily: daily ? manager.today : null);
       await tester.pumpWidget(ChangeNotifierProvider<GameManager>.value(
         value: manager,
         child: MaterialApp(
@@ -277,6 +314,26 @@ void main() {
           reason: 'the score, and the 200 tier: 20 balls');
       expect(find.text('× 20'), findsOneWidget);
       expect(find.text('New best for this level'), findsOneWidget);
+    });
+
+    testWidgets(
+        'given the daily board, then the header says so; when the last ball lands, then the summary is the day\'s, with no next level',
+        (tester) async {
+      await pumpScreen(tester, daily: true);
+      expect(
+          find.descendant(
+              of: find.byType(GameScreen),
+              matching: find.text(GameStrings.daily)),
+          findsOneWidget);
+
+      await playRound(tester, points: 2000);
+
+      expect(find.textContaining(GameStrings.dailyBoard), findsOneWidget);
+      expect(find.text(GameStrings.newDailyBest), findsOneWidget);
+      expect(find.text(GameStrings.nextLevel), findsNothing,
+          reason: 'every star a level could give, and still no next level');
+      expect(manager.dailyBestToday, 40000);
+      expect(manager.dailyStreak, 1);
     });
 
     testWidgets(

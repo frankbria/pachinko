@@ -43,6 +43,11 @@ dependencies:
   # Sound effects (low-latency mode)
   audioplayers: ^6.7.1
 
+  # The daily board's leaderboard on Google Play Games (#117), off until
+  # GameConstants.dailyLeaderboardId is set. 5.0.0 is the last version that
+  # runs on Flutter 3.38
+  games_services: ^5.0.0
+
   # Internationalization and date formatting
   intl: ^0.20.2
 

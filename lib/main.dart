@@ -6,6 +6,7 @@ import 'services/audio_service.dart';
 import 'services/haptics_service.dart';
 import 'services/storage_service.dart';
 import 'services/achievement_service.dart';
+import 'services/daily_leaderboard.dart';
 import 'screens/menu_screen.dart';
 import 'utils/constants.dart';
 import 'utils/game_theme.dart';
@@ -94,6 +95,8 @@ class _PachinkoAppState extends State<PachinkoApp> {
             haptics: _haptics,
             storageService: _storageService,
             achievementService: _achievementService,
+            leaderboard:
+                PlayGamesLeaderboard.fromId(GameConstants.dailyLeaderboardId),
           ),
           update: (context, storageService, achievementService, gameManager) =>
               gameManager!

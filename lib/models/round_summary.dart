@@ -1,4 +1,5 @@
 import '../utils/constants.dart';
+import 'daily_board.dart';
 import 'game_state.dart';
 import 'peg.dart';
 import 'star_targets.dart';
@@ -20,6 +21,9 @@ class SlotTierTally {
 class RoundSummary {
   final int levelNumber;
 
+  /// The daily board the round was played on, or null on a level.
+  final DailyBoard? daily;
+
   /// The points won on this level, not the run's total.
   final int score;
 
@@ -38,12 +42,14 @@ class RoundSummary {
   /// [tiers] count slot values; [score] includes these.
   final int feverPoints;
 
-  /// Whether [score] beats the level's best before this round. Null when it
+  /// Whether [score] beats the level's best before this round, or the
+  /// day's on the daily board. Null when it
   /// is not known (there is no storage, or it has not answered yet).
   final bool? isNewBest;
 
   const RoundSummary({
     required this.levelNumber,
+    this.daily,
     required this.score,
     required this.tiers,
     required this.prizePegsCollected,
@@ -76,6 +82,7 @@ class RoundSummary {
 
     return RoundSummary(
       levelNumber: state.currentLevelNumber,
+      daily: state.daily,
       score: state.levelScore,
       tiers: [
         for (final value in values)

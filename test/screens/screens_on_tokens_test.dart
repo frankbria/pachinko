@@ -118,6 +118,15 @@ void main() {
       expect(lowContrast(tester), isEmpty);
     });
 
+    testWidgets('on the menu, with today\'s daily best and a streak',
+        (tester) async {
+      await storage.recordDailyRound(manager.today.day - 1, 9000);
+      await storage.recordDailyRound(manager.today.day, 12500);
+      await pump(tester, const MenuScreen());
+      expect(find.textContaining("Today's best 12,500"), findsOneWidget);
+      expect(lowContrast(tester), isEmpty);
+    });
+
     testWidgets('on the level picker, with a level played', (tester) async {
       await storage.saveHighScore(1, 12500);
       await pump(tester, const MenuScreen());
@@ -164,6 +173,33 @@ void main() {
             ),
           ));
       expect(find.byIcon(Icons.star_border), findsNWidgets(2));
+      expect(lowContrast(tester), isEmpty);
+    });
+
+    testWidgets('on the daily round\'s summary', (tester) async {
+      await pump(
+          tester,
+          Scaffold(
+            body: Center(
+              child: RoundSummaryPanel(
+                summary: RoundSummary(
+                  levelNumber: 7,
+                  daily: manager.today,
+                  score: 14200,
+                  tiers: const [SlotTierTally(pointValue: 2000, balls: 3)],
+                  prizePegsCollected: 2,
+                  prizePegsTotal: 5,
+                  bonusBalls: 0,
+                  isNewBest: true,
+                ),
+                onMenu: () {},
+                onReplay: () {},
+                onNextLevel: () {},
+                nextLevelOpen: false,
+              ),
+            ),
+          ));
+      expect(find.text(GameStrings.newDailyBest), findsOneWidget);
       expect(lowContrast(tester), isEmpty);
     });
 

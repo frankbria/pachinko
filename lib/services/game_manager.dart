@@ -8,6 +8,7 @@ import '../models/ball.dart';
 import '../models/ball_landing.dart';
 import '../models/ball_launcher.dart';
 import '../models/board_feature.dart';
+import '../models/daily_board.dart';
 import '../models/game_settings.dart';
 import '../models/game_state.dart';
 import '../models/peg.dart';
@@ -20,6 +21,7 @@ import 'audio_service.dart';
 import 'haptics_service.dart';
 import 'storage_service.dart';
 import 'achievement_service.dart';
+import 'daily_leaderboard.dart';
 
 class GameManager extends ChangeNotifier {
   final GameState _gameState;
@@ -94,6 +96,12 @@ class GameManager extends ChangeNotifier {
 
   final ValueNotifier<BallLanding?> _lastLanding = ValueNotifier(null);
 
+  /// Where daily scores are posted, or null while the leaderboard is off.
+  final DailyLeaderboard? _leaderboard;
+
+  /// The time now, which says which day's board is today's.
+  final DateTime Function() _clock;
+
   /// Creates a GameManager with optional dependency injection.
   ///
   /// Dependencies default to production instances if not provided,
@@ -106,7 +114,11 @@ class GameManager extends ChangeNotifier {
     HapticsService? haptics,
     StorageService? storageService,
     AchievementService? achievementService,
+    DailyLeaderboard? leaderboard,
+    DateTime Function() clock = DateTime.now,
   })  : _audioService = audioService,
+        _leaderboard = leaderboard,
+        _clock = clock,
         _haptics = haptics,
         _storageService = storageService,
         _achievementService = achievementService,
@@ -119,6 +131,7 @@ class GameManager extends ChangeNotifier {
       _gameState.singleBallLaunch = storageService.singleBallLaunch;
       _applySettings(storageService.settings);
       _readHints(storageService);
+      unawaited(postPendingDailyScore());
     }
   }
 
@@ -149,6 +162,7 @@ class GameManager extends ChangeNotifier {
       return;
     }
     _storageService = storageService;
+    unawaited(postPendingDailyScore());
     final shownBefore =
         (_gameState.singleBallLaunch, _launchHintDue, _settings);
     _readHints(storageService);
@@ -232,13 +246,26 @@ class GameManager extends ChangeNotifier {
     return byLevel;
   }
 
+  /// Today's daily board, by the UTC date.
+  DailyBoard get today => DailyBoard.on(_clock());
+
+  /// The best score of a daily round finished today, or null when there was
+  /// none or there is no storage.
+  int? get dailyBestToday => _storageService?.dailyBest(today.day);
+
+  /// The player's streak of days with a daily round finished, as it stands
+  /// today: zero once a day has been missed, and without storage.
+  int get dailyStreak => _storageService?.dailyStreak.lengthOn(today.day) ?? 0;
+
   /// Whether the round summary offers Next Level: the level after this one
   /// is open, because this round won a star or the level already had one.
+  /// Never on the daily board, which has no next level.
   bool get nextLevelOpen =>
-      _levelHadStar ||
-      StarTargets.forLevel(_gameState.currentLevelNumber)
-              .starsFor(_gameState.levelScore) >=
-          1;
+      _gameState.daily == null &&
+      (_levelHadStar ||
+          StarTargets.forLevel(_gameState.currentLevelNumber)
+                  .starsFor(_gameState.levelScore) >=
+              1);
 
   /// Sets whether a ball may only be launched once no ball is in play,
   /// applies it to the game at once and saves it for the next start.
@@ -325,10 +352,13 @@ class GameManager extends ChangeNotifier {
   /// same level, round and launches play out the same way.
   static int physicsSeedFor(int level, int round) => level * 1000003 + round;
 
-  /// Begins round [_round] on the current level with its own seed.
+  /// Begins round [_round] on the current level with its own seed. Every
+  /// round of the daily board has the board's seed, so the same launches
+  /// play out the same way on every phone and in every round of the day.
   void _beginRound() {
     _round++;
-    _physicsEngine.seed(physicsSeedFor(_gameState.currentLevelNumber, _round));
+    _physicsEngine.seed(_gameState.daily?.seed ??
+        physicsSeedFor(_gameState.currentLevelNumber, _round));
   }
 
   /// Whether the round just finished beat the level's best score. Null while
@@ -351,9 +381,10 @@ class GameManager extends ChangeNotifier {
     _prizePegHint = null;
   }
 
-  void startGame({int level = 1}) {
+  /// Starts a new run on [level], or on the [daily] board.
+  void startGame({int level = 1, DailyBoard? daily}) {
     _clearRoundTracking();
-    _gameState.startNewGame(level: level);
+    _gameState.startNewGame(level: level, daily: daily);
     _beginRound();
     _startGameLoop();
     notifyListeners();
@@ -669,10 +700,19 @@ class GameManager extends ChangeNotifier {
   }
 
   /// Saves the points won on the current level as that level's high score.
+  /// A daily round is recorded as the day's instead, and counts for no
+  /// level's scores, stars or achievements.
   void _saveHighScore() {
     final storageService = _storageService;
     final level = _gameState.currentLevel?.levelNumber ?? 1;
     final score = _gameState.levelScore;
+    final daily = _gameState.daily;
+    if (daily != null) {
+      if (storageService != null) {
+        _recordDailyRound(storageService, daily, score);
+      }
+      return;
+    }
 
     if (storageService != null) {
       _recordScore(storageService, level, score);
@@ -703,6 +743,40 @@ class GameManager extends ChangeNotifier {
     _roundIsNewBest = score > best;
     _levelHadStar = starsBefore >= 1;
     notifyListeners();
+  }
+
+  /// Records a daily round of [score] on [board]: the day's best and the
+  /// streak, and a new best for the day is posted to the leaderboard, or
+  /// kept to post later. Then the summary can say whether it was a best.
+  Future<void> _recordDailyRound(
+      StorageService storage, DailyBoard board, int score) async {
+    final round = _round;
+    final best = storage.dailyBest(board.day) ?? 0;
+    await storage.recordDailyRound(board.day, score);
+    if (score > best && _leaderboard != null) {
+      await storage.savePendingDailyScore(board.day, score);
+      await postPendingDailyScore();
+    }
+    if (_disposed || round != _round) return;
+    _roundIsNewBest = score > best;
+    notifyListeners();
+  }
+
+  /// Posts the daily score kept for the leaderboard, if there is one. A
+  /// score from an earlier day is dropped, because that day's board is over;
+  /// one that fails to post (the player is offline or not signed in) is kept
+  /// and tried again at the next start or the next best of the day.
+  Future<void> postPendingDailyScore() async {
+    final storage = _storageService;
+    final leaderboard = _leaderboard;
+    if (storage == null || leaderboard == null) return;
+    final pending = storage.pendingDailyScore;
+    if (pending == null) return;
+    final board = today;
+    if (pending.day != board.day ||
+        await leaderboard.submit(board, pending.score)) {
+      await storage.clearPendingDailyScore();
+    }
   }
 
   void nextLevel() {

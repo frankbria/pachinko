@@ -466,4 +466,81 @@ void main() {
       expect(storage.storedStars, {1: 1});
     });
   });
+
+  group('StorageService - daily board', () {
+    late StorageService storage;
+    const day = 20000;
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      storage = StorageService(prefs: await SharedPreferences.getInstance());
+    });
+
+    test('given no daily round, then there is no best and no streak', () {
+      expect(storage.dailyBest(day), isNull);
+      expect(storage.dailyStreak.length, 0);
+      expect(storage.pendingDailyScore, isNull);
+    });
+
+    test('given two rounds on a day, then the better is the day\'s best',
+        () async {
+      await storage.recordDailyRound(day, 9000);
+      await storage.recordDailyRound(day, 12000);
+      await storage.recordDailyRound(day, 7000);
+
+      expect(storage.dailyBest(day), 12000);
+      expect(storage.dailyBest(day + 1), isNull,
+          reason: 'the next day has a best of its own');
+    });
+
+    test(
+        'given a round on the next day, then its best replaces the day before\'s',
+        () async {
+      await storage.recordDailyRound(day, 12000);
+      await storage.recordDailyRound(day + 1, 3000);
+
+      expect(storage.dailyBest(day + 1), 3000);
+      expect(storage.dailyBest(day), isNull);
+    });
+
+    test(
+        'given a round finished on yesterday\'s board after today\'s, then today\'s best stays',
+        () async {
+      await storage.recordDailyRound(day + 1, 3000);
+      await storage.recordDailyRound(day, 15000);
+
+      expect(storage.dailyBest(day + 1), 3000);
+    });
+
+    test(
+        'given rounds on days in a row and after a gap, then the streak follows',
+        () async {
+      await storage.recordDailyRound(day, 1000);
+      await storage.recordDailyRound(day + 1, 1000);
+      expect(storage.dailyStreak.lengthOn(day + 1), 2);
+
+      await storage.recordDailyRound(day + 3, 1000);
+      expect(storage.dailyStreak.lengthOn(day + 3), 1);
+    });
+
+    test(
+        'given a score kept for the leaderboard, then it is read back and cleared',
+        () async {
+      await storage.savePendingDailyScore(day, 8000);
+      expect(storage.pendingDailyScore, (day: day, score: 8000));
+
+      await storage.clearPendingDailyScore();
+      expect(storage.pendingDailyScore, isNull);
+    });
+  });
+
+  test(
+      'StorageService - daily board, given storage that fails, then a round is not thrown',
+      () async {
+    final failing = MockSharedPreferences();
+    when(failing.getInt(any)).thenThrow(Exception('Storage error'));
+    final storage = StorageService(prefs: failing);
+
+    await expectLater(storage.recordDailyRound(20000, 5000), completes);
+  });
 }

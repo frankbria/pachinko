@@ -34,10 +34,14 @@ class Level {
     this.boardHeight = 600.0,
   });
 
-  factory Level.generate(
-      int levelNumber, double boardWidth, double boardHeight) {
-    final random =
-        Random(levelNumber); // Deterministic random for consistent levels
+  /// Generates level [levelNumber]: its pattern, features, prize column and
+  /// difficulty go by the number. The pegs are placed by a random sequence
+  /// seeded with [seed], the level number unless given, so a level is the
+  /// same every time; the daily board gives the date instead (#117), and
+  /// its [name].
+  factory Level.generate(int levelNumber, double boardWidth, double boardHeight,
+      {int? seed, String? name}) {
+    final random = Random(seed ?? levelNumber);
     final pegs = <Peg>[];
     final slots = <Slot>[];
     final specialPegs = <Peg>[];
@@ -163,7 +167,7 @@ class Level {
 
     return Level(
       levelNumber: levelNumber,
-      name: 'Level $levelNumber',
+      name: name ?? 'Level $levelNumber',
       pegs: pegs,
       slots: slots,
       specialPegs: specialPegs,
