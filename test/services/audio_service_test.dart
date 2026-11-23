@@ -307,6 +307,30 @@ void main() {
     });
   });
 
+  group('sound off', () {
+    setUp(() => audioService.initialize());
+
+    test('plays nothing while off, and plays again once on', () async {
+      audioService.enabled = false;
+
+      await audioService.playLaunch();
+      await audioService.playPegHit(300);
+      await audioService.playSpecialPeg();
+      await audioService.playSlotScore(2000);
+      await audioService.playBonusTrigger();
+
+      for (final effect in SoundEffect.values) {
+        for (final player in playersOf(effect)) {
+          verifyNever(player.resume());
+        }
+      }
+
+      audioService.enabled = true;
+      await audioService.playLaunch();
+      verify(playersOf(SoundEffect.launch).first.resume()).called(1);
+    });
+  });
+
   group('failures do not escape', () {
     /// Sounds are played without being awaited. A failure inside a player
     /// (it was disposed while a sound was loading, or the platform has no

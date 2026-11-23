@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:pachinko_game/models/game_settings.dart';
 import 'package:pachinko_game/models/high_score.dart';
 import 'package:pachinko_game/services/storage_service.dart';
 
@@ -358,6 +359,44 @@ void main() {
       await restarted.clearData();
       expect(restarted.launchHintDue, isFalse,
           reason: 'clearing the high scores leaves the hints alone');
+    });
+  });
+
+  group('StorageService - sound, vibration and motion settings', () {
+    Future<StorageService> freshStore() async {
+      SharedPreferences.setMockInitialValues({});
+      return StorageService(prefs: await SharedPreferences.getInstance());
+    }
+
+    test('given a fresh install, then the defaults are read', () async {
+      expect((await freshStore()).settings, const GameSettings());
+    });
+
+    test('given settings saved, then a restart reads them back', () async {
+      final storage = await freshStore();
+      const chosen = GameSettings(
+          soundOn: false,
+          soundVolume: 0.3,
+          vibrationOn: false,
+          reducedMotion: true);
+
+      await storage.saveSettings(chosen);
+
+      final restarted =
+          StorageService(prefs: await SharedPreferences.getInstance());
+      expect(restarted.settings, chosen);
+      await restarted.clearData();
+      expect(restarted.settings, chosen,
+          reason: 'clearing the high scores leaves the settings alone');
+    });
+
+    test('given reduced motion chosen off, then off is kept, not the system\'s',
+        () async {
+      final storage = await freshStore();
+
+      await storage.saveSettings(const GameSettings(reducedMotion: false));
+
+      expect(storage.settings.reducedMotion, isFalse);
     });
   });
 }

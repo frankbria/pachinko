@@ -3,11 +3,12 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i3;
+import 'dart:async' as _i4;
 
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:pachinko_game/models/high_score.dart' as _i4;
-import 'package:pachinko_game/services/storage_service.dart' as _i2;
+import 'package:pachinko_game/models/game_settings.dart' as _i2;
+import 'package:pachinko_game/models/high_score.dart' as _i5;
+import 'package:pachinko_game/services/storage_service.dart' as _i3;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -22,10 +23,20 @@ import 'package:pachinko_game/services/storage_service.dart' as _i2;
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
 
+class _FakeGameSettings_0 extends _i1.SmartFake implements _i2.GameSettings {
+  _FakeGameSettings_0(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
 /// A class which mocks [StorageService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockStorageService extends _i1.Mock implements _i2.StorageService {
+class MockStorageService extends _i1.Mock implements _i3.StorageService {
   MockStorageService() {
     _i1.throwOnMissingStub(this);
   }
@@ -35,6 +46,15 @@ class MockStorageService extends _i1.Mock implements _i2.StorageService {
         Invocation.getter(#singleBallLaunch),
         returnValue: false,
       ) as bool);
+
+  @override
+  _i2.GameSettings get settings => (super.noSuchMethod(
+        Invocation.getter(#settings),
+        returnValue: _FakeGameSettings_0(
+          this,
+          Invocation.getter(#settings),
+        ),
+      ) as _i2.GameSettings);
 
   @override
   bool get launchHintDue => (super.noSuchMethod(
@@ -49,37 +69,48 @@ class MockStorageService extends _i1.Mock implements _i2.StorageService {
       ) as bool);
 
   @override
-  _i3.Future<void> saveSingleBallLaunch(bool? value) => (super.noSuchMethod(
+  _i4.Future<void> saveSingleBallLaunch(bool? value) => (super.noSuchMethod(
         Invocation.method(
           #saveSingleBallLaunch,
           [value],
         ),
-        returnValue: _i3.Future<void>.value(),
-        returnValueForMissingStub: _i3.Future<void>.value(),
-      ) as _i3.Future<void>);
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 
   @override
-  _i3.Future<void> saveLaunchHintShown() => (super.noSuchMethod(
+  _i4.Future<void> saveSettings(_i2.GameSettings? settings) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #saveSettings,
+          [settings],
+        ),
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> saveLaunchHintShown() => (super.noSuchMethod(
         Invocation.method(
           #saveLaunchHintShown,
           [],
         ),
-        returnValue: _i3.Future<void>.value(),
-        returnValueForMissingStub: _i3.Future<void>.value(),
-      ) as _i3.Future<void>);
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 
   @override
-  _i3.Future<void> savePrizePegHintShown() => (super.noSuchMethod(
+  _i4.Future<void> savePrizePegHintShown() => (super.noSuchMethod(
         Invocation.method(
           #savePrizePegHintShown,
           [],
         ),
-        returnValue: _i3.Future<void>.value(),
-        returnValueForMissingStub: _i3.Future<void>.value(),
-      ) as _i3.Future<void>);
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 
   @override
-  _i3.Future<void> saveHighScore(
+  _i4.Future<void> saveHighScore(
     int? level,
     int? score,
   ) =>
@@ -91,54 +122,54 @@ class MockStorageService extends _i1.Mock implements _i2.StorageService {
             score,
           ],
         ),
-        returnValue: _i3.Future<void>.value(),
-        returnValueForMissingStub: _i3.Future<void>.value(),
-      ) as _i3.Future<void>);
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 
   @override
-  _i3.Future<List<_i4.HighScore>> getHighScores(int? level) =>
+  _i4.Future<List<_i5.HighScore>> getHighScores(int? level) =>
       (super.noSuchMethod(
         Invocation.method(
           #getHighScores,
           [level],
         ),
-        returnValue: _i3.Future<List<_i4.HighScore>>.value(<_i4.HighScore>[]),
-      ) as _i3.Future<List<_i4.HighScore>>);
+        returnValue: _i4.Future<List<_i5.HighScore>>.value(<_i5.HighScore>[]),
+      ) as _i4.Future<List<_i5.HighScore>>);
 
   @override
-  _i3.Future<List<int>> levelsWithScores() => (super.noSuchMethod(
+  _i4.Future<List<int>> levelsWithScores() => (super.noSuchMethod(
         Invocation.method(
           #levelsWithScores,
           [],
         ),
-        returnValue: _i3.Future<List<int>>.value(<int>[]),
-      ) as _i3.Future<List<int>>);
+        returnValue: _i4.Future<List<int>>.value(<int>[]),
+      ) as _i4.Future<List<int>>);
 
   @override
-  _i3.Future<int> getTotalScore() => (super.noSuchMethod(
+  _i4.Future<int> getTotalScore() => (super.noSuchMethod(
         Invocation.method(
           #getTotalScore,
           [],
         ),
-        returnValue: _i3.Future<int>.value(0),
-      ) as _i3.Future<int>);
+        returnValue: _i4.Future<int>.value(0),
+      ) as _i4.Future<int>);
 
   @override
-  _i3.Future<_i4.HighScore?> getBestScore(int? level) => (super.noSuchMethod(
+  _i4.Future<_i5.HighScore?> getBestScore(int? level) => (super.noSuchMethod(
         Invocation.method(
           #getBestScore,
           [level],
         ),
-        returnValue: _i3.Future<_i4.HighScore?>.value(),
-      ) as _i3.Future<_i4.HighScore?>);
+        returnValue: _i4.Future<_i5.HighScore?>.value(),
+      ) as _i4.Future<_i5.HighScore?>);
 
   @override
-  _i3.Future<void> clearData() => (super.noSuchMethod(
+  _i4.Future<void> clearData() => (super.noSuchMethod(
         Invocation.method(
           #clearData,
           [],
         ),
-        returnValue: _i3.Future<void>.value(),
-        returnValueForMissingStub: _i3.Future<void>.value(),
-      ) as _i3.Future<void>);
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 }

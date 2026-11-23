@@ -6,6 +6,7 @@ import 'package:mockito/mockito.dart';
 import 'package:vector_math/vector_math_64.dart';
 import 'package:pachinko_game/models/ball.dart';
 import 'package:pachinko_game/models/ball_launcher.dart';
+import 'package:pachinko_game/models/game_settings.dart';
 import 'package:pachinko_game/models/game_state.dart';
 import 'package:pachinko_game/models/high_score.dart';
 import 'package:pachinko_game/models/peg.dart';
@@ -688,6 +689,102 @@ void main() {
 
       expect(audio.played.skip(1).take(2), ['slotScore 50', 'slotScore 2000']);
       expect(haptics.felt.take(2), ['slot 50', 'slot 2000']);
+      // The last landing is what a screen reader announces
+      final landing = feltManager.lastLanding.value!;
+      expect(
+          (landing.points, landing.slotIndex, landing.slotCount), (2000, 1, 2));
+    });
+  });
+
+  group('Sound, vibration and motion settings', () {
+    /// The settings path the launch mode takes: the manager applies a change
+    /// to the services at once and saves it; storage that arrives late brings
+    /// the saved choices, unless the player chose while it was loading.
+    late _RecordingAudio audio;
+    late _RecordingHaptics haptics;
+    late SharedPreferences prefs;
+
+    const quiet =
+        GameSettings(soundOn: false, soundVolume: 0.4, vibrationOn: false);
+
+    GameManager managerWith({StorageService? storage}) {
+      final manager = GameManager(
+        gameState: mockGameState,
+        physicsEngine: mockPhysicsEngine,
+        ballLauncher: mockBallLauncher,
+        audioService: audio,
+        haptics: haptics,
+        storageService: storage,
+      );
+      addTearDown(manager.dispose);
+      return manager;
+    }
+
+    setUp(() async {
+      audio = _RecordingAudio();
+      haptics = _RecordingHaptics();
+      when(mockGameState.singleBallLaunch).thenReturn(true);
+      SharedPreferences.setMockInitialValues({});
+      prefs = await SharedPreferences.getInstance();
+    });
+
+    test('Given a change Then the services follow at once and it is saved',
+        () async {
+      final manager = managerWith(storage: StorageService(prefs: prefs));
+      var notified = 0;
+      manager.addListener(() => notified++);
+
+      await manager.updateSettings(quiet);
+
+      expect(manager.settings, quiet);
+      expect(audio.enabled, isFalse);
+      expect(audio.volume, 0.4);
+      expect(haptics.enabled, isFalse);
+      expect(notified, 1);
+      expect(StorageService(prefs: prefs).settings, quiet);
+    });
+
+    test('Given saved settings When a manager starts Then it applies them',
+        () async {
+      await StorageService(prefs: prefs).saveSettings(quiet);
+
+      final manager = managerWith(storage: StorageService(prefs: prefs));
+
+      expect(manager.settings, quiet);
+      expect(audio.enabled, isFalse);
+      expect(haptics.enabled, isFalse);
+    });
+
+    test(
+        'Given storage that loads late When it arrives Then its settings are applied and listeners hear of it',
+        () async {
+      await StorageService(prefs: prefs).saveSettings(quiet);
+      final manager = managerWith();
+      expect(manager.settings, const GameSettings());
+      var notified = 0;
+      manager.addListener(() => notified++);
+
+      manager.attachServices(storageService: StorageService(prefs: prefs));
+      await pumpEventQueue();
+
+      expect(manager.settings, quiet);
+      expect(audio.enabled, isFalse);
+      expect(haptics.enabled, isFalse);
+      expect(notified, 1);
+    });
+
+    test(
+        'Given a change made before storage loaded When it arrives Then the change stands and is saved',
+        () async {
+      final manager = managerWith();
+      await manager.updateSettings(quiet);
+
+      manager.attachServices(storageService: StorageService(prefs: prefs));
+      await pumpEventQueue();
+
+      expect(manager.settings, quiet);
+      expect(audio.enabled, isFalse);
+      expect(StorageService(prefs: prefs).settings, quiet);
     });
   });
 
@@ -832,6 +929,7 @@ void main() {
       final mockAchievements = MockAchievementService();
       when(mockStorage.saveHighScore(any, any)).thenAnswer((_) async {});
       when(mockStorage.singleBallLaunch).thenReturn(true);
+      when(mockStorage.settings).thenReturn(const GameSettings());
       when(mockStorage.launchHintDue).thenReturn(false);
       when(mockStorage.prizePegHintDue).thenReturn(false);
 

@@ -37,6 +37,26 @@ void main() {
   /// Moves the clock on past the rate limit, so the next pulse stands alone.
   void waitOutTheLimit() => now += HapticsService.minimumInterval;
 
+  test('given vibration off, nothing vibrates until it is on again', () async {
+    haptics.enabled = false;
+
+    haptics.pin();
+    waitOutTheLimit();
+    haptics.prizePeg();
+    waitOutTheLimit();
+    haptics.slot(2000);
+    waitOutTheLimit();
+    haptics.bonus();
+    await pumpEventQueue();
+    expect(vibrations, isEmpty);
+
+    haptics.enabled = true;
+    waitOutTheLimit();
+    haptics.bonus();
+    await pumpEventQueue();
+    expect(vibrations, [heavy]);
+  });
+
   group('which event gives which strength', () {
     test('a pin is a light tick', () {
       haptics.pin();

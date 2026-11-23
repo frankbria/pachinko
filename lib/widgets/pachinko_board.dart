@@ -12,6 +12,14 @@ import 'floating_text.dart';
 import 'board_static_layer.dart';
 import 'first_round_hints.dart';
 
+/// How many of a ball's past positions the board draws behind it when
+/// motion is reduced: enough to show which way it is going.
+const int reducedMotionTrailLength = 2;
+
+/// The shimmer strength a prize peg is drawn at when motion is reduced:
+/// halfway through its breath, held still.
+const double _restingShimmer = 0.3;
+
 class PachinkoBoard extends StatefulWidget {
   const PachinkoBoard({super.key});
 
@@ -40,6 +48,10 @@ class _PachinkoBoardState extends State<PachinkoBoard>
   // The felt, rail, pins and slots, recorded once per level
   final BoardStaticLayer _staticLayer = BoardStaticLayer();
 
+  // Whether the system asks apps for less motion; the player's own choice,
+  // when made, overrides it
+  bool _systemDisablesAnimations = false;
+
   @override
   void initState() {
     super.initState();
@@ -48,7 +60,6 @@ class _PachinkoBoardState extends State<PachinkoBoard>
     _repaint =
         Listenable.merge([_gameManager, _gameManager.gameState, _pegFrame]);
     _gameManager.addListener(_syncPegTicker);
-    _syncPegTicker();
   }
 
   @override
@@ -60,9 +71,24 @@ class _PachinkoBoardState extends State<PachinkoBoard>
     super.dispose();
   }
 
-  bool get _pegsAnimating =>
-      _gameManager.gameState.currentLevel?.pegs.any((peg) => peg.isAnimating) ??
-      false;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _systemDisablesAnimations = MediaQuery.disableAnimationsOf(context);
+    _syncPegTicker();
+  }
+
+  bool get _reducesMotion => _gameManager.settings
+      .reducesMotion(systemDisablesAnimations: _systemDisablesAnimations);
+
+  /// Whether a peg needs the ticker: one in its hit pulse, or a prize peg
+  /// shimmering, which it does not when motion is reduced.
+  bool get _pegsAnimating {
+    final reducesMotion = _reducesMotion;
+    return _gameManager.gameState.currentLevel?.pegs.any(
+            (peg) => peg.isAnimating && (peg.hasBeenHit || !reducesMotion)) ??
+        false;
+  }
 
   /// Runs the peg ticker while a peg is animating and stops it otherwise, so
   /// a board with nothing to animate draws no frames.
@@ -114,6 +140,7 @@ class _PachinkoBoardState extends State<PachinkoBoard>
                   dragStart: _dragStart,
                   dragEnd: _dragEnd,
                   isDragging: _isDragging,
+                  systemDisablesAnimations: _systemDisablesAnimations,
                 ),
                 size: Size.infinite,
               ),
@@ -186,6 +213,10 @@ class _PachinkoBoardPainter extends CustomPainter {
   final vm.Vector2? dragEnd;
   final bool isDragging;
 
+  /// Whether the system asks for less motion. The painter reads the player's
+  /// settings as it paints, so a change there shows at the next repaint.
+  final bool systemDisablesAnimations;
+
   _PachinkoBoardPainter({
     required this.gameManager,
     required this.staticLayer,
@@ -193,6 +224,7 @@ class _PachinkoBoardPainter extends CustomPainter {
     this.dragStart,
     this.dragEnd,
     this.isDragging = false,
+    this.systemDisablesAnimations = false,
   }) : super(repaint: repaint);
 
   @override
@@ -201,6 +233,8 @@ class _PachinkoBoardPainter extends CustomPainter {
     final level = gameState.currentLevel;
 
     if (level == null) return;
+    final reducesMotion = gameManager.settings
+        .reducesMotion(systemDisablesAnimations: systemDisablesAnimations);
 
     // Scale the board to fit the available space
     final scaleX = size.width / GameConstants.boardWidth;
@@ -220,7 +254,7 @@ class _PachinkoBoardPainter extends CustomPainter {
     paintSlotCounts(canvas, level.slots,
         inTray: roomBelow >= slotTrayHeight + 8);
 
-    _drawAnimatedPegs(canvas, level);
+    _drawAnimatedPegs(canvas, level, reducesMotion: reducesMotion);
     final prizes = level.pegs.where((peg) => peg.type == PegType.special);
     paintPrizeLamps(
       canvas,
@@ -239,7 +273,7 @@ class _PachinkoBoardPainter extends CustomPainter {
     }
 
     // Draw balls
-    _drawBalls(canvas, gameState);
+    _drawBalls(canvas, gameState, reducesMotion: reducesMotion);
 
     _drawLaunchArea(canvas, level);
 
@@ -251,9 +285,10 @@ class _PachinkoBoardPainter extends CustomPainter {
       _drawLaunchPowerIndicator(canvas, scale);
     }
 
-    // Draw confetti particles
-    for (final particle in gameState.confettiParticles) {
-      paintConfettiPiece(canvas, particle);
+    if (!reducesMotion) {
+      for (final particle in gameState.confettiParticles) {
+        paintConfettiPiece(canvas, particle);
+      }
     }
 
     // Draw floating texts
@@ -269,8 +304,10 @@ class _PachinkoBoardPainter extends CustomPainter {
   ///
   /// A prize peg still to win is a gold sphere in a soft halo with two rings,
   /// which breathe with its shimmer. Once collected it is dim, with one thin
-  /// ring and no halo, so that it is plain which prizes remain.
-  void _drawAnimatedPegs(Canvas canvas, Level level) {
+  /// ring and no halo, so that it is plain which prizes remain. When motion
+  /// is reduced the rings hold still.
+  void _drawAnimatedPegs(Canvas canvas, Level level,
+      {required bool reducesMotion}) {
     for (final peg in level.pegs) {
       if (peg.type != PegType.special && !peg.isAnimating) continue;
       final centre = Offset(peg.position.x, peg.position.y);
@@ -310,7 +347,8 @@ class _PachinkoBoardPainter extends CustomPainter {
           glowColour: GameConstants.specialPegColor,
         );
         // shimmerIntensity runs from 0.0 to 0.6
-        final strength = 0.5 + 0.7 * peg.shimmerIntensity;
+        final shimmer = reducesMotion ? _restingShimmer : peg.shimmerIntensity;
+        final strength = 0.5 + 0.7 * shimmer;
         canvas.drawCircle(centre, peg.radius + 3, ring(1.5, strength));
         canvas.drawCircle(centre, peg.radius + 6.5, ring(1, strength * 0.45));
       }
@@ -318,13 +356,18 @@ class _PachinkoBoardPainter extends CustomPainter {
   }
 
   /// Each ball as a shaded sphere over a soft glow, with a fading trail
-  /// behind it: the ball is what the player has to follow.
-  void _drawBalls(Canvas canvas, GameState gameState) {
+  /// behind it: the ball is what the player has to follow. When motion is
+  /// reduced the trail is its last [reducedMotionTrailLength] points.
+  void _drawBalls(Canvas canvas, GameState gameState,
+      {required bool reducesMotion}) {
     for (final ball in gameState.activeBalls) {
       if (!ball.isActive) continue;
 
       // Oldest first: each step nearer the ball is larger and more opaque
-      final trail = ball.trail;
+      final fullTrail = ball.trail;
+      final trail = reducesMotion && fullTrail.length > reducedMotionTrailLength
+          ? fullTrail.sublist(fullTrail.length - reducedMotionTrailLength)
+          : fullTrail;
       for (int i = 0; i < trail.length; i++) {
         final nearness = (i + 1) / (trail.length + 1);
         canvas.drawCircle(
@@ -427,5 +470,6 @@ class _PachinkoBoardPainter extends CustomPainter {
       oldDelegate.gameManager != gameManager ||
       oldDelegate.dragStart != dragStart ||
       oldDelegate.dragEnd != dragEnd ||
-      oldDelegate.isDragging != isDragging;
+      oldDelegate.isDragging != isDragging ||
+      oldDelegate.systemDisablesAnimations != systemDisablesAnimations;
 }

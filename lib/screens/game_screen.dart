@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:provider/provider.dart';
 import '../services/game_manager.dart';
 import '../models/game_state.dart';
 import '../utils/constants.dart';
 import '../widgets/achievement_toast_overlay.dart';
+import '../widgets/game_card.dart';
 import '../widgets/how_to_play_dialog.dart';
 import '../models/round_summary.dart';
 import '../widgets/pachinko_board.dart';
@@ -29,6 +31,7 @@ class _GameScreenState extends State<GameScreen>
     _gameManager = context.read<GameManager>()..attachVsync(this);
     _toasts = AchievementToastOverlay.of(context);
     _lifecycleListener = AppLifecycleListener(onHide: _pauseWhileHidden);
+    _gameManager.lastLanding.addListener(_announceLanding);
     // The header has no size until the first frame has been laid out
     WidgetsBinding.instance
         .addPostFrameCallback((_) => _anchorToastsBelowHeader());
@@ -52,8 +55,23 @@ class _GameScreenState extends State<GameScreen>
     }
   }
 
+  /// Tells a screen reader where the last ball landed and what it won:
+  /// "1,000 points, centre slot". The board is one canvas, so this is how a
+  /// player who cannot see it learns how a ball went.
+  void _announceLanding() {
+    final landing = _gameManager.lastLanding.value;
+    if (landing == null || !mounted) return;
+    SemanticsService.sendAnnouncement(
+      View.of(context),
+      GameStrings.ballLanded(
+          groupedThousands(landing.points), landing.slotName),
+      TextDirection.ltr,
+    );
+  }
+
   @override
   void dispose() {
+    _gameManager.lastLanding.removeListener(_announceLanding);
     _lifecycleListener.dispose();
     // Leaving the screen abandons the game in progress: letting go of this
     // screen's clock stops it playing on in the background. A newer game
@@ -161,6 +179,7 @@ class _GameHUD extends StatelessWidget {
                 child: _HUDItem(
                   icon: Icons.sports_golf,
                   label: GameStrings.ballsRemaining,
+                  semanticLabel: GameStrings.ballsLeft,
                   value: gameState.ballsRemaining.toString(),
                   color: GameConstants.ballColor,
                   highlighted: gameState.ballCountHighlighted,
@@ -195,9 +214,13 @@ class _HUDItem extends StatelessWidget {
   /// When set, the value counts up to this number instead of jumping to it.
   final int? countTo;
 
+  /// What a screen reader calls the value, when it is not [label].
+  final String? semanticLabel;
+
   const _HUDItem({
     required this.icon,
     required this.label,
+    this.semanticLabel,
     required this.value,
     required this.color,
     this.valueColor = GameConstants.inkColor,
@@ -207,6 +230,19 @@ class _HUDItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // A screen reader hears the label and the value as one, and the value as
+    // it is, not partway through counting up
+    final countTo = this.countTo;
+    return Semantics(
+      container: true,
+      label: semanticLabel ?? label,
+      value: countTo == null ? value : groupedThousands(countTo),
+      excludeSemantics: true,
+      child: _tile(context, countTo),
+    );
+  }
+
+  Widget _tile(BuildContext context, int? countTo) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -253,7 +289,7 @@ class _HUDItem extends StatelessWidget {
                   : TweenAnimationBuilder<double>(
                       // No begin: the first build shows the number as it is,
                       // and each later change runs from the number on screen
-                      tween: Tween<double>(end: countTo!.toDouble()),
+                      tween: Tween<double>(end: countTo.toDouble()),
                       duration: const Duration(milliseconds: 400),
                       builder: (context, shown, child) =>
                           _valueText(context, shown.round().toString()),
@@ -321,6 +357,7 @@ class _GameControls extends StatelessWidget {
               // Back button
               IconButton(
                 onPressed: () => Navigator.of(context).pop(),
+                tooltip: GameStrings.back,
                 icon: const Icon(Icons.arrow_back),
                 style: IconButton.styleFrom(
                   backgroundColor: GameConstants.surfaceColor,
@@ -332,6 +369,7 @@ class _GameControls extends StatelessWidget {
               if (gameState.phase == GamePhase.playing)
                 IconButton(
                   onPressed: gameManager.pauseGame,
+                  tooltip: GameStrings.pause,
                   icon: const Icon(Icons.pause),
                   style: IconButton.styleFrom(
                     backgroundColor: GameConstants.primaryColor,
@@ -342,6 +380,7 @@ class _GameControls extends StatelessWidget {
                   gameState.activeBalls.isNotEmpty)
                 IconButton(
                   onPressed: gameManager.resumeGame,
+                  tooltip: GameStrings.resume,
                   icon: const Icon(Icons.play_arrow),
                   style: IconButton.styleFrom(
                     backgroundColor: GameConstants.primaryColor,
@@ -352,6 +391,7 @@ class _GameControls extends StatelessWidget {
               // Reset button
               IconButton(
                 onPressed: gameManager.resetGame,
+                tooltip: GameStrings.restart,
                 icon: const Icon(Icons.restart_alt),
                 style: IconButton.styleFrom(
                   backgroundColor: GameConstants.surfaceColor,

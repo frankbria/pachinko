@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:vector_math/vector_math_64.dart' as vm;
 import '../models/ball.dart';
+import '../models/ball_landing.dart';
 import '../models/ball_launcher.dart';
+import '../models/game_settings.dart';
 import '../models/game_state.dart';
 import '../models/peg.dart';
 import '../models/slot.dart';
@@ -75,6 +78,15 @@ class GameManager extends ChangeNotifier {
   /// The level's number of prize pegs while the prize peg callout shows.
   int? _prizePegHint;
 
+  /// The player's sound, vibration and motion settings, as applied.
+  GameSettings _settings = const GameSettings();
+
+  /// Settings the player changed while there was no storage to save them
+  /// to. Saved when storage is attached.
+  GameSettings? _unsavedSettings;
+
+  final ValueNotifier<BallLanding?> _lastLanding = ValueNotifier(null);
+
   /// Creates a GameManager with optional dependency injection.
   ///
   /// Dependencies default to production instances if not provided,
@@ -98,6 +110,7 @@ class GameManager extends ChangeNotifier {
     // The player's saved choice, when there is storage to read it from
     if (storageService != null) {
       _gameState.singleBallLaunch = storageService.singleBallLaunch;
+      _applySettings(storageService.settings);
       _readHints(storageService);
     }
   }
@@ -129,7 +142,8 @@ class GameManager extends ChangeNotifier {
       return;
     }
     _storageService = storageService;
-    final shownBefore = (_gameState.singleBallLaunch, _launchHintDue);
+    final shownBefore =
+        (_gameState.singleBallLaunch, _launchHintDue, _settings);
     _readHints(storageService);
 
     final unsaved = _unsavedSingleBallLaunch;
@@ -139,7 +153,15 @@ class GameManager extends ChangeNotifier {
     } else {
       _gameState.singleBallLaunch = storageService.singleBallLaunch;
     }
-    if (shownBefore != (_gameState.singleBallLaunch, _launchHintDue)) {
+    final unsavedSettings = _unsavedSettings;
+    _unsavedSettings = null;
+    if (unsavedSettings != null) {
+      unawaited(storageService.saveSettings(unsavedSettings));
+    } else {
+      _applySettings(storageService.settings);
+    }
+    if (shownBefore !=
+        (_gameState.singleBallLaunch, _launchHintDue, _settings)) {
       scheduleMicrotask(() {
         if (!_disposed) notifyListeners();
       });
@@ -190,6 +212,36 @@ class GameManager extends ChangeNotifier {
     }
     await storage.saveSingleBallLaunch(value);
   }
+
+  /// The player's sound, vibration and motion settings.
+  GameSettings get settings => _settings;
+
+  /// Applies [settings] at once (sound, volume and vibration go to their
+  /// services; the board reads reduced motion when it paints) and saves them
+  /// for the next start.
+  Future<void> updateSettings(GameSettings settings) async {
+    _applySettings(settings);
+    notifyListeners();
+    final storage = _storageService;
+    if (storage == null) {
+      // Kept until storage arrives: see attachServices
+      _unsavedSettings = settings;
+      return;
+    }
+    await storage.saveSettings(settings);
+  }
+
+  void _applySettings(GameSettings settings) {
+    _settings = settings;
+    _audioService
+      ?..enabled = settings.soundOn
+      ..setVolume(settings.soundVolume);
+    _haptics?.enabled = settings.vibrationOn;
+  }
+
+  /// The last ball to land in a slot, for the game screen to announce to a
+  /// screen reader. Null until a ball has landed.
+  ValueListenable<BallLanding?> get lastLanding => _lastLanding;
 
   // Getters
   GameState get gameState => _gameState;
@@ -479,6 +531,12 @@ class GameManager extends ChangeNotifier {
       // The slot lights, and the popup starts above its mouth, clear of its
       // value, in the slot's own colour and at a size that goes by the score
       _gameState.lightSlot(slot);
+      final row = _gameState.currentLevel?.slots ?? const <Slot>[];
+      _lastLanding.value = BallLanding(
+        points: slot.pointValue,
+        slotIndex: row.indexOf(slot),
+        slotCount: row.length,
+      );
       final size = FloatingText.sizeFor(slot.pointValue);
       _gameState.addFloatingText(
         '+${slot.pointValue}',
@@ -598,6 +656,7 @@ class GameManager extends ChangeNotifier {
     _ticker?.dispose();
     _ticker = null;
     _vsync = null;
+    _lastLanding.dispose();
     super.dispose();
   }
 }

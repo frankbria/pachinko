@@ -3,11 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
 import 'package:vector_math/vector_math_64.dart';
+import 'package:pachinko_game/models/game_settings.dart';
 import 'package:pachinko_game/screens/game_screen.dart';
 import 'package:pachinko_game/widgets/round_summary_panel.dart';
 import 'package:pachinko_game/services/game_manager.dart';
 import 'package:pachinko_game/models/game_state.dart';
 import 'package:pachinko_game/models/ball.dart';
+import 'package:pachinko_game/models/ball_landing.dart';
 import 'package:pachinko_game/models/ball_launcher.dart';
 import 'package:pachinko_game/widgets/pachinko_board.dart';
 import 'package:pachinko_game/utils/constants.dart';
@@ -30,6 +32,8 @@ void main() {
     when(mockGameManager.ballLauncher).thenReturn(mockBallLauncher);
     // No first-round hint: those are tested in first_round_hints_test.dart
     when(mockGameManager.showsLaunchHint).thenReturn(false);
+    when(mockGameManager.settings).thenReturn(const GameSettings());
+    when(mockGameManager.lastLanding).thenReturn(ValueNotifier(null));
     when(mockGameManager.prizePegHint).thenReturn(null);
 
     // Stub GameState properties with default values
@@ -503,6 +507,68 @@ void main() {
       expect(find.text('5000'), findsOneWidget);
       expect(find.text('5'), findsOneWidget);
       expect(find.text('10'), findsOneWidget);
+    });
+  });
+
+  group('For a screen reader', () {
+    /// The board is one canvas, so the header and the announcements are what
+    /// a player who cannot see it has.
+    testWidgets(
+        'the score, balls left and level are labelled values, the score as a number in full',
+        (tester) async {
+      final semantics = tester.ensureSemantics();
+      when(mockGameState.score).thenReturn(12500);
+
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+
+      expect(tester.getSemantics(find.bySemanticsLabel(GameStrings.score)),
+          matchesSemantics(label: GameStrings.score, value: '12,500'));
+      expect(tester.getSemantics(find.bySemanticsLabel(GameStrings.ballsLeft)),
+          matchesSemantics(label: GameStrings.ballsLeft, value: '15'));
+      expect(tester.getSemantics(find.bySemanticsLabel(GameStrings.level)),
+          matchesSemantics(label: GameStrings.level, value: '3'));
+      semantics.dispose();
+    });
+
+    testWidgets(
+        'a ball landing is announced with its points and slot, each time, until the screen closes',
+        (tester) async {
+      final landings = ValueNotifier<BallLanding?>(null);
+      when(mockGameManager.lastLanding).thenReturn(landings);
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+
+      landings.value = BallLanding(points: 1000, slotIndex: 3, slotCount: 7);
+      landings.value = BallLanding(points: 1000, slotIndex: 3, slotCount: 7);
+      landings.value = BallLanding(points: 2000, slotIndex: 0, slotCount: 7);
+
+      expect(
+          tester
+              .takeAnnouncements()
+              .map((announcement) => announcement.message),
+          [
+            '1,000 points, centre slot',
+            '1,000 points, centre slot',
+            '2,000 points, left edge slot',
+          ]);
+
+      await tester.pumpWidget(const SizedBox());
+      landings.value = BallLanding(points: 50, slotIndex: 1, slotCount: 7);
+      expect(tester.takeAnnouncements(), isEmpty);
+    });
+
+    testWidgets('each control button says what it does', (tester) async {
+      when(mockGameState.phase).thenReturn(GamePhase.playing);
+
+      await tester.pumpWidget(createTestWidget(gameManager: mockGameManager));
+
+      for (final name in [
+        GameStrings.back,
+        GameStrings.pause,
+        GameStrings.restart,
+        GameStrings.howToPlay,
+      ]) {
+        expect(find.byTooltip(name), findsOneWidget, reason: name);
+      }
     });
   });
 }

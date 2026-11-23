@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
+import 'package:pachinko_game/models/game_settings.dart';
 import 'package:pachinko_game/models/achievement.dart';
 import 'package:pachinko_game/models/ball_launcher.dart';
 import 'package:pachinko_game/models/game_state.dart';
@@ -59,6 +60,8 @@ void main() {
     when(mockGameManager.ballLauncher).thenReturn(mockBallLauncher);
     // No first-round hint: those are tested in first_round_hints_test.dart
     when(mockGameManager.showsLaunchHint).thenReturn(false);
+    when(mockGameManager.settings).thenReturn(const GameSettings());
+    when(mockGameManager.lastLanding).thenReturn(ValueNotifier(null));
     when(mockGameManager.prizePegHint).thenReturn(null);
 
     when(mockGameState.score).thenReturn(12345);
