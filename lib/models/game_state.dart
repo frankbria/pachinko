@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:vector_math/vector_math_64.dart';
 import 'package:flutter/material.dart';
 import 'ball.dart';
+import 'board_feature.dart';
 import 'level.dart';
 import 'slot.dart';
 import 'confetti_particle.dart';
@@ -118,6 +119,7 @@ class GameState extends ChangeNotifier {
     _specialBonusTriggered = false;
     _bonusBallsToAdd = 0;
     _feverPoints = 0;
+    _tulipBalls = 0;
     _clearEffects();
     notifyListeners();
   }
@@ -153,6 +155,28 @@ class GameState extends ChangeNotifier {
     return points;
   }
 
+  /// Pays out the balls a [tulip] gives for the ball it has just caught:
+  /// [GameConstants.tulipPayoutBalls] more to launch, a gold popup over the
+  /// tulip, and the ball count lit as it is for the bonus.
+  void payTulip(Tulip tulip) {
+    _ballsRemaining += GameConstants.tulipPayoutBalls;
+    _tulipBalls += GameConstants.tulipPayoutBalls;
+    _ballCountHighlighted = true;
+    _ballCountHighlightTimer = _ballCountHighlightDuration;
+    addFloatingText(
+      '+${GameConstants.tulipPayoutBalls} balls',
+      Offset(
+          tulip.position.x, tulip.position.y - GameConstants.tulipRadius - 16),
+      GameConstants.bonusBallColor,
+      fontSize: 16,
+    );
+  }
+
+  int _tulipBalls = 0;
+
+  /// The balls tulips have paid out on this level.
+  int get tulipBalls => _tulipBalls;
+
   /// Runs the fever down by [deltaTime] seconds of play. The game loop calls
   /// it only while a ball is in play.
   void updateFever(double deltaTime) {
@@ -175,9 +199,10 @@ class GameState extends ChangeNotifier {
         _phase = GamePhase.ready;
       } else {
         _phase = GamePhase.gameOver;
-        // A fever still running has no ball left to pay; its rims and meter
-        // would otherwise stay up behind the round summary
+        // A fever still running has no ball left to pay, and an open tulip
+        // none to catch; they would otherwise stay up behind the summary
         _feverSecondsLeft = 0.0;
+        _closeTulips();
       }
     }
     notifyListeners();
@@ -333,20 +358,28 @@ class GameState extends ChangeNotifier {
     _specialBonusTriggered = false;
     _bonusBallsToAdd = 0;
     _feverPoints = 0;
+    _tulipBalls = 0;
     _clearEffects();
     notifyListeners();
   }
 
-  /// Removes all transient visual effects (popups, confetti, bonus overlay)
-  /// and ends the fever.
+  /// Removes all transient visual effects (popups, confetti, bonus overlay),
+  /// ends the fever and closes the tulips.
   void _clearEffects() {
     _feverSecondsLeft = 0.0;
+    _closeTulips();
     _floatingTexts.clear();
     _confettiParticles.clear();
     _ballCountHighlighted = false;
     _ballCountHighlightTimer = 0.0;
     _bonusDisplayTimer?.cancel();
     _bonusOverlayOpacity = 0.0;
+  }
+
+  void _closeTulips() {
+    for (final tulip in _currentLevel?.tulips ?? const <Tulip>[]) {
+      tulip.close();
+    }
   }
 
   void pauseGame() {

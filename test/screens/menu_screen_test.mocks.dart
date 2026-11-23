@@ -12,6 +12,7 @@ import 'package:mockito/mockito.dart' as _i1;
 import 'package:pachinko_game/models/ball.dart' as _i14;
 import 'package:pachinko_game/models/ball_landing.dart' as _i8;
 import 'package:pachinko_game/models/ball_launcher.dart' as _i6;
+import 'package:pachinko_game/models/board_feature.dart' as _i18;
 import 'package:pachinko_game/models/confetti_particle.dart' as _i16;
 import 'package:pachinko_game/models/game_settings.dart' as _i2;
 import 'package:pachinko_game/models/game_state.dart' as _i4;
@@ -21,7 +22,7 @@ import 'package:pachinko_game/services/game_manager.dart' as _i7;
 import 'package:pachinko_game/services/physics_engine.dart' as _i5;
 import 'package:pachinko_game/services/storage_service.dart' as _i9;
 import 'package:pachinko_game/widgets/floating_text.dart' as _i15;
-import 'package:vector_math/vector_math_64.dart' as _i18;
+import 'package:vector_math/vector_math_64.dart' as _i19;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -510,6 +511,12 @@ class MockGameState extends _i1.Mock implements _i4.GameState {
       ) as bool);
 
   @override
+  int get tulipBalls => (super.noSuchMethod(
+        Invocation.getter(#tulipBalls),
+        returnValue: 0,
+      ) as int);
+
+  @override
   bool get slotsLit => (super.noSuchMethod(
         Invocation.getter(#slotsLit),
         returnValue: false,
@@ -566,6 +573,15 @@ class MockGameState extends _i1.Mock implements _i4.GameState {
         ),
         returnValue: 0,
       ) as int);
+
+  @override
+  void payTulip(_i18.Tulip? tulip) => super.noSuchMethod(
+        Invocation.method(
+          #payTulip,
+          [tulip],
+        ),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void updateFever(double? deltaTime) => super.noSuchMethod(
@@ -643,7 +659,7 @@ class MockGameState extends _i1.Mock implements _i4.GameState {
 
   @override
   void spawnConfetti(
-    _i18.Vector2? position,
+    _i19.Vector2? position,
     int? count,
   ) =>
       super.noSuchMethod(
@@ -820,11 +836,11 @@ class MockBallLauncher extends _i1.Mock implements _i6.BallLauncher {
       );
 
   @override
-  List<_i18.Vector2> getLaunchPath() => (super.noSuchMethod(
+  List<_i19.Vector2> getLaunchPath() => (super.noSuchMethod(
         Invocation.method(
           #getLaunchPath,
           [],
         ),
-        returnValue: <_i18.Vector2>[],
-      ) as List<_i18.Vector2>);
+        returnValue: <_i19.Vector2>[],
+      ) as List<_i19.Vector2>);
 }

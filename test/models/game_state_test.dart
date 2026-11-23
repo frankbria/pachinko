@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:pachinko_game/models/game_state.dart';
 import 'package:pachinko_game/models/ball.dart';
+import 'package:pachinko_game/models/board_feature.dart';
 import 'package:pachinko_game/utils/constants.dart';
 import 'package:vector_math/vector_math_64.dart';
 
@@ -1777,6 +1778,81 @@ void main() {
       // Then
       expect(gameState.score, equals(0));
       expect(gameState.levelScore, equals(0));
+    });
+  });
+
+  /// A tulip pays out balls for a ball it catches (#114), and is closed by
+  /// whatever ends the round or the level, like the other effects.
+  group('Tulip payout -', () {
+    late GameState gameState;
+
+    setUp(() => gameState = GameState()..startNewGame(level: 3));
+    tearDown(() => gameState.dispose());
+
+    Tulip openTulip() {
+      final tulip = gameState.currentLevel!.tulips.first;
+      tulip.triggerPin.timesStruck++;
+      tulip.update(0.0);
+      return tulip;
+    }
+
+    test(
+        'given a catch, then the tulip pays its balls with a gold popup over it',
+        () {
+      final tulip = gameState.currentLevel!.tulips.first;
+      var notified = 0;
+      gameState.addListener(() => notified++);
+
+      gameState.payTulip(tulip);
+
+      expect(gameState.ballsRemaining,
+          GameConstants.ballsPerRound + GameConstants.tulipPayoutBalls);
+      expect(gameState.tulipBalls, GameConstants.tulipPayoutBalls);
+      expect(gameState.ballCountHighlighted, isTrue);
+      final popup = gameState.floatingTexts.single;
+      expect(popup.text, '+${GameConstants.tulipPayoutBalls} balls');
+      expect(popup.color, GameConstants.bonusBallColor);
+      expect(popup.startPosition.dx, tulip.position.x);
+      expect(popup.startPosition.dy, lessThan(tulip.position.y));
+      expect(notified, greaterThan(0));
+    });
+
+    test(
+        'given a tulip open, when the level restarts, then it is closed and the payout forgotten',
+        () {
+      final tulip = openTulip();
+      gameState.payTulip(tulip);
+      final again = openTulip();
+
+      gameState.resetLevel();
+
+      expect(again.isOpen, isFalse);
+      expect(gameState.tulipBalls, 0);
+    });
+
+    test(
+        'given a payout, when the next level loads, then the payout is forgotten',
+        () {
+      gameState.payTulip(gameState.currentLevel!.tulips.first);
+
+      gameState.nextLevel();
+
+      expect(gameState.tulipBalls, 0);
+    });
+
+    test('given a tulip open, when the last ball leaves play, then it closes',
+        () {
+      final ball = Ball(position: Vector2(100, 100));
+      for (int i = 0; i < GameConstants.ballsPerRound; i++) {
+        gameState.launchBall(ball);
+        if (i < GameConstants.ballsPerRound - 1) gameState.removeBall(ball);
+      }
+      final tulip = openTulip();
+
+      gameState.removeBall(ball);
+
+      expect(gameState.phase, GamePhase.gameOver);
+      expect(tulip.isOpen, isFalse);
     });
   });
 }

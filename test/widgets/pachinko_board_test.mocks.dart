@@ -7,6 +7,7 @@ import 'dart:ui' as _i3;
 
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i5;
+import 'package:pachinko_game/models/board_feature.dart' as _i8;
 import 'package:pachinko_game/models/level.dart' as _i4;
 import 'package:pachinko_game/models/peg.dart' as _i6;
 import 'package:pachinko_game/models/slot.dart' as _i7;
@@ -97,6 +98,12 @@ class MockLevel extends _i1.Mock implements _i4.Level {
       ) as List<_i6.Peg>);
 
   @override
+  List<_i8.BoardFeature> get features => (super.noSuchMethod(
+        Invocation.getter(#features),
+        returnValue: <_i8.BoardFeature>[],
+      ) as List<_i8.BoardFeature>);
+
+  @override
   double get boardWidth => (super.noSuchMethod(
         Invocation.getter(#boardWidth),
         returnValue: 0.0,
@@ -107,6 +114,12 @@ class MockLevel extends _i1.Mock implements _i4.Level {
         Invocation.getter(#boardHeight),
         returnValue: 0.0,
       ) as double);
+
+  @override
+  Iterable<_i8.Tulip> get tulips => (super.noSuchMethod(
+        Invocation.getter(#tulips),
+        returnValue: <_i8.Tulip>[],
+      ) as Iterable<_i8.Tulip>);
 
   @override
   bool get allSpecialPegsHit => (super.noSuchMethod(

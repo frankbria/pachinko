@@ -7,6 +7,7 @@ import 'package:vector_math/vector_math_64.dart' as vm;
 import '../models/ball.dart';
 import '../models/ball_landing.dart';
 import '../models/ball_launcher.dart';
+import '../models/board_feature.dart';
 import '../models/game_settings.dart';
 import '../models/game_state.dart';
 import '../models/peg.dart';
@@ -470,6 +471,8 @@ class GameManager extends ChangeNotifier {
     // The fever lasts for seconds of play, so it runs down only here, with a
     // ball in play; that also keeps the loop running for its meter
     _gameState.updateFever(deltaTime);
+    // The features move with play too, so a seeded round repeats exactly
+    _physicsEngine.updateFeatures(level.features, deltaTime);
 
     // Bonus balls only join once a ball has hit pegs, so the first ball in
     // play this round is the first one launched
@@ -490,6 +493,10 @@ class GameManager extends ChangeNotifier {
     // Check peg collisions (only for free balls)
     final hitPegs = _physicsEngine.checkPegCollisions(freeBalls, level.pegs);
     _handlePegHits(hitPegs);
+
+    final featureHits =
+        _physicsEngine.checkFeatureCollisions(freeBalls, level.features);
+    _handleTulipCatches(featureHits);
 
     // Check slot collisions (only for free balls)
     final hitSlots = _physicsEngine.checkSlotCollisions(freeBalls, level.slots);
@@ -523,6 +530,17 @@ class GameManager extends ChangeNotifier {
         _showPrizePegHintOnce();
         _checkSpecialBonus();
       }
+    }
+  }
+
+  /// Pays out for each ball an open tulip caught on this step.
+  void _handleTulipCatches(List<FeatureHit> hits) {
+    for (final hit in hits) {
+      final tulip = hit.feature;
+      if (!hit.caught || tulip is! Tulip) continue;
+      _gameState.payTulip(tulip);
+      _audioService?.playTulipCatch();
+      _haptics?.prizePeg();
     }
   }
 

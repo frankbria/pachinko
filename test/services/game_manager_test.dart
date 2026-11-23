@@ -6,6 +6,7 @@ import 'package:mockito/mockito.dart';
 import 'package:vector_math/vector_math_64.dart';
 import 'package:pachinko_game/models/ball.dart';
 import 'package:pachinko_game/models/ball_launcher.dart';
+import 'package:pachinko_game/models/board_feature.dart';
 import 'package:pachinko_game/models/game_settings.dart';
 import 'package:pachinko_game/models/game_state.dart';
 import 'package:pachinko_game/models/high_score.dart';
@@ -86,6 +87,7 @@ void main() {
     mockBallLauncher = MockBallLauncher();
 
     // Setup default mock behaviors
+    when(mockPhysicsEngine.checkFeatureCollisions(any, any)).thenReturn([]);
     when(mockGameState.activeBalls).thenReturn([]);
     when(mockGameState.ballsRemaining).thenReturn(20);
     when(mockGameState.currentLevelNumber).thenReturn(1);
@@ -175,6 +177,7 @@ void main() {
       // Given: Mock level to enable updates
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
 
@@ -196,6 +199,7 @@ void main() {
       // Given: Start game
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
       when(mockBallLauncher.launch()).thenReturn(Ball(
@@ -220,6 +224,7 @@ void main() {
       // Given: Paused game
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
       when(mockBallLauncher.launch()).thenReturn(Ball(
@@ -354,6 +359,7 @@ void main() {
       );
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockGameState.activeBalls).thenReturn([ball]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
@@ -388,6 +394,7 @@ void main() {
       );
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([peg]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockGameState.activeBalls).thenReturn([ball]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
@@ -423,6 +430,7 @@ void main() {
       );
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([slot]);
       when(mockGameState.activeBalls).thenReturn([ball]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
@@ -459,6 +467,7 @@ void main() {
       );
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([specialPeg]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.specialPegs).thenReturn([specialPeg]);
       when(mockLevel.slots).thenReturn([]);
       when(mockLevel.allSpecialPegsHit).thenReturn(true);
@@ -496,6 +505,7 @@ void main() {
       );
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([specialPeg]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.specialPegs).thenReturn([specialPeg]);
       when(mockLevel.slots).thenReturn([]);
       when(mockLevel.allSpecialPegsHit).thenReturn(true);
@@ -534,6 +544,7 @@ void main() {
       );
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([specialPeg]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockLevel.allSpecialPegsHit).thenReturn(false); // Not all hit yet
       when(mockGameState.activeBalls).thenReturn([ball]);
@@ -573,6 +584,7 @@ void main() {
       );
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([slot]);
       when(mockGameState.activeBalls).thenReturn([ball]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
@@ -604,6 +616,7 @@ void main() {
           position: Vector2(300, 550), width: 50, height: 60, pointValue: 2000);
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([slot1, slot2]);
       when(mockGameState.activeBalls).thenReturn([ball1, ball2]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
@@ -653,6 +666,7 @@ void main() {
           Peg(position: Vector2(210, 210), radius: 10.0, type: PegType.special);
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([prize]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.specialPegs).thenReturn([prize]);
       when(mockLevel.slots).thenReturn([]);
       when(mockLevel.allSpecialPegsHit).thenReturn(true);
@@ -670,6 +684,45 @@ void main() {
     });
 
     testLoop(
+        'Given an open tulip catching a ball When the loop sees it Then it pays out, is heard and is felt, and a bounce pays nothing',
+        () async {
+      useRecorders();
+      final ball = Ball(
+          position: Vector2(110, 230), velocity: Vector2(0, 50), radius: 8.0);
+      final bounced = Ball(position: Vector2(300, 230), radius: 8.0);
+      final tulip = Tulip(
+          position: Vector2(110, 250),
+          triggerPin: Peg(position: Vector2(88, 208)));
+      final other = Tulip(
+          position: Vector2(290, 250),
+          triggerPin: Peg(position: Vector2(312, 208)));
+      final mockLevel = MockLevel();
+      when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([tulip, other]);
+      when(mockLevel.slots).thenReturn([]);
+      when(mockGameState.activeBalls).thenReturn([ball, bounced]);
+      when(mockGameState.currentLevel).thenReturn(mockLevel);
+      when(mockPhysicsEngine.checkPegCollisions(any, any)).thenReturn([]);
+      when(mockPhysicsEngine.checkSlotCollisions(any, any)).thenReturn([]);
+      when(mockPhysicsEngine.checkFeatureCollisions(any, any)).thenReturn([
+        (ball: ball, feature: tulip, caught: true),
+        (ball: bounced, feature: other, caught: false),
+      ]);
+      when(mockBallLauncher.launch()).thenReturn(ball);
+
+      feltManager.launchBall();
+      await play(const Duration(milliseconds: 20));
+
+      verify(mockPhysicsEngine.updateFeatures([tulip, other], any))
+          .called(greaterThan(0));
+      // Every step reports the catch here, since the physics is a stand-in
+      verify(mockGameState.payTulip(tulip)).called(greaterThan(0));
+      verifyNever(mockGameState.payTulip(other));
+      expect(audio.played.skip(1).first, 'tulipCatch');
+      expect(haptics.felt.first, 'prizePeg');
+    });
+
+    testLoop(
         'Given balls landing in a 50 and a 2,000 slot When the loop sees them Then each slot is heard and reported by its points',
         () async {
       useRecorders();
@@ -681,6 +734,7 @@ void main() {
           position: Vector2(300, 550), width: 50, height: 60, pointValue: 2000);
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([low, high]);
       when(mockGameState.activeBalls).thenReturn([ball]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
@@ -834,6 +888,7 @@ void main() {
       // Given: Running game
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
       when(mockBallLauncher.launch()).thenReturn(Ball(
@@ -858,6 +913,7 @@ void main() {
       // Given: Paused game
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
       when(mockBallLauncher.launch()).thenReturn(Ball(
@@ -882,6 +938,7 @@ void main() {
       // Given: Running game
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
       when(mockBallLauncher.launch()).thenReturn(Ball(
@@ -908,6 +965,7 @@ void main() {
       // Given: Running game
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
       when(mockBallLauncher.launch()).thenReturn(Ball(
@@ -974,6 +1032,7 @@ void main() {
       when(mockStorage.getBestScore(any)).thenAnswer((_) async => null);
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockLevel.levelNumber).thenReturn(2);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
@@ -1011,6 +1070,7 @@ void main() {
       // Given: Running game
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
       when(mockBallLauncher.launch()).thenReturn(Ball(
@@ -1036,6 +1096,7 @@ void main() {
       // Given: Running game
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
       when(mockBallLauncher.launch()).thenReturn(Ball(
@@ -1061,6 +1122,7 @@ void main() {
       // Given: No balls
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockLevel.levelNumber).thenReturn(1);
       when(mockGameState.activeBalls).thenReturn([]);
@@ -1089,6 +1151,7 @@ void main() {
       // Given: Balls remaining but none active
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockGameState.activeBalls).thenReturn([]);
       when(mockGameState.ballsRemaining).thenReturn(10);
@@ -1117,6 +1180,7 @@ void main() {
       // Given: no balls active and none remaining, and the last ball's popup on screen
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockLevel.levelNumber).thenReturn(1);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
@@ -1146,6 +1210,7 @@ void main() {
       // Given
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.slots).thenReturn([]);
       when(mockLevel.levelNumber).thenReturn(1);
       when(mockGameState.currentLevel).thenReturn(mockLevel);
@@ -1181,6 +1246,7 @@ void main() {
         // Given
         final mockLevel = MockLevel();
         when(mockLevel.pegs).thenReturn([]);
+        when(mockLevel.features).thenReturn([]);
         when(mockLevel.slots).thenReturn([]);
         when(mockLevel.levelNumber).thenReturn(1);
         when(mockGameState.currentLevel).thenReturn(mockLevel);
@@ -1923,6 +1989,7 @@ void main() {
       ];
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn(prizes);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.specialPegs).thenReturn(prizes);
       when(mockLevel.slots).thenReturn([]);
       when(mockLevel.allSpecialPegsHit).thenReturn(false);
@@ -1949,6 +2016,7 @@ void main() {
           Peg(position: Vector2(210, 210), radius: 10.0, type: PegType.special);
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([prize]);
+      when(mockLevel.features).thenReturn([]);
       when(mockLevel.specialPegs).thenReturn([prize, prize]);
       when(mockLevel.slots).thenReturn([]);
       when(mockLevel.allSpecialPegsHit).thenReturn(false);
@@ -2106,6 +2174,9 @@ class _RecordingAudio extends AudioService {
 
   @override
   Future<void> playBonusTrigger() async => played.add('bonusTrigger');
+
+  @override
+  Future<void> playTulipCatch() async => played.add('tulipCatch');
 }
 
 /// Haptics that vibrate nothing and record what they were asked for.

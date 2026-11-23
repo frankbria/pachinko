@@ -183,6 +183,30 @@ void main() {
       manager.stopLoop();
     });
 
+    testWidgets(
+        'every tulip, windmill hub and gate pivot is still lit from the upper left',
+        (tester) async {
+      final manager = await leftHandedGame(tester);
+      // Level 30 has all three kinds of feature (#114)
+      manager.startGame(level: 30);
+      await tester.pump();
+      final features = manager.gameState.currentLevel!.features;
+      expect(features, hasLength(4));
+
+      final calls = paintBoard(tester);
+      for (final feature in features) {
+        final centre = Offset(feature.centre.x, feature.centre.y);
+        final sphere = calls.where((call) =>
+            call.$1.memberName == #drawCircle &&
+            call.$1.positionalArguments[0] == centre &&
+            (call.$1.positionalArguments[2] as Paint).shader != null);
+        expect(sphere, isNotEmpty, reason: '${feature.runtimeType}');
+        expect(sphere.where((call) => reflects(call.$2)), isEmpty,
+            reason: '${feature.runtimeType}');
+      }
+      manager.stopLoop();
+    });
+
     test(
         'the static layer: the level sign and slot values read the right way round, and the pins are lit from the upper left',
         () {

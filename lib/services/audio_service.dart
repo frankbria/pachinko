@@ -247,6 +247,39 @@ class AudioService {
   Future<void> playSlotScore(int points) =>
       _play(SoundEffect.slotScore, slotToneFor(points));
 
+  /// The tone of a windmill blade met at [impactSpeed]: a pin's tone (see
+  /// [pegHitToneFor]) played lower, a wooden knock.
+  static SoundTone windmillToneFor(double impactSpeed) {
+    final pin = pegHitToneFor(impactSpeed);
+    return (volume: pin.volume, playbackRate: pin.playbackRate * 0.6);
+  }
+
+  /// The tone of the centre gate met at [impactSpeed]: the slot's sound,
+  /// low and as loud as a pin met at that speed would be.
+  static SoundTone gateToneFor(double impactSpeed) =>
+      (volume: pegHitToneFor(impactSpeed).volume * 0.8, playbackRate: 0.7);
+
+  /// The tone of a tulip opening: the prize chime, high and soft.
+  static const SoundTone tulipOpenTone = (volume: 0.6, playbackRate: 1.5);
+
+  /// The tone of a tulip catching a ball: the prize chime, low and full.
+  static const SoundTone tulipCatchTone = (volume: 1.0, playbackRate: 0.8);
+
+  /// Plays a tulip opening, when its trigger pin is hit.
+  Future<void> playTulipOpen() => _play(SoundEffect.specialPeg, tulipOpenTone);
+
+  /// Plays a tulip catching a ball, which pays out balls.
+  Future<void> playTulipCatch() =>
+      _play(SoundEffect.specialPeg, tulipCatchTone);
+
+  /// Plays a ball meeting a windmill blade at [impactSpeed].
+  Future<void> playWindmillHit(double impactSpeed) =>
+      _play(SoundEffect.pegHit, windmillToneFor(impactSpeed));
+
+  /// Plays a ball meeting the centre gate at [impactSpeed].
+  Future<void> playGateHit(double impactSpeed) =>
+      _play(SoundEffect.slotScore, gateToneFor(impactSpeed));
+
   /// Plays the bonus fanfare.
   Future<void> playBonusTrigger() => _play(SoundEffect.bonusTrigger, _plain);
 

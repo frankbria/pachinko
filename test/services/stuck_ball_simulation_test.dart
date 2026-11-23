@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vector_math/vector_math_64.dart';
 import 'package:pachinko_game/models/ball.dart';
 import 'package:pachinko_game/models/ball_launcher.dart';
+import 'package:pachinko_game/models/board_feature.dart';
 import 'package:pachinko_game/models/level.dart';
 import 'package:pachinko_game/services/physics_engine.dart';
 import 'package:pachinko_game/utils/constants.dart';
@@ -14,16 +15,20 @@ import 'package:pachinko_game/utils/constants.dart';
 /// the real `PhysicsEngine`, `BallLauncher` and `Level.generate` for levels
 /// 1 to 30, stepping the way `GameManager` does, and counts the balls still in
 /// play after 30 simulated seconds. Every random source is seeded, so a failure
-/// repeats.
+/// repeats. The tulips, windmills and centre gates of those levels move and
+/// collide as in the game (#114); a ball a tulip catches leaves play.
 void main() {
-  const dt = 1.0 / 60.0;
-  const maxFrames = 30 * 60;
+  // The game's own step: a feature's thin bar is only solid at it
+  const dt = GameConstants.physicsTimeStep;
+  const maxFrames = 30 * GameConstants.physicsStepsPerSecond;
 
   /// Steps one free ball until it leaves play. False if it is still in play at the end.
   bool leavesPlay(PhysicsEngine engine, Level level, Ball ball) {
     for (var frame = 0; frame < maxFrames && ball.isActive; frame++) {
+      engine.updateFeatures(level.features, dt);
       engine.updateBalls([ball], dt);
       engine.checkPegCollisions([ball], level.pegs);
+      engine.checkFeatureCollisions([ball], level.features);
       engine.checkSlotCollisions([ball], level.slots);
     }
     return !ball.isActive;
@@ -54,6 +59,14 @@ void main() {
         ),
     ];
   }
+
+  test('given levels 1 to 30, then every kind of board feature is among them',
+      () {
+    final kinds = {
+      for (var n = 1; n <= 30; n++) ...Level.featureKindsFor(n),
+    };
+    expect(kinds, containsAll(FeatureKind.values));
+  });
 
   test(
       'given levels 1 to 30, when 100 balls are launched on each, then none comes to rest',

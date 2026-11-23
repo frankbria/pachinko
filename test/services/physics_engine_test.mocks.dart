@@ -348,6 +348,21 @@ class MockPeg extends _i1.Mock implements _i5.Peg {
       );
 
   @override
+  int get timesStruck => (super.noSuchMethod(
+        Invocation.getter(#timesStruck),
+        returnValue: 0,
+      ) as int);
+
+  @override
+  set timesStruck(int? _timesStruck) => super.noSuchMethod(
+        Invocation.setter(
+          #timesStruck,
+          _timesStruck,
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
   bool get isAnimating => (super.noSuchMethod(
         Invocation.getter(#isAnimating),
         returnValue: false,
