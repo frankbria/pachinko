@@ -85,9 +85,9 @@ class Level {
     }
 
     final features = _placeFeatures(featureKindsFor(levelNumber), pegs, slots);
-    final columnStep = features.any((feature) => feature is CentreGate)
-        ? GameConstants.centreGateColumnStep
-        : GameConstants.prizeColumnStep;
+    final columnStep = prizeColumnStepFor(levelNumber,
+        centreGate: features.any((feature) => feature is CentreGate));
+    final columnSway = prizeColumnSwayFor(levelNumber);
 
     // The prize pegs, down their zigzag column, spaced apart
     const specialPegCount = GameConstants.prizePegsPerLevel;
@@ -103,9 +103,7 @@ class Level {
 
       // Try to find a valid position with proper spacing
       for (int attempts = 0; position == null && attempts < 200; attempts++) {
-        final sway = i.isEven
-            ? -GameConstants.prizeColumnSway
-            : GameConstants.prizeColumnSway;
+        final sway = i.isEven ? -columnSway : columnSway;
         final x = GameConstants.prizeColumnX + sway + _jitter(random);
         final y =
             GameConstants.prizeColumnTopY + i * columnStep + _jitter(random);
@@ -174,6 +172,26 @@ class Level {
       boardHeight: boardHeight,
     );
   }
+
+  /// How far apart the prize pegs on level [levelNumber] stand, down the
+  /// column: further on later levels (#115). On a level with the centre gate
+  /// the step stays [GameConstants.centreGateColumnStep], so that the lowest
+  /// prize peg leaves a ball room past the gate.
+  static double prizeColumnStepFor(int levelNumber,
+          {required bool centreGate}) =>
+      centreGate
+          ? GameConstants.centreGateColumnStep
+          : GameConstants.alongDifficulty(
+              levelNumber,
+              GameConstants.prizeColumnStep,
+              GameConstants.prizeColumnStepHardest);
+
+  /// How far either side of the middle the prize pegs on level
+  /// [levelNumber] stand: closer to the middle on later levels, which makes
+  /// the bonus rarer (#115).
+  static double prizeColumnSwayFor(int levelNumber) =>
+      GameConstants.alongDifficulty(levelNumber, GameConstants.prizeColumnSway,
+          GameConstants.prizeColumnSwayHardest);
 
   /// Which features level [levelNumber] has. The first two levels have
   /// none, so the first round teaches the pins and slots alone; tulips come

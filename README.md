@@ -41,15 +41,15 @@ The board changes colour every five levels. These are levels 1, 6, 11 and 16:
    |:----:|:---:|:--:|:----:|:--:|:---:|:----:|
 
    The two 2,000 slots are against the walls and barely wider than the ball. About one ball in nine lands in one.
-4. **Win the bonus.** Each level has five gold prize pegs down the middle of the field, with a lamp in the dome for each. Hitting them all is rare, about two rounds in five. When you do, the bonus drops extra balls from the top (5 on level 1, one more for every two levels, 15 at most) and starts a fever: for eight seconds of play every slot pays double.
+4. **Win the bonus.** Each level has five gold prize pegs down the middle of the field, with a lamp in the dome for each. Hitting them all is rare, about two rounds in five, and rarer on later levels. When you do, the bonus drops extra balls from the top (5 on level 1, one more for every two levels, 15 at most) and starts a fever: for eight seconds of play every slot pays double.
 5. **Finish.** A round starts with 20 balls. When the last one lands, the summary shows the level's score, how many balls landed in each kind of slot, the prize pegs you collected, what the fever paid, and whether it is your best for that level. From there: replay, go on to the next level, or return to the menu.
 
 ## What is in the game
 
-- **Levels without end.** Three peg layouts (triangle, random, hexagonal) take turns, and Next Level has no upper limit. The level picker opens any of the first 20 and shows your best score on each.
+- **Levels without end.** Three peg layouts (triangle, random, hexagonal) take turns, and Next Level has no upper limit. The layouts get harder up to level 20: the pins close in, and the prize pegs line up so that each shields the next, so the bonus comes less often as it grows, and a later level does not simply pay more. The level picker opens any of the first 20 and shows your best score on each.
 - **Board features.** From level 3 the board has things to aim at. A gold tulip opens when the pin above it is hit, and a ball that falls into it while it is open pays out two more balls. A brass windmill turns and throws balls aside, and on every fifth level a gate rocks over the centre slot, turning balls away while it is level and guiding them in while it is steep. Tulips come on odd levels and a windmill on even ones, and after level 20 the tulips are on every level.
 - **Four colour bands.** Midnight, Lagoon, Plum and Ember, five levels each, then round again.
-- **18 achievements**, announced by a toast over whatever screen you are on. Some are milestones (First Launch, Marathon Runner), some take a good round (High Roller: 27,500 in one level), and some take luck or aim (Lucky Shot: the first ball of a round in a 2,000 slot; Combo King: every prize peg on a level with one ball).
+- **18 achievements**, announced by a toast over whatever screen you are on. Some are milestones (First Launch, Marathon Runner), some take a good round (High Roller: 24,000 in one level), and some take luck or aim (Lucky Shot: the first ball of a round in a 2,000 slot; Combo King: every prize peg on a level with one ball).
 - **High scores.** The ten best scores for each level are kept on the device.
 - **One ball at a time, or not.** By default the next ball waits for the one in play to land. A setting turns that off, and then you can launch as many as you like. The recording above was made with it off.
 - **Sound** for the launch, the pins, the prize pegs, the slots and the bonus: a pin sounds louder and higher the harder it is hit, and a slot by its value.

@@ -216,16 +216,15 @@ void main() {
       final level2 = Level.generate(2, 400.0, 600.0);
       final level11 = Level.generate(11, 400.0, 600.0);
 
-      // Then - random pattern generates pegs
-      // Random pattern formula: 30 + (levelNumber * 3)
-      // Level 2: 30 + (2 * 3) = 36 base pegs (before special pegs)
-      // Level 11: 30 + (11 * 3) = 63 base pegs, less the few its tulips
-      // make room for
+      // Then - random pattern generates pegs, and its pins stop higher up
+      // the board on a later level (#115)
       expect(level2.pegs, isNotEmpty);
       expect(level11.pegs, isNotEmpty);
-
-      // Level 11 should have more pegs than level 2
-      expect(level11.pegs.length, greaterThan(level2.pegs.length));
+      double lowestPin(int levelNumber) => PegPatterns.generateRandomPattern(
+              Random(levelNumber), levelNumber, 400.0, 600.0)
+          .map((peg) => peg.position.y)
+          .reduce(max);
+      expect(lowestPin(11), lessThan(lowestPin(2)));
     });
 
     test(
@@ -271,27 +270,56 @@ void main() {
       /// so a ball that reaches one has usually been turned aside by the one
       /// above it: that is what makes the bonus rare (#113)
       /// On a level with the centre gate the column is shorter, so that its
-      /// lowest peg leaves room past the gate (#114)
+      /// lowest peg leaves room past the gate (#114). Its step and sway
+      /// change with the level (#115)
       const reach = GameConstants.prizeColumnJitter + 1e-9;
       for (int n = 1; n <= 100; n++) {
         final level = Level.generate(n, 400.0, 600.0);
-        final step = level.features.any((feature) => feature is CentreGate)
-            ? GameConstants.centreGateColumnStep
-            : GameConstants.prizeColumnStep;
+        final step = Level.prizeColumnStepFor(n,
+            centreGate: level.features.any((feature) => feature is CentreGate));
+        final sway = Level.prizeColumnSwayFor(n);
         for (int i = 0; i < level.specialPegs.length; i++) {
           final peg = level.specialPegs[i].position;
           final side = i.isEven ? -1 : 1;
           expect(
-              peg.x,
-              closeTo(
-                  GameConstants.prizeColumnX +
-                      side * GameConstants.prizeColumnSway,
-                  reach),
+              peg.x, closeTo(GameConstants.prizeColumnX + side * sway, reach),
               reason: 'level $n, prize peg $i');
           expect(
               peg.y, closeTo(GameConstants.prizeColumnTopY + i * step, reach),
               reason: 'level $n, prize peg $i');
         }
+      }
+    });
+
+    test(
+        'given later levels, then the prize pegs stand further apart down the column and closer to its middle line',
+        () {
+      /// Further apart down the column, as #115 asks; closer to the middle,
+      /// because a wide zigzag puts each peg in its own stream of balls and
+      /// the bonus comes more often, not less (measured with the scoring tool)
+      expect(Level.prizeColumnStepFor(1, centreGate: false),
+          GameConstants.prizeColumnStep);
+      expect(Level.prizeColumnSwayFor(1), GameConstants.prizeColumnSway);
+      for (int n = 2; n <= GameConstants.hardestLayoutLevel; n++) {
+        expect(Level.prizeColumnStepFor(n, centreGate: false),
+            greaterThan(Level.prizeColumnStepFor(n - 1, centreGate: false)),
+            reason: 'level $n');
+        expect(Level.prizeColumnSwayFor(n),
+            lessThan(Level.prizeColumnSwayFor(n - 1)),
+            reason: 'level $n');
+      }
+      expect(Level.prizeColumnStepFor(60, centreGate: false),
+          GameConstants.prizeColumnStepHardest);
+      expect(
+          Level.prizeColumnSwayFor(60), GameConstants.prizeColumnSwayHardest);
+    });
+
+    test(
+        'given a level with the centre gate, then the column step stays short at every level',
+        () {
+      for (final n in [5, 20, 60]) {
+        expect(Level.prizeColumnStepFor(n, centreGate: true),
+            GameConstants.centreGateColumnStep);
       }
     });
 

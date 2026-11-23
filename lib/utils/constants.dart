@@ -100,17 +100,81 @@ class GameConstants {
   static const int prizePegsPerLevel = 5;
 
   /// Where prize pegs are placed: a zigzag column down the middle of the
-  /// field, low down, the first at [prizeColumnTopY] and each next one
-  /// [prizeColumnStep] lower and on the other side of [prizeColumnX] by
-  /// [prizeColumnSway], moved by up to [prizeColumnJitter] either way. A ball
-  /// that reaches one has usually been turned aside by the one above it,
-  /// which is what makes collecting them all rare; set with
-  /// `tool/scoring_simulation_test.dart` (#113).
+  /// field, low down, the first at [prizeColumnTopY] and each next one a
+  /// step lower and on the other side of [prizeColumnX] by the sway, moved by
+  /// up to [prizeColumnJitter] either way. A ball that reaches one has
+  /// usually been turned aside by the one above it, which is what makes
+  /// collecting them all rare; set with `tool/scoring_simulation_test.dart`
+  /// (#113). The step and the sway change with the level (#115): on level 1
+  /// they are [prizeColumnStep] and [prizeColumnSway], from
+  /// [hardestLayoutLevel] on [prizeColumnStepHardest] and
+  /// [prizeColumnSwayHardest] (`Level.prizeColumnStepFor` and
+  /// `Level.prizeColumnSwayFor`).
   static const double prizeColumnX = boardWidth / 2;
   static const double prizeColumnTopY = 340.0;
-  static const double prizeColumnStep = 41.0;
-  static const double prizeColumnSway = 25.0;
+  static const double prizeColumnStep = 38.0;
+  static const double prizeColumnSway = 31.0;
   static const double prizeColumnJitter = 8.0;
+
+  /// The prize column from [hardestLayoutLevel] on. The pegs stand further
+  /// apart down the column as levels rise, and closer to its middle line:
+  /// the sway is what sets the bonus rate. Spread wider, the pegs stand in
+  /// separate streams of balls and the bonus comes more often (a sway of 20
+  /// gave it in about a quarter of rounds, 45 in more than half); kept close,
+  /// each shades the next. From 31 on level 1 to 25.5 the bonus comes in
+  /// about 42% of rounds on levels 1 to 10 and 36% on levels 41 to 60, which
+  /// pays for the bonus growing with the level (#115).
+  static const double prizeColumnSwayHardest = 25.5;
+  static const double prizeColumnStepHardest = 42.0;
+
+  /// The level from which the layouts and the prize column are at their
+  /// hardest (#115). It is the level at which the bonus stops growing
+  /// ([bonusBallsMax]), so the layouts get harder for as long as the bonus
+  /// gets richer.
+  static const int hardestLayoutLevel = 20;
+
+  /// How far [levelNumber] is along the difficulty curve: 0 on level 1,
+  /// rising evenly to 1 at [hardestLayoutLevel], and 1 on every level after.
+  static double difficultyFor(int levelNumber) =>
+      ((levelNumber - 1) / (hardestLayoutLevel - 1)).clamp(0.0, 1.0);
+
+  /// The value [levelNumber] takes between [easiest], on level 1, and
+  /// [hardest], from [hardestLayoutLevel] on.
+  static double alongDifficulty(
+          int levelNumber, double easiest, double hardest) =>
+      easiest + (hardest - easiest) * difficultyFor(levelNumber);
+
+  /// The hexagonal layout: pins [hexagonalSpacing] apart along a row and rows
+  /// [hexagonalRowStep] apart, each pin moved by up to half of
+  /// [hexagonalJitter] either way, on level 1; the `Hardest` values from
+  /// [hardestLayoutLevel] on (#115). Closer rows fit one more row in the
+  /// same height, and closer, more jittered pins scatter a ball more.
+  static const double hexagonalSpacing = 45.0;
+  static const double hexagonalSpacingHardest = 42.0;
+  static const double hexagonalRowStep = 38.0;
+  static const double hexagonalRowStepHardest = 36.0;
+  static const double hexagonalJitter = 10.0;
+  static const double hexagonalJitterHardest = 14.0;
+
+  /// The triangle layout, in the same way: pins [triangleSpacing] apart,
+  /// rows [triangleRowStep] apart and [triangleJitter] of jitter on level 1.
+  static const double triangleSpacing = 50.0;
+  static const double triangleSpacingHardest = 46.0;
+  static const double triangleRowStep = 40.0;
+  static const double triangleRowStepHardest = 37.0;
+  static const double triangleJitter = 8.0;
+  static const double triangleJitterHardest = 12.0;
+
+  /// How far above the bottom of the board the random layout's pins stop:
+  /// 230 px on level 1 (pins down to y = 370 on the 600 px board) and 265 px
+  /// (y = 335) from [hardestLayoutLevel] on, so
+  /// that on later levels more of the prize column stands in open field and
+  /// fewer pins turn balls onto it (#115). Down to y = 400, as before, they
+  /// stood among the prize pegs and the bonus came in two rounds of three on
+  /// random levels. The field above fills by level 2, so the number of pins
+  /// no longer grows with the level.
+  static const double randomLayoutBottomMargin = 230.0;
+  static const double randomLayoutBottomMarginHardest = 265.0;
 
   /// How much a slot pays during the fever that follows the bonus.
   static const int feverMultiplier = 2;
