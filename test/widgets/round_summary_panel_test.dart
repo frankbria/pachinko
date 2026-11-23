@@ -121,21 +121,19 @@ void main() {
     late GameManager manager;
 
     /// Plays a whole round of [manager]'s level by dropping every ball into
-    /// the first 200 slot, with real time passing between balls.
+    /// the first 200 slot, with frames of the screen's clock between balls.
     Future<void> playRound(WidgetTester tester) async {
       final slot = manager.gameState.currentLevel!.slots
           .firstWhere((slot) => slot.pointValue == 200);
-      await tester.runAsync(() async {
-        while (manager.gameState.ballsRemaining > 0) {
-          manager.gameState.launchBall(Ball(
-              position: Vector2(slot.position.x, slot.top - 4),
-              velocity: Vector2(0, 300)));
-          manager.resumeGame();
-          await Future<void>.delayed(const Duration(milliseconds: 60));
-        }
-        await Future<void>.delayed(const Duration(milliseconds: 80));
-      });
-      await tester.pump();
+      while (manager.gameState.ballsRemaining > 0) {
+        manager.gameState.launchBall(Ball(
+            position: Vector2(slot.position.x, slot.top - 4),
+            velocity: Vector2(0, 300)));
+        manager.resumeGame();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 60));
+      }
+      await tester.pump(const Duration(milliseconds: 80));
     }
 
     Future<void> pumpScreen(WidgetTester tester) async {

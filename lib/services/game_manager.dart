@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:vector_math/vector_math_64.dart' as vm;
 import '../models/ball.dart';
 import '../models/ball_launcher.dart';
@@ -20,8 +22,24 @@ class GameManager extends ChangeNotifier {
   final AudioService? _audioService;
   StorageService? _storageService;
   AchievementService? _achievementService;
-  Timer? _gameTimer;
-  DateTime _lastFrameTime = DateTime.now();
+
+  /// The display's clock, from the screen that hosts the board. Null while
+  /// no screen does, and then the loop does not run.
+  Ticker? _ticker;
+
+  /// The screen whose clock [_ticker] runs on.
+  TickerProvider? _vsync;
+
+  /// The physics steps run since the ticker last started.
+  int _stepsTaken = 0;
+
+  /// Every physics step this manager has run, to space the trail points.
+  int _physicsSteps = 0;
+
+  /// The physics steps between two points of a ball's trail: a point every
+  /// 1/60 s.
+  static const int _stepsPerTrailPoint =
+      GameConstants.physicsStepsPerSecond ~/ 60;
   bool _levelResultSaved = false;
 
   /// Whether the round just finished beat the level's best. Null until the
@@ -130,7 +148,38 @@ class GameManager extends ChangeNotifier {
   GameState get gameState => _gameState;
   PhysicsEngine get physicsEngine => _physicsEngine;
   BallLauncher get ballLauncher => _ballLauncher;
-  bool get isRunning => _gameTimer?.isActive ?? false;
+
+  /// Whether the game loop is advancing on the display's frames.
+  bool get isRunning => _ticker?.isActive ?? false;
+
+  /// Runs the game loop on the frames of [vsync], the screen that hosts the
+  /// board. The screen calls [detachVsync] before it is disposed. The clock
+  /// of an earlier screen is let go: the newest host drives the loop.
+  void attachVsync(TickerProvider vsync) {
+    _ticker?.dispose();
+    _vsync = vsync;
+    _ticker = vsync.createTicker(_onFrame);
+  }
+
+  /// Stops the game loop and lets go of [vsync]'s clock, if it is the one
+  /// driving the loop, without notifying listeners: the screen calls this
+  /// while it is being disposed, perhaps after a newer screen has attached.
+  void detachVsync(TickerProvider vsync) {
+    if (!identical(vsync, _vsync)) return;
+    _ticker?.dispose();
+    _ticker = null;
+    _vsync = null;
+  }
+
+  /// The seed for the bounces of the round [round] of [level], so that the
+  /// same level, round and launches play out the same way.
+  static int physicsSeedFor(int level, int round) => level * 1000003 + round;
+
+  /// Begins round [_round] on the current level with its own seed.
+  void _beginRound() {
+    _round++;
+    _physicsEngine.seed(physicsSeedFor(_gameState.currentLevelNumber, _round));
+  }
 
   /// Whether the round just finished beat the level's best score. Null while
   /// that is not known: before the stored scores have been read, when there
@@ -141,16 +190,16 @@ class GameManager extends ChangeNotifier {
     _ballLauncher.reset();
     _levelResultSaved = false;
     _roundIsNewBest = null;
-    _round++;
     _firstBall = null;
     _firstBallSeen = false;
     _gameState.startNewGame(level: level);
+    _beginRound();
     _startGameLoop();
     notifyListeners();
   }
 
   void pauseGame() {
-    _gameTimer?.cancel();
+    _ticker?.stop();
     _gameState.pauseGame();
     notifyListeners();
   }
@@ -165,11 +214,11 @@ class GameManager extends ChangeNotifier {
     _ballLauncher.reset();
     _levelResultSaved = false;
     _roundIsNewBest = null;
-    _round++;
     _firstBall = null;
     _firstBallSeen = false;
-    _gameTimer?.cancel();
+    _ticker?.stop();
     _gameState.resetLevel();
+    _beginRound();
     notifyListeners();
   }
 
@@ -177,7 +226,7 @@ class GameManager extends ChangeNotifier {
   ///
   /// Safe to call while widgets are being disposed.
   void stopLoop() {
-    _gameTimer?.cancel();
+    _ticker?.stop();
   }
 
   void startLaunchCharging() {
@@ -217,39 +266,47 @@ class GameManager extends ChangeNotifier {
   }
 
   void _startGameLoop() {
-    if (_gameTimer?.isActive == true) return;
-
-    _lastFrameTime = DateTime.now();
-    _gameTimer = Timer.periodic(
-      const Duration(milliseconds: 16), // ~60 FPS
-      _updateGame,
-    );
+    final ticker = _ticker;
+    if (ticker == null || ticker.isActive) return;
+    _stepsTaken = 0;
+    ticker.start();
   }
 
-  void _updateGame(Timer timer) {
-    final currentTime = DateTime.now();
-    final deltaTime =
-        currentTime.difference(_lastFrameTime).inMicroseconds / 1000000.0;
-    _lastFrameTime = currentTime;
+  /// One display frame, [elapsed] after the ticker started: runs the physics
+  /// steps that fall due by then, so the game moves by the same fixed steps
+  /// at any frame rate. Time left over that is less than a step is carried
+  /// to the next frame; a frame that is due more than
+  /// [GameConstants.maxPhysicsIterations] steps drops the rest.
+  void _onFrame(Duration elapsed) {
+    final stepsDue = elapsed.inMicroseconds *
+        GameConstants.physicsStepsPerSecond ~/
+        Duration.microsecondsPerSecond;
+    final steps =
+        math.min(stepsDue - _stepsTaken, GameConstants.maxPhysicsIterations);
+    _stepsTaken = stepsDue;
+    if (steps <= 0) return;
 
-    // Cap delta time to prevent large jumps
-    final clampedDeltaTime = deltaTime.clamp(0.0, 1.0 / 30.0);
-
-    _updatePhysics(clampedDeltaTime);
-
-    // Update visual effects
-    _gameState.updateFloatingTexts(clampedDeltaTime);
-    _gameState.updateBallCountHighlight(clampedDeltaTime);
-    _gameState.updateConfetti(clampedDeltaTime);
-    _gameState.updateSlotLights(clampedDeltaTime);
-
-    _checkGameState();
+    for (int step = 0; step < steps; step++) {
+      _step(GameConstants.physicsTimeStep);
+    }
 
     // Nothing left for the loop to move: stop until the next launch. The board
     // animates its own pegs, so it does not need these ticks
-    if (_isIdle) _gameTimer?.cancel();
+    if (_isIdle) _ticker?.stop();
 
     notifyListeners();
+  }
+
+  /// Moves the game on by one fixed step of [deltaTime] seconds.
+  void _step(double deltaTime) {
+    _updatePhysics(deltaTime);
+
+    _gameState.updateFloatingTexts(deltaTime);
+    _gameState.updateBallCountHighlight(deltaTime);
+    _gameState.updateConfetti(deltaTime);
+    _gameState.updateSlotLights(deltaTime);
+
+    _checkGameState();
   }
 
   /// Whether nothing the loop drives is changing: no ball in play (a ball in
@@ -268,9 +325,13 @@ class GameManager extends ChangeNotifier {
 
     if (level == null) return;
 
-    // Where each ball is before this step moves it, for the trail behind it
-    for (final ball in balls) {
-      ball.recordTrail();
+    // Where each ball is before this step moves it, for the trail behind it.
+    // Every other step, so the trail spans the same time as at 60 steps a
+    // second and looks the same on any display
+    if (_physicsSteps++ % _stepsPerTrailPoint == 0) {
+      for (final ball in balls) {
+        ball.recordTrail();
+      }
     }
 
     // Update ball launcher (for balls traveling on guided path)
@@ -443,11 +504,11 @@ class GameManager extends ChangeNotifier {
     _ballLauncher.reset();
     _levelResultSaved = false;
     _roundIsNewBest = null;
-    _round++;
     _firstBall = null;
     _firstBallSeen = false;
-    _gameTimer?.cancel();
+    _ticker?.stop();
     _gameState.nextLevel();
+    _beginRound();
     notifyListeners();
   }
 
@@ -461,18 +522,20 @@ class GameManager extends ChangeNotifier {
     _ballLauncher.reset();
     _levelResultSaved = false;
     _roundIsNewBest = null;
-    _round++;
     _firstBall = null;
     _firstBallSeen = false;
-    _gameTimer?.cancel();
+    _ticker?.stop();
     _gameState.loadLevel(levelNumber);
+    _beginRound();
     notifyListeners();
   }
 
   @override
   void dispose() {
     _disposed = true;
-    _gameTimer?.cancel();
+    _ticker?.dispose();
+    _ticker = null;
+    _vsync = null;
     super.dispose();
   }
 }

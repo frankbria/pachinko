@@ -50,6 +50,15 @@ class MockPhysicsEngine extends _i1.Mock implements _i3.PhysicsEngine {
   }
 
   @override
+  void seed(int? seed) => super.noSuchMethod(
+        Invocation.method(
+          #seed,
+          [seed],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
   void updateBalls(
     List<_i4.Ball>? balls,
     double? deltaTime,

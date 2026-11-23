@@ -12,9 +12,10 @@
 // copy this file into a checkout of each: it only uses what GameState,
 // BallLauncher, PhysicsEngine and Level have offered since #6.
 //
-// The round is stepped the way GameManager._updatePhysics steps it. Launch
-// power is uniform on 0 to 100, which a player's is not. The physics engine's
-// own randomness is not seeded, so figures move by about a point between runs.
+// The round is stepped the way GameManager._updatePhysics steps it, in the
+// game's fixed steps, and each round's bounces are seeded as the game seeds
+// them (GameManager.physicsSeedFor), so a run gives the same figures every
+// time. Launch power is uniform on 0 to 100, which a player's is not.
 import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pachinko_game/models/ball.dart';
@@ -22,7 +23,9 @@ import 'package:pachinko_game/models/ball_launcher.dart';
 import 'package:pachinko_game/models/game_state.dart';
 import 'package:pachinko_game/models/peg.dart';
 import 'package:pachinko_game/services/achievement_service.dart';
+import 'package:pachinko_game/services/game_manager.dart';
 import 'package:pachinko_game/services/physics_engine.dart';
+import 'package:pachinko_game/utils/constants.dart';
 
 class Tally {
   int rounds = 0,
@@ -92,8 +95,8 @@ class Tally {
 }
 
 void main() {
-  const dt = 1.0 / 60.0;
-  const maxFrames = 30 * 60;
+  const dt = GameConstants.physicsTimeStep;
+  const maxFrames = 30 * GameConstants.physicsStepsPerSecond;
   const rounds = int.fromEnvironment('ROUNDS', defaultValue: 20);
   const levels = int.fromEnvironment('LEVELS', defaultValue: 30);
   // PegPatterns.getPatternForLevel picks the pattern from the level number
@@ -108,14 +111,15 @@ void main() {
     return ball;
   }
 
-  Tally playRound(int levelNumber, int seed) {
+  Tally playRound(int levelNumber, int round, int seed) {
     final tally = Tally()..rounds = 1;
     final state = GameState()..startNewGame(level: levelNumber);
     final level = state.currentLevel!;
     tally.pegs = level.pegs.length;
     tally.prizePegs =
         level.pegs.where((peg) => peg.type == PegType.special).length;
-    final engine = PhysicsEngine();
+    final engine = PhysicsEngine()
+      ..seed(GameManager.physicsSeedFor(levelNumber, round));
     final powers = Random(seed);
 
     Ball? firstOfRound;
@@ -189,7 +193,7 @@ void main() {
     };
     for (int n = 1; n <= levels; n++) {
       for (int r = 0; r < rounds; r++) {
-        final t = playRound(n, n * 1000 + r);
+        final t = playRound(n, r + 1, n * 1000 + r);
         byPattern[n % 3]!.add(t);
         all.add(t);
         bands[n <= 10
