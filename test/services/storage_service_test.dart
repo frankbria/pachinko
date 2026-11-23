@@ -5,6 +5,7 @@ import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pachinko_game/models/game_settings.dart';
 import 'package:pachinko_game/models/high_score.dart';
+import 'package:pachinko_game/models/star_targets.dart';
 import 'package:pachinko_game/services/storage_service.dart';
 
 import 'storage_service_test.mocks.dart';
@@ -398,6 +399,71 @@ void main() {
       await storage.saveSettings(const GameSettings(reducedMotion: false));
 
       expect(storage.settings.reducedMotion, isFalse);
+    });
+  });
+
+  group('StorageService - stars when storage fails', () {
+    test(
+        'given storage that throws, then stars read as none and a save does not throw',
+        () async {
+      when(mockPrefs.getKeys()).thenThrow(Exception('Storage error'));
+      when(mockPrefs.getInt(any)).thenThrow(Exception('Storage error'));
+
+      expect(storageService.storedStars, isEmpty);
+      await expectLater(storageService.saveStars(1, 2), completes);
+    });
+  });
+
+  group('StorageService - stars', () {
+    late StorageService storage;
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({'other_app_key': 3});
+      storage = StorageService(prefs: await SharedPreferences.getInstance());
+    });
+
+    test('given nothing won, then no level has stored stars', () {
+      expect(storage.storedStars, isEmpty);
+    });
+
+    test('given stars saved on two levels, then each is read back', () async {
+      await storage.saveStars(1, 2);
+      await storage.saveStars(27, 1);
+
+      expect(storage.storedStars, {1: 2, 27: 1});
+    });
+
+    test('given a level with more stars, then fewer do not replace them',
+        () async {
+      await storage.saveStars(3, StarTargets.maxStars);
+      await storage.saveStars(3, 1);
+
+      expect(storage.storedStars[3], StarTargets.maxStars);
+    });
+
+    test(
+        'given scores stored before stars existed, when cleared, then the stars they won are kept',
+        () async {
+      // Clear may come before anything has read the stars from the scores
+      final one = StarTargets.forLevel(1);
+      await storage.saveHighScore(1, one.two);
+      await storage.saveHighScore(2, 10);
+
+      await storage.clearData();
+
+      expect(await storage.levelsWithScores(), isEmpty);
+      expect(storage.storedStars, {1: 2});
+    });
+
+    test('given the scores cleared, then the stars and the open levels stay',
+        () async {
+      await storage.saveHighScore(1, 12000);
+      await storage.saveStars(1, 1);
+
+      await storage.clearData();
+
+      expect(await storage.levelsWithScores(), isEmpty);
+      expect(storage.storedStars, {1: 1});
     });
   });
 }

@@ -103,6 +103,12 @@ class MockGameManager extends _i1.Mock implements _i7.GameManager {
       ) as bool);
 
   @override
+  bool get nextLevelOpen => (super.noSuchMethod(
+        Invocation.getter(#nextLevelOpen),
+        returnValue: false,
+      ) as bool);
+
+  @override
   _i2.GameSettings get settings => (super.noSuchMethod(
         Invocation.getter(#settings),
         returnValue: _FakeGameSettings_0(
@@ -192,6 +198,15 @@ class MockGameManager extends _i1.Mock implements _i7.GameManager {
           #bestScoresByLevel,
           [],
           {#levels: levels},
+        ),
+        returnValue: _i11.Future<Map<int, int>>.value(<int, int>{}),
+      ) as _i11.Future<Map<int, int>>);
+
+  @override
+  _i11.Future<Map<int, int>> starsByLevel() => (super.noSuchMethod(
+        Invocation.method(
+          #starsByLevel,
+          [],
         ),
         returnValue: _i11.Future<Map<int, int>>.value(<int, int>{}),
       ) as _i11.Future<Map<int, int>>);

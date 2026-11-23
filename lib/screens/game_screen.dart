@@ -335,6 +335,7 @@ class _RoundSummaryOverlay extends StatelessWidget {
             onMenu: () => Navigator.of(context).pop(),
             onReplay: gameManager.resetGame,
             onNextLevel: gameManager.nextLevel,
+            nextLevelOpen: gameManager.nextLevelOpen,
           ),
         );
       },

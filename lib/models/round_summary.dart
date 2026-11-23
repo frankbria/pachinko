@@ -1,6 +1,7 @@
 import '../utils/constants.dart';
 import 'game_state.dart';
 import 'peg.dart';
+import 'star_targets.dart';
 
 /// How many balls landed in the slots of one value, and what they scored.
 class SlotTierTally {
@@ -51,6 +52,14 @@ class RoundSummary {
     this.feverPoints = 0,
     this.isNewBest,
   });
+
+  /// The stars [score] wins on this level, 0 to [StarTargets.maxStars].
+  int get stars => StarTargets.forLevel(levelNumber).starsFor(score);
+
+  /// How many points [score] fell short of the next star, or null when it won
+  /// every star.
+  int? get pointsShortOfNextStar =>
+      StarTargets.forLevel(levelNumber).pointsShortOfNextStar(score);
 
   /// The balls that landed in a slot. A ball that fell between two slots is
   /// not among them.

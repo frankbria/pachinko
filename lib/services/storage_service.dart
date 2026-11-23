@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/game_settings.dart';
 import '../models/high_score.dart';
+import '../models/star_targets.dart';
 
 /// Service for persisting high scores to local storage.
 ///
@@ -86,6 +87,38 @@ class StorageService {
   /// Records that the prize peg callout has been shown.
   Future<void> savePrizePegHintShown() async {
     await _prefs.setBool(_prizePegHintShownKey, true);
+  }
+
+  /// What every stored key of a level's stars starts with.
+  static const String _starsKeyPrefix = 'stars_level_';
+
+  /// The stars stored for each level that has any, by level number. Stars
+  /// are stored separately from the scores so that clearing the scores, or
+  /// raising a level's targets later, takes no star or unlock away.
+  Map<int, int> get storedStars {
+    try {
+      return {
+        for (final key in _prefs.getKeys())
+          if (key.startsWith(_starsKeyPrefix))
+            if (int.tryParse(key.substring(_starsKeyPrefix.length))
+                case final level?)
+              level: _prefs.getInt(key) ?? 0,
+      };
+    } catch (e) {
+      debugPrint('Error reading stars: $e');
+      return {};
+    }
+  }
+
+  /// Records that [level] has won [stars], unless it already has more. A
+  /// failure is logged, not thrown: nothing waits on the save.
+  Future<void> saveStars(int level, int stars) async {
+    try {
+      final key = '$_starsKeyPrefix$level';
+      if (stars > (_prefs.getInt(key) ?? 0)) await _prefs.setInt(key, stars);
+    } catch (e) {
+      debugPrint('Error saving stars: $e');
+    }
   }
 
   /// Initializes StorageService with production SharedPreferences.
@@ -192,10 +225,18 @@ class StorageService {
   /// Clears all high score data from storage.
   ///
   /// Only removes keys that start with 'highscores_level_'.
-  /// Other app data is preserved.
+  /// Other app data is preserved, the stars and so the open levels too:
+  /// first each level's scores are turned into the stars they win, which a
+  /// table stored before stars existed has not been yet.
   /// Handles errors gracefully by logging without throwing exceptions.
   Future<void> clearData() async {
     try {
+      for (final level in await levelsWithScores()) {
+        if (await getBestScore(level) case final best?) {
+          await saveStars(
+              level, StarTargets.forLevel(level).starsFor(best.score));
+        }
+      }
       final keys = _prefs.getKeys();
       for (final key in keys) {
         if (key.startsWith(_levelKeyPrefix)) {

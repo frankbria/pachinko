@@ -13,7 +13,8 @@ Future<void> showHowToPlay(BuildContext context) => showDialog<void>(
             mainAxisSize: MainAxisSize.min,
             children: [
               _heading(Icons.flag, 'Objective'),
-              _body('Score as many points as possible with 20 balls.'),
+              _body('Score as many points as possible with 20 balls. Each '
+                  'level has three star scores; one star opens the next level.'),
               _heading(Icons.touch_app, 'Controls'),
               _body(
                   '• Drag from the launcher: the longer the drag, the more power\n'

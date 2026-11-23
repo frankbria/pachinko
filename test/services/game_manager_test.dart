@@ -12,6 +12,7 @@ import 'package:pachinko_game/models/game_state.dart';
 import 'package:pachinko_game/models/high_score.dart';
 import 'package:pachinko_game/models/peg.dart';
 import 'package:pachinko_game/models/slot.dart';
+import 'package:pachinko_game/models/star_targets.dart';
 import 'package:pachinko_game/models/level.dart';
 import 'package:pachinko_game/services/achievement_service.dart';
 import 'package:pachinko_game/services/audio_service.dart';
@@ -1030,6 +1031,8 @@ void main() {
       when(mockStorage.prizePegHintDue).thenReturn(false);
 
       when(mockStorage.getBestScore(any)).thenAnswer((_) async => null);
+      when(mockStorage.storedStars).thenReturn(const {});
+      when(mockStorage.saveStars(any, any)).thenAnswer((_) async {});
       final mockLevel = MockLevel();
       when(mockLevel.pegs).thenReturn([]);
       when(mockLevel.features).thenReturn([]);
@@ -1061,6 +1064,8 @@ void main() {
 
       // Then
       verify(mockStorage.saveHighScore(2, 9000)).called(1);
+      verify(mockStorage.saveStars(2, StarTargets.forLevel(2).starsFor(9000)))
+          .called(1);
       verify(mockAchievements.trackLevelScore(2, 9000)).called(1);
     });
 
@@ -1536,6 +1541,50 @@ void main() {
       manager.resetGame();
       await playRoundInto(1000);
       expect(manager.roundIsNewBest, isTrue);
+    }, timeout: const Timeout(Duration(minutes: 2)));
+
+    testLoop(
+        'Given rounds on a fresh install When they end Then their stars are stored and Next Level opens only after a star',
+        () async {
+      SharedPreferences.setMockInitialValues({});
+      final storage =
+          StorageService(prefs: await SharedPreferences.getInstance());
+      final manager = GameManager(storageService: storage);
+      addTearDown(manager.dispose);
+      host(manager);
+      Future<void> playRoundInto(int value) async {
+        final slot = manager.gameState.currentLevel!.slots
+            .firstWhere((slot) => slot.pointValue == value);
+        while (manager.gameState.ballsRemaining > 0) {
+          await landIn(manager, slot);
+        }
+        await ticks(3);
+      }
+
+      // Twenty balls of 50 win no star; twenty of 2,000 win every one
+      manager.startGame();
+      await playRoundInto(50);
+      expect(manager.nextLevelOpen, isFalse);
+      expect(await manager.starsByLevel(), {1: 0});
+
+      manager.resetGame();
+      await playRoundInto(2000);
+      expect(manager.nextLevelOpen, isTrue);
+      expect(storage.storedStars, {1: StarTargets.maxStars});
+
+      manager.resetGame();
+      expect(manager.nextLevelOpen, isFalse,
+          reason: 'not known again until the round ends');
+      await playRoundInto(50);
+      expect(manager.nextLevelOpen, isTrue,
+          reason: 'the level already had a star');
+      expect(storage.storedStars, {1: StarTargets.maxStars},
+          reason: 'a worse round takes no star away');
+
+      manager.nextLevel();
+      await playRoundInto(50);
+      expect(manager.nextLevelOpen, isFalse);
+      expect(await manager.starsByLevel(), {1: StarTargets.maxStars, 2: 0});
     }, timeout: const Timeout(Duration(minutes: 2)));
 
     testLoop(
@@ -2097,6 +2146,60 @@ void main() {
       expect(hinted.prizePegHint, isNull);
     });
   });
+  group('starsByLevel', () {
+    test(
+        'Given high scores stored before stars existed Then they award the stars they earn, and the levels those open',
+        () async {
+      // A player's storage from before #116: score tables and nothing else
+      final one = StarTargets.forLevel(1);
+      final two = StarTargets.forLevel(2);
+      final five = StarTargets.forLevel(5);
+      SharedPreferences.setMockInitialValues({});
+      final storage =
+          StorageService(prefs: await SharedPreferences.getInstance());
+      await storage.saveHighScore(1, one.two);
+      await storage.saveHighScore(2, two.one - 1);
+      await storage.saveHighScore(5, five.three + 400);
+      final manager = GameManager(storageService: storage);
+      addTearDown(manager.dispose);
+
+      final stars = await manager.starsByLevel();
+
+      expect(stars, {1: 2, 2: 0, 5: 3});
+      expect(storage.storedStars, {1: 2, 5: 3},
+          reason: 'stars won by old scores are stored once read');
+      await storage.clearData();
+      expect(await manager.starsByLevel(), {1: 2, 5: 3},
+          reason: 'clearing the scores keeps them');
+      expect(
+          [for (int level = 1; level <= 7; level++) level]
+              .where((level) => StarTargets.levelIsOpen(level, stars)),
+          [1, 2, 6]);
+    });
+
+    test(
+        'Given stored stars that the best score would not win today Then the stored stars stand',
+        () async {
+      SharedPreferences.setMockInitialValues({});
+      final storage =
+          StorageService(prefs: await SharedPreferences.getInstance());
+      await storage.saveHighScore(3, 100);
+      await storage.saveStars(3, 2);
+      await storage.saveStars(24, 1);
+      final manager = GameManager(storageService: storage);
+      addTearDown(manager.dispose);
+
+      expect(await manager.starsByLevel(), {3: 2, 24: 1});
+    });
+
+    test('Given no storage Then it returns an empty map', () async {
+      final manager = GameManager();
+      addTearDown(manager.dispose);
+
+      expect(await manager.starsByLevel(), isEmpty);
+    });
+  });
+
   group('bestScoresByLevel', () {
     test(
         'Given stored scores on some levels Then it returns the best of each, and no entry for a level never played',

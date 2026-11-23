@@ -69,6 +69,12 @@ class MockStorageService extends _i1.Mock implements _i3.StorageService {
       ) as bool);
 
   @override
+  Map<int, int> get storedStars => (super.noSuchMethod(
+        Invocation.getter(#storedStars),
+        returnValue: <int, int>{},
+      ) as Map<int, int>);
+
+  @override
   _i4.Future<void> saveSingleBallLaunch(bool? value) => (super.noSuchMethod(
         Invocation.method(
           #saveSingleBallLaunch,
@@ -104,6 +110,23 @@ class MockStorageService extends _i1.Mock implements _i3.StorageService {
         Invocation.method(
           #savePrizePegHintShown,
           [],
+        ),
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> saveStars(
+    int? level,
+    int? stars,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #saveStars,
+          [
+            level,
+            stars,
+          ],
         ),
         returnValue: _i4.Future<void>.value(),
         returnValueForMissingStub: _i4.Future<void>.value(),

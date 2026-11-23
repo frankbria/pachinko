@@ -12,12 +12,16 @@ class RoundSummaryPanel extends StatelessWidget {
   final VoidCallback onReplay;
   final VoidCallback onNextLevel;
 
+  /// Whether the next level is open, so Next Level is offered.
+  final bool nextLevelOpen;
+
   const RoundSummaryPanel({
     super.key,
     required this.summary,
     required this.onMenu,
     required this.onReplay,
     required this.onNextLevel,
+    required this.nextLevelOpen,
   });
 
   @override
@@ -60,6 +64,17 @@ class RoundSummaryPanel extends StatelessWidget {
                 style: text.labelLarge
                     ?.copyWith(color: GameConstants.secondaryColor),
               ),
+            const SizedBox(height: 8),
+            StarRow(stars: summary.stars, size: 28),
+            Text(
+              GameStrings.starsWon(
+                  summary.stars,
+                  switch (summary.pointsShortOfNextStar) {
+                    final short? => groupedThousands(short),
+                    null => null,
+                  }),
+              style: text.bodyMedium?.copyWith(color: GameConstants.inkColor),
+            ),
             const SizedBox(height: 12),
             for (final tier in summary.tiers) _row(text, tier),
             const Divider(height: 20),
@@ -80,9 +95,10 @@ class RoundSummaryPanel extends StatelessWidget {
                     onPressed: onMenu, child: const Text(GameStrings.menu)),
                 OutlinedButton(
                     onPressed: onReplay, child: const Text(GameStrings.replay)),
-                FilledButton(
-                    onPressed: onNextLevel,
-                    child: const Text(GameStrings.nextLevel)),
+                if (nextLevelOpen)
+                  FilledButton(
+                      onPressed: onNextLevel,
+                      child: const Text(GameStrings.nextLevel)),
               ],
             ),
           ],

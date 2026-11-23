@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/star_targets.dart';
 import '../services/game_manager.dart';
 import '../utils/constants.dart';
 import 'game_screen.dart';
@@ -147,10 +148,13 @@ class MenuScreen extends StatelessWidget {
     );
   }
 
-  /// The level picker: twenty tiles in rows of five. A level that has been
-  /// played is rimmed in gold and shows its best score.
+  /// The level picker: twenty tiles in rows of five. Each open level shows
+  /// its stars; a level whose level before has no star yet is locked and
+  /// cannot be started. A played level shows its best score, rimmed in gold.
   void _showLevelSelect(BuildContext context) {
-    final bestScores = context.read<GameManager>().bestScoresByLevel();
+    final gameManager = context.read<GameManager>();
+    final progress = Future.wait(
+        [gameManager.bestScoresByLevel(), gameManager.starsByLevel()]);
 
     showDialog(
       context: context,
@@ -161,10 +165,12 @@ class MenuScreen extends StatelessWidget {
         content: SizedBox(
           width: double.maxFinite,
           height: 300,
-          child: FutureBuilder<Map<int, int>>(
-            future: bestScores,
+          child: FutureBuilder<List<Map<int, int>>>(
+            future: progress,
             builder: (_, snapshot) {
-              final best = snapshot.data ?? const <int, int>{};
+              // Until storage answers only level 1 is known to be open
+              final [best, stars] =
+                  snapshot.data ?? const <Map<int, int>>[{}, {}];
               return GridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 5,
@@ -175,8 +181,18 @@ class MenuScreen extends StatelessWidget {
                 itemCount: 20,
                 itemBuilder: (_, index) {
                   final levelNumber = index + 1;
-                  return _levelTile(
-                      context, dialogContext, levelNumber, best[levelNumber]);
+                  return _LevelTile(
+                    levelNumber: levelNumber,
+                    best: best[levelNumber],
+                    stars: stars[levelNumber] ?? 0,
+                    isOpen: levelNumber == 1 ||
+                        snapshot.hasData &&
+                            StarTargets.levelIsOpen(levelNumber, stars),
+                    onOpen: () {
+                      Navigator.of(dialogContext).pop();
+                      _startGameFromLevel(context, levelNumber);
+                    },
+                  );
                 },
               );
             },
@@ -188,53 +204,6 @@ class MenuScreen extends StatelessWidget {
             child: const Text('Cancel'),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _levelTile(BuildContext context, BuildContext dialogContext,
-      int levelNumber, int? best) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(dialogContext).pop();
-        _startGameFromLevel(context, levelNumber);
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: GameConstants.cabinetColor,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: best != null
-                ? GameConstants.secondaryColor.withValues(alpha: 0.8)
-                : GameConstants.mutedColor.withValues(alpha: 0.35),
-            width: 1.5,
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              '$levelNumber',
-              style: const TextStyle(
-                color: GameConstants.inkColor,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
-            if (best != null)
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  groupedThousands(best),
-                  style: const TextStyle(
-                    color: GameConstants.secondaryColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 11,
-                  ),
-                ),
-              ),
-          ],
-        ),
       ),
     );
   }
@@ -270,6 +239,94 @@ class MenuScreen extends StatelessWidget {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const AchievementsScreen(),
+      ),
+    );
+  }
+}
+
+/// One level in the picker: its number, its stars or a lock when it is not
+/// open, and its best score once played. A level played before locks
+/// existed can be locked and still show its score.
+class _LevelTile extends StatelessWidget {
+  final int levelNumber;
+  final int? best;
+  final int stars;
+  final bool isOpen;
+  final VoidCallback onOpen;
+
+  const _LevelTile({
+    required this.levelNumber,
+    required this.best,
+    required this.stars,
+    required this.isOpen,
+    required this.onOpen,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final score = best;
+    return Semantics(
+      button: true,
+      enabled: isOpen,
+      label: '${GameStrings.level} $levelNumber',
+      value:
+          isOpen ? GameStrings.starsWon(stars, null) : GameStrings.levelLocked,
+      hint: isOpen ? null : GameStrings.levelLockedHint,
+      // The tile's own tap is hidden with its children, so a screen reader
+      // gets it here
+      onTap: isOpen ? onOpen : null,
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: isOpen ? onOpen : null,
+        child: Container(
+          decoration: BoxDecoration(
+            color: GameConstants.cabinetColor,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: score != null
+                  ? GameConstants.secondaryColor.withValues(alpha: 0.8)
+                  : GameConstants.mutedColor.withValues(alpha: 0.35),
+              width: 1.5,
+            ),
+          ),
+          // A small phone's tile is narrower than three stars: the whole
+          // of its content scales down to fit, never past its edge
+          child: Padding(
+            padding: const EdgeInsets.all(2),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '$levelNumber',
+                    style: TextStyle(
+                      color: isOpen
+                          ? GameConstants.inkColor
+                          : GameConstants.mutedColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  if (!isOpen)
+                    const Icon(Icons.lock,
+                        size: 14, color: GameConstants.mutedColor)
+                  else
+                    StarRow(stars: stars, size: 12),
+                  if (score != null)
+                    Text(
+                      groupedThousands(score),
+                      style: const TextStyle(
+                        color: GameConstants.secondaryColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
