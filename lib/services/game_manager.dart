@@ -467,6 +467,10 @@ class GameManager extends ChangeNotifier {
 
     if (balls.isEmpty) return;
 
+    // The fever lasts for seconds of play, so it runs down only here, with a
+    // ball in play; that also keeps the loop running for its meter
+    _gameState.updateFever(deltaTime);
+
     // Bonus balls only join once a ball has hit pegs, so the first ball in
     // play this round is the first one launched
     if (!_firstBallSeen) {
@@ -533,7 +537,7 @@ class GameManager extends ChangeNotifier {
 
   void _handleSlotHits(List<Slot> hitSlots) {
     for (final slot in hitSlots) {
-      _gameState.addScore(slot.pointValue);
+      final points = _gameState.scoreLanding(slot);
       _audioService?.playSlotScore(slot.pointValue);
       _haptics?.slot(slot.pointValue);
 
@@ -542,13 +546,13 @@ class GameManager extends ChangeNotifier {
       _gameState.lightSlot(slot);
       final row = _gameState.currentLevel?.slots ?? const <Slot>[];
       _lastLanding.value = BallLanding(
-        points: slot.pointValue,
+        points: points,
         slotIndex: row.indexOf(slot),
         slotCount: row.length,
       );
-      final size = FloatingText.sizeFor(slot.pointValue);
+      final size = FloatingText.sizeFor(points);
       _gameState.addFloatingText(
-        '+${slot.pointValue}',
+        '+$points',
         Offset(slot.position.x, slot.top - size * 1.4),
         slot.color,
         fontSize: size,

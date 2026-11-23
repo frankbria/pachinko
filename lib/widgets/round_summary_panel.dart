@@ -67,6 +67,9 @@ class RoundSummaryPanel extends StatelessWidget {
                 '${summary.prizePegsCollected} of ${summary.prizePegsTotal}'),
             if (summary.bonusBalls > 0)
               _line(text, GameStrings.bonusBalls, '+${summary.bonusBalls}'),
+            if (summary.feverPoints > 0)
+              _line(text, GameStrings.feverPoints,
+                  '+${groupedThousands(summary.feverPoints)}'),
             const SizedBox(height: 16),
             Wrap(
               alignment: WrapAlignment.center,

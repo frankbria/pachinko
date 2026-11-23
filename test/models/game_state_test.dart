@@ -531,6 +531,76 @@ void main() {
     });
   });
 
+  group('Fever -', () {
+    // The fever is the bonus's second half: for feverSeconds of play after
+    // the bonus triggers every slot pays feverMultiplier times its value.
+    // These tests drive it directly, as the game loop and the scoring tool do
+    late GameState gameState;
+
+    setUp(() {
+      gameState = GameState()..startNewGame(level: 1);
+    });
+
+    tearDown(() => gameState.dispose());
+
+    test('before the bonus there is no fever and a slot pays its value', () {
+      final slot = gameState.currentLevel!.slots.first;
+
+      expect(gameState.feverActive, isFalse);
+      expect(gameState.feverRemaining, 0.0);
+      expect(gameState.scoreLanding(slot), slot.pointValue);
+      expect(gameState.score, slot.pointValue);
+      expect(gameState.feverPoints, 0);
+    });
+
+    test('the bonus starts the fever, and a landing pays the multiple', () {
+      final slot = gameState.currentLevel!.slots[3];
+
+      gameState.triggerSpecialBonus();
+
+      expect(gameState.feverActive, isTrue);
+      expect(gameState.feverRemaining, 1.0);
+      final points = gameState.scoreLanding(slot);
+      expect(points, slot.pointValue * GameConstants.feverMultiplier);
+      expect(gameState.score, points);
+      expect(gameState.feverPoints, points - slot.pointValue);
+    });
+
+    test('the fever ends after its set length of play, and pays no more', () {
+      final slot = gameState.currentLevel!.slots[3];
+      gameState.triggerSpecialBonus();
+
+      gameState.updateFever(GameConstants.feverSeconds / 2);
+      expect(gameState.feverRemaining, closeTo(0.5, 1e-9));
+      expect(gameState.feverActive, isTrue);
+
+      gameState.updateFever(GameConstants.feverSeconds / 2 + 0.01);
+      expect(gameState.feverActive, isFalse);
+      expect(gameState.feverRemaining, 0.0);
+      expect(gameState.scoreLanding(slot), slot.pointValue);
+    });
+
+    test('Restart ends the fever and takes back what it paid', () {
+      gameState.triggerSpecialBonus();
+      gameState.scoreLanding(gameState.currentLevel!.slots[0]);
+
+      gameState.resetLevel();
+
+      expect(gameState.feverActive, isFalse);
+      expect(gameState.feverPoints, 0);
+    });
+
+    test('a new level ends the fever and starts its tally again', () {
+      gameState.triggerSpecialBonus();
+      gameState.scoreLanding(gameState.currentLevel!.slots[0]);
+
+      gameState.nextLevel();
+
+      expect(gameState.feverActive, isFalse);
+      expect(gameState.feverPoints, 0);
+    });
+  });
+
   group('Level Progression -', () {
     test(
         'given GameState on level 1, when nextLevel called, then level increments to 2',

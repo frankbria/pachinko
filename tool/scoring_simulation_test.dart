@@ -10,14 +10,15 @@
 //
 // and read the lines that start with SIM and BAND. To compare two commits,
 // copy this file into a checkout of each: it uses what GameState,
-// BallLauncher, PhysicsEngine and Level have offered since #6, and the fixed
-// step and seeding added in #108. For a commit older than #108, run that
-// commit's own copy of the tool.
+// BallLauncher, PhysicsEngine and Level have offered since #6, the fixed
+// step and seeding added in #108, and the fever added in #113. For an older
+// commit, run that commit's own copy of the tool.
 //
 // The round is stepped the way GameManager._updatePhysics steps it, in the
-// game's fixed steps, and each round's bounces are seeded as the game seeds
-// them (GameManager.physicsSeedFor), so a run gives the same figures every
-// time. Launch power is uniform on 0 to 100, which a player's is not.
+// game's fixed steps, with the fever running down while balls are in play and
+// each landing scored by GameState.scoreLanding. Each round's bounces are
+// seeded as the game seeds them (GameManager.physicsSeedFor), so a run gives
+// the same figures every time. Launch power is uniform on 0 to 100, which a player's is not.
 import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pachinko_game/models/ball.dart';
@@ -44,6 +45,10 @@ class Tally {
   /// rounds whose first ball landed in a 2,000 slot (Lucky Shot).
   int comboRounds = 0, luckyRounds = 0;
 
+  /// What rounds with the bonus scored in all, and what the fever added to
+  /// them, against what rounds without it scored.
+  int bonusRoundScore = 0, feverPoints = 0;
+
   /// Every round's score, for the percentiles.
   final scores = <int>[];
   final slots = <int, int>{50: 0, 200: 0, 1000: 0, 2000: 0};
@@ -63,6 +68,8 @@ class Tally {
     scores.addAll(o.scores);
     comboRounds += o.comboRounds;
     luckyRounds += o.luckyRounds;
+    bonusRoundScore += o.bonusRoundScore;
+    feverPoints += o.feverPoints;
     best = max(best, o.best);
     o.slots.forEach((k, v) => slots[k] = slots[k]! + v);
     for (int i = 0; i < byPosition.length; i++) {
@@ -77,6 +84,17 @@ class Tally {
       '${share(reaching(AchievementService.highRollerScore))} | '
       '${share(reaching(AchievementService.scoreMasterScore))} | '
       '${share(comboRounds)} | ${share(luckyRounds)} | $best';
+
+  /// Mean score of rounds with the bonus and without it, and what the fever
+  /// added to a bonus round.
+  String fever(String name) {
+    final others = rounds - bonusRounds;
+    String mean(int total, int count) =>
+        count == 0 ? '-' : '${(total / count).round()}';
+    return '$name | ${mean(bonusRoundScore, bonusRounds)} | '
+        '${mean(score - bonusRoundScore, others)} | '
+        '${mean(feverPoints, bonusRounds)}';
+  }
 
   /// How many rounds scored at least [threshold].
   int reaching(int threshold) =>
@@ -141,6 +159,7 @@ void main() {
           }
           break;
         }
+        state.updateFever(dt);
         engine.updateBalls(balls, dt);
         final hitPegs = engine.checkPegCollisions(balls, level.pegs);
         if (hitPegs.any((peg) => peg.type == PegType.special) &&
@@ -163,7 +182,7 @@ void main() {
               slot.containsPoint(firstBall.position)) {
             tally.luckyRounds = 1;
           }
-          state.addScore(slot.pointValue);
+          state.scoreLanding(slot);
           tally.slots[slot.pointValue] = tally.slots[slot.pointValue]! + 1;
           tally.byPosition[level.slots.indexOf(slot)]++;
         }
@@ -180,6 +199,8 @@ void main() {
     tally.best = state.score;
     if (state.score >= 10000) tally.over10k = 1;
     tally.scores.add(state.score);
+    if (tally.bonusRounds == 1) tally.bonusRoundScore = state.score;
+    tally.feverPoints = state.feverPoints;
     state.dispose();
     return tally;
   }
@@ -228,6 +249,15 @@ void main() {
     });
     // ignore: avoid_print
     print('BAND ${all.band('all')}');
+    // ignore: avoid_print
+    print(
+        'FEVER levels | score of a round with the bonus | without it | fever points in a bonus round');
+    bands.forEach((name, tally) {
+      // ignore: avoid_print
+      if (tally.rounds > 0) print('FEVER ${tally.fever(name)}');
+    });
+    // ignore: avoid_print
+    print('FEVER ${all.fever('all')}');
     // ignore: avoid_print
     print('ROW left to right | ${all.byPosition.map(all.pct).join(' | ')}');
   }, timeout: const Timeout(Duration(minutes: 20)));

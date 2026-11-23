@@ -31,6 +31,8 @@ class GameState extends ChangeNotifier {
   GamePhase _phase = GamePhase.loading;
   bool _specialBonusTriggered = false;
   int _bonusBallsToAdd = 0;
+  double _feverSecondsLeft = 0.0;
+  int _feverPoints = 0;
 
   /// Whether a ball can only be launched once no ball is in play.
   ///
@@ -75,6 +77,18 @@ class GameState extends ChangeNotifier {
   List<Ball> get activeBalls => List.unmodifiable(_activeBalls);
   GamePhase get phase => _phase;
   bool get specialBonusTriggered => _specialBonusTriggered;
+
+  /// Whether the fever is on: the bonus has triggered, and for
+  /// [GameConstants.feverSeconds] of play after it every slot pays
+  /// [GameConstants.feverMultiplier] times its value.
+  bool get feverActive => _feverSecondsLeft > 0.0;
+
+  /// The share of the fever still to run, from 1.0 when it starts to 0.0.
+  double get feverRemaining => _feverSecondsLeft / GameConstants.feverSeconds;
+
+  /// The points the fever has added on this level, over what the slots pay
+  /// without it.
+  int get feverPoints => _feverPoints;
   double get bonusOverlayOpacity => _bonusOverlayOpacity;
 
   /// The one gate for launching a ball.
@@ -103,6 +117,7 @@ class GameState extends ChangeNotifier {
     launcherBusy = false;
     _specialBonusTriggered = false;
     _bonusBallsToAdd = 0;
+    _feverPoints = 0;
     _clearEffects();
     notifyListeners();
   }
@@ -125,6 +140,25 @@ class GameState extends ChangeNotifier {
   void addScore(int points) {
     _score += points;
     notifyListeners();
+  }
+
+  /// Scores a ball landing in [slot] and returns the points it won: the
+  /// slot's value, multiplied while the fever is on.
+  int scoreLanding(Slot slot) {
+    final points = feverActive
+        ? slot.pointValue * GameConstants.feverMultiplier
+        : slot.pointValue;
+    _feverPoints += points - slot.pointValue;
+    addScore(points);
+    return points;
+  }
+
+  /// Runs the fever down by [deltaTime] seconds of play. The game loop calls
+  /// it only while a ball is in play.
+  void updateFever(double deltaTime) {
+    if (feverActive) {
+      _feverSecondsLeft = math.max(0.0, _feverSecondsLeft - deltaTime);
+    }
   }
 
   void removeBall(Ball ball) {
@@ -152,6 +186,7 @@ class GameState extends ChangeNotifier {
     _specialBonusTriggered = true;
     _bonusOverlayOpacity = 1.0; // Show bonus overlay
     _bonusBallsToAdd = GameConstants.bonusBallsFor(_currentLevelNumber);
+    _feverSecondsLeft = GameConstants.feverSeconds;
 
     // Spawn bonus balls immediately
     final level = _currentLevel;
@@ -294,12 +329,15 @@ class GameState extends ChangeNotifier {
     launcherBusy = false;
     _specialBonusTriggered = false;
     _bonusBallsToAdd = 0;
+    _feverPoints = 0;
     _clearEffects();
     notifyListeners();
   }
 
-  /// Removes all transient visual effects (popups, confetti, bonus overlay).
+  /// Removes all transient visual effects (popups, confetti, bonus overlay)
+  /// and ends the fever.
   void _clearEffects() {
+    _feverSecondsLeft = 0.0;
     _floatingTexts.clear();
     _confettiParticles.clear();
     _ballCountHighlighted = false;

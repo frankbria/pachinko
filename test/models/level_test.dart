@@ -249,15 +249,41 @@ void main() {
   });
 
   group('Special Peg Placement -', () {
-    test('given generated level, when created, then has 2-4 special pegs', () {
-      // Given / When
-      // Using level 1 (Triangle pattern) which has more spacing for special pegs
+    test('given generated level, when created, then has its five prize pegs',
+        () {
       final level = Level.generate(1, 400.0, 600.0);
 
-      // Then - special peg count formula: 2 + random.nextInt(3) = 2-4
-      // Note: May be less if 50-attempt limit hit due to dense peg layout
-      expect(level.specialPegs.length, greaterThanOrEqualTo(2));
-      expect(level.specialPegs.length, lessThanOrEqualTo(4));
+      expect(level.specialPegs, hasLength(GameConstants.prizePegsPerLevel));
+    });
+
+    test(
+        'given levels 1 to 100, when generated, then the prize pegs zigzag down the middle of the field',
+        () {
+      /// Each prize peg is in its own row of the column, on alternate sides,
+      /// so a ball that reaches one has usually been turned aside by the one
+      /// above it: that is what makes the bonus rare (#113)
+      const reach = GameConstants.prizeColumnJitter + 1e-9;
+      for (int n = 1; n <= 100; n++) {
+        final level = Level.generate(n, 400.0, 600.0);
+        for (int i = 0; i < level.specialPegs.length; i++) {
+          final peg = level.specialPegs[i].position;
+          final side = i.isEven ? -1 : 1;
+          expect(
+              peg.x,
+              closeTo(
+                  GameConstants.prizeColumnX +
+                      side * GameConstants.prizeColumnSway,
+                  reach),
+              reason: 'level $n, prize peg $i');
+          expect(
+              peg.y,
+              closeTo(
+                  GameConstants.prizeColumnTopY +
+                      i * GameConstants.prizeColumnStep,
+                  reach),
+              reason: 'level $n, prize peg $i');
+        }
+      }
     });
 
     test(
@@ -376,13 +402,13 @@ void main() {
     });
 
     test(
-        'given levels 1 to 100, when generated, then each has 2 to 4 prize pegs',
+        'given levels 1 to 100, when generated, then each has all its prize pegs',
         () {
       /// A dense field can leave no free spot for a prize peg. A level without
       /// one has no bonus, so the generator clears room when it has to.
       for (int n = 1; n <= 100; n++) {
         final level = Level.generate(n, 400.0, 600.0);
-        expect(level.specialPegs.length, inInclusiveRange(2, 4),
+        expect(level.specialPegs, hasLength(GameConstants.prizePegsPerLevel),
             reason: 'level $n');
         expect(level.pegs.where((peg) => peg.type == PegType.special),
             level.specialPegs,
@@ -737,9 +763,8 @@ void main() {
       // Then - level should still be valid even if special peg placement failed
       expect(level.pegs, isNotEmpty);
       expect(level.slots.length, equals(7));
-      // Special peg count may be 0-4 depending on successful placements
-      expect(level.specialPegs.length, greaterThanOrEqualTo(0));
-      expect(level.specialPegs.length, lessThanOrEqualTo(4));
+      expect(level.specialPegs.length,
+          lessThanOrEqualTo(GameConstants.prizePegsPerLevel));
     });
 
     test('given generated level, when inspected, then has playable peg count',

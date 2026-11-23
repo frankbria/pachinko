@@ -407,4 +407,59 @@ void main() {
       expect(found.where((size) => size < 12), isEmpty, reason: file);
     });
   });
+
+  group('Fever', () {
+    // While the fever runs, every slot is rimmed in gold and a gold meter
+    // under the row of slots runs down with it (#113)
+    List<Rect> shapes(TestRecordingCanvas canvas) =>
+        recorded(canvas, #drawRRect)
+            .map((shape) => shape.positionalArguments[0])
+            .whereType<RRect>()
+            .map((shape) => shape.outerRect)
+            .toList();
+
+    test('given no fever, then nothing is drawn', () {
+      final canvas = TestRecordingCanvas();
+
+      paintFever(canvas, level(1).slots, remaining: 0.0);
+
+      expect(recorded(canvas), isEmpty);
+    });
+
+    test(
+        'given the fever half run, then every slot is rimmed and the meter spans half the row, under the slots and on the board',
+        () {
+      final slots = level(1).slots;
+      final canvas = TestRecordingCanvas();
+
+      paintFever(canvas, slots, remaining: 0.5);
+
+      final drawn = shapes(canvas);
+      expect(drawn, hasLength(slots.length + 1));
+      for (int i = 0; i < slots.length; i++) {
+        expect(drawn[i], slots[i].bounds);
+      }
+      final meter = drawn.last;
+      final row = slots.last.right - slots.first.left;
+      expect(meter.left, slots.first.left);
+      expect(meter.width, closeTo(row / 2, 0.001));
+      expect(meter.top, greaterThan(slots.first.bottom));
+      expect(meter.bottom, lessThanOrEqualTo(GameConstants.boardHeight));
+    });
+
+    test('given the fever, then it is drawn in gold, the colour of the bonus',
+        () {
+      final canvas = TestRecordingCanvas();
+
+      paintFever(canvas, level(1).slots, remaining: 1.0);
+
+      final paints = recorded(canvas, #drawRRect)
+          .map((shape) => shape.positionalArguments[1])
+          .whereType<Paint>();
+      expect(paints, isNotEmpty);
+      for (final paint in paints) {
+        expect(paint.color.toARGB32(), GameConstants.bonusBallColor.toARGB32());
+      }
+    });
+  });
 }

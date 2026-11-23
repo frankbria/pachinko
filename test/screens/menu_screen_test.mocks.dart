@@ -456,6 +456,24 @@ class MockGameState extends _i1.Mock implements _i4.GameState {
       ) as bool);
 
   @override
+  bool get feverActive => (super.noSuchMethod(
+        Invocation.getter(#feverActive),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  double get feverRemaining => (super.noSuchMethod(
+        Invocation.getter(#feverRemaining),
+        returnValue: 0.0,
+      ) as double);
+
+  @override
+  int get feverPoints => (super.noSuchMethod(
+        Invocation.getter(#feverPoints),
+        returnValue: 0,
+      ) as int);
+
+  @override
   double get bonusOverlayOpacity => (super.noSuchMethod(
         Invocation.getter(#bonusOverlayOpacity),
         returnValue: 0.0,
@@ -536,6 +554,24 @@ class MockGameState extends _i1.Mock implements _i4.GameState {
         Invocation.method(
           #addScore,
           [points],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  int scoreLanding(_i17.Slot? slot) => (super.noSuchMethod(
+        Invocation.method(
+          #scoreLanding,
+          [slot],
+        ),
+        returnValue: 0,
+      ) as int);
+
+  @override
+  void updateFever(double? deltaTime) => super.noSuchMethod(
+        Invocation.method(
+          #updateFever,
+          [deltaTime],
         ),
         returnValueForMissingStub: null,
       );

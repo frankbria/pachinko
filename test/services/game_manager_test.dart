@@ -98,6 +98,11 @@ void main() {
     when(mockGameState.confettiParticles).thenReturn([]);
     when(mockGameState.ballCountHighlighted).thenReturn(false);
     when(mockGameState.slotsLit).thenReturn(false);
+    // A landing scores the slot's value, as it does outside the fever
+    when(mockGameState.scoreLanding(any)).thenAnswer((invocation) {
+      final slot = invocation.positionalArguments.first;
+      return slot is Slot ? slot.pointValue : 0;
+    });
     when(mockBallLauncher.phase).thenReturn(LaunchPhase.ready);
     when(mockBallLauncher.currentBall).thenReturn(null);
 
@@ -552,7 +557,7 @@ void main() {
   group('Slot Hit Scoring', () {
     /// Tests score added when ball lands in slot
     testLoop(
-        'Given ball in slot When slot collision detected Then GameState.addScore called with slot pointValue',
+        'Given ball in slot When slot collision detected Then GameState scores the landing in that slot',
         () async {
       // Given: Ball and slot
       final ball = Ball(
@@ -580,13 +585,13 @@ void main() {
 
       await play(const Duration(milliseconds: 20));
 
-      // Then: Should add score with slot's point value
-      verify(mockGameState.addScore(2000)).called(greaterThan(0));
+      // Then: the game state scores it, fever and all
+      verify(mockGameState.scoreLanding(slot)).called(greaterThan(0));
     });
 
     /// Tests multiple slot hits add scores correctly
     testLoop(
-        'Given multiple balls in slots When collisions detected Then addScore called for each',
+        'Given multiple balls in slots When collisions detected Then each landing is scored',
         () async {
       // Given: Multiple slots hit
       final ball1 = Ball(
@@ -613,8 +618,8 @@ void main() {
       await play(const Duration(milliseconds: 20));
 
       // Then: Both scores should be added
-      verify(mockGameState.addScore(1000)).called(greaterThan(0));
-      verify(mockGameState.addScore(2000)).called(greaterThan(0));
+      verify(mockGameState.scoreLanding(slot1)).called(greaterThan(0));
+      verify(mockGameState.scoreLanding(slot2)).called(greaterThan(0));
     });
   });
 
@@ -1651,6 +1656,69 @@ void main() {
       expect(state.phase, GamePhase.gameOver);
     });
   });
+  group('Fever in play', () {
+    // The real loop with a real game state: the fever starts with the bonus,
+    // runs down only while a ball is in play, and doubles what a landing pays,
+    // which the popup and the screen reader both give
+    Future<void> ticks(int count) =>
+        play(Duration(milliseconds: 16 * count + 8));
+
+    GameManager game() {
+      final manager = GameManager();
+      addTearDown(manager.dispose);
+      host(manager);
+      manager.startGame();
+      return manager;
+    }
+
+    Future<void> landIn(GameManager manager, Slot slot) async {
+      manager.gameState.launchBall(Ball(
+          position: Vector2(slot.position.x, slot.top - 4),
+          velocity: Vector2(0, 300)));
+      manager.resumeGame();
+      await ticks(3);
+    }
+
+    testLoop(
+        'Given the fever on When a ball lands in a 2,000 slot Then it pays 4,000, shown and announced as such',
+        () async {
+      final manager = game();
+      final state = manager.gameState;
+      final edge =
+          state.currentLevel!.slots.firstWhere((s) => s.pointValue == 2000);
+      state.triggerSpecialBonus();
+      // The bonus balls would land too; only the one placed here is wanted
+      for (final ball in state.activeBalls) {
+        state.removeBall(ball);
+      }
+
+      await landIn(manager, edge);
+
+      expect(state.levelScore, 4000);
+      expect(state.feverPoints, 2000);
+      expect(manager.lastLanding.value!.points, 4000);
+      expect(state.floatingTexts.map((text) => text.text), contains('+4000'));
+      manager.stopLoop();
+      await play(const Duration(seconds: 3));
+    });
+
+    testLoop(
+        'Given the fever on and no ball in play When time passes Then the fever waits for the next ball',
+        () async {
+      final manager = game();
+      final state = manager.gameState;
+      state.triggerSpecialBonus();
+      for (final ball in state.activeBalls) {
+        state.removeBall(ball);
+      }
+
+      await play(const Duration(seconds: 3));
+
+      expect(state.feverRemaining, 1.0);
+      manager.stopLoop();
+    });
+  });
+
   group('Achievements earned in play', () {
     /// Combo King and Lucky Shot could not be won: their rules asked for the
     /// impossible and the game never told the service about them (#85). These
@@ -1770,6 +1838,10 @@ void main() {
       for (final peg in manager.gameState.currentLevel!.specialPegs) {
         first = await touch(manager, peg, ball: first);
       }
+      // The lowest prize peg is just above the slots: lift the first ball
+      // clear of them, so that it is still in play when the bonus ball lands
+      first!.position.setValues(GameConstants.boardWidth / 2, 150);
+      first.velocity.setZero();
       final edge = manager.gameState.currentLevel!.slots
           .firstWhere((slot) => slot.pointValue == 2000);
       Future<void> drop(Ball ball) async {
@@ -1784,7 +1856,7 @@ void main() {
       expect(bonusBall.hasLanded, isTrue);
       expect(unlocked(service, 'lucky_shot'), isFalse);
 
-      await drop(first!);
+      await drop(first);
       expect(first.hasLanded, isTrue);
       expect(unlocked(service, 'lucky_shot'), isTrue);
     });

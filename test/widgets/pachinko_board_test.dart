@@ -57,6 +57,7 @@ void main() {
     when(mockGameState.ballCountHighlighted).thenReturn(false);
     // Only read while the bonus overlay is shown; fully visible so bonus tests render it
     when(mockGameState.bonusOverlayOpacity).thenReturn(1.0);
+    when(mockGameState.feverRemaining).thenReturn(0.0);
 
     // Stub BallLauncher properties
     when(mockBallLauncher.phase).thenReturn(LaunchPhase.ready);

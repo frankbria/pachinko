@@ -63,15 +63,66 @@ void paintBonusOverlay(Canvas canvas,
     textDirection: TextDirection.ltr,
   )..layout();
 
+  final fever = TextPainter(
+    text: TextSpan(
+      text: 'FEVER ×${GameConstants.feverMultiplier}',
+      style: TextStyle(
+        color: GameConstants.inkColor.withValues(alpha: opacity),
+        fontFamily: displayFontFamily,
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 4,
+      ),
+    ),
+    textDirection: TextDirection.ltr,
+  )..layout();
+
   paintUnreflected(canvas, aboutX: centre.dx, mirrored: mirrored, paint: () {
     amount.paint(canvas, centre - Offset(amount.width / 2, amount.height / 2));
     caption.paint(
         canvas,
         centre -
             Offset(caption.width / 2, amount.height / 2 + caption.height + 4));
+    fever.paint(
+        canvas, centre + Offset(-fever.width / 2, amount.height / 2 + 4));
   });
   caption.dispose();
   amount.dispose();
+  fever.dispose();
+}
+
+/// How far under the slots the fever meter is drawn, and how thick it is.
+const double _feverMeterGap = 3.0;
+const double _feverMeterThickness = 4.0;
+
+/// Draws the fever over the row of [slots]: each slot rimmed in gold, as the
+/// bonus is, and a gold meter under the row that runs down from the full
+/// width as the fever does. [remaining] is the share still to run.
+///
+/// The meter lies between the slots and the board's lower edge, clear of the
+/// prize pegs above the slots.
+void paintFever(Canvas canvas, List<Slot> slots, {required double remaining}) {
+  if (slots.isEmpty || remaining <= 0.0) return;
+
+  final rim = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2
+    ..color = GameConstants.bonusBallColor;
+  for (final slot in slots) {
+    canvas.drawRRect(
+        RRect.fromRectAndRadius(slot.bounds, const Radius.circular(4)), rim);
+  }
+
+  final left = slots.first.left;
+  final top = slots.first.bottom + _feverMeterGap;
+  canvas.drawRRect(
+    RRect.fromRectAndRadius(
+      Rect.fromLTWH(left, top, (slots.last.right - left) * remaining,
+          _feverMeterThickness),
+      const Radius.circular(_feverMeterThickness / 2),
+    ),
+    Paint()..color = GameConstants.bonusBallColor,
+  );
 }
 
 /// Draws one piece of confetti in its own colour, fading with its opacity.

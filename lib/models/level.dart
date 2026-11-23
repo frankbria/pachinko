@@ -5,6 +5,10 @@ import 'slot.dart';
 import '../utils/constants.dart';
 import '../utils/peg_patterns.dart';
 
+/// A random shift of a prize peg from its place in the column.
+double _jitter(Random random) =>
+    (random.nextDouble() * 2 - 1) * GameConstants.prizeColumnJitter;
+
 class Level {
   final int levelNumber;
   final String name;
@@ -37,8 +41,8 @@ class Level {
         random, levelNumber, boardWidth, boardHeight);
     pegs.addAll(regularPegs);
 
-    // Generate special pegs (2-4 per level) with proper spacing
-    final specialPegCount = 2 + random.nextInt(3);
+    // The prize pegs, down their zigzag column, spaced apart
+    const specialPegCount = GameConstants.prizePegsPerLevel;
     // Centre to centre, between special pegs. It leaves a 20 px gap, which is
     // more than minPegGap, so making room for one never removes another.
     const specialMinSpacing = 50.0;
@@ -50,9 +54,14 @@ class Level {
       int fewestInTheWay = pegs.length + 1;
 
       // Try to find a valid position with proper spacing
-      for (int attempts = 0; position == null && attempts < 50; attempts++) {
-        final x = 80 + random.nextDouble() * (boardWidth - 160);
-        final y = 150 + random.nextDouble() * (boardHeight - 400);
+      for (int attempts = 0; position == null && attempts < 200; attempts++) {
+        final sway = i.isEven
+            ? -GameConstants.prizeColumnSway
+            : GameConstants.prizeColumnSway;
+        final x = GameConstants.prizeColumnX + sway + _jitter(random);
+        final y = GameConstants.prizeColumnTopY +
+            i * GameConstants.prizeColumnStep +
+            _jitter(random);
 
         final candidate = Vector2(x, y);
         // Field walls only, which also keeps it out of the launch channel beyond
