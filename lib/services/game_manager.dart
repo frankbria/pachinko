@@ -706,7 +706,8 @@ class GameManager extends ChangeNotifier {
 
   /// Saves the points won on the current level as that level's high score.
   /// A daily round is recorded as the day's instead, and counts for no
-  /// level's scores, stars or achievements.
+  /// level's scores or stars, nor for the achievements that go by a level's
+  /// result; those earned in play count on it as on any round.
   void _saveHighScore() {
     final storageService = _storageService;
     final level = _gameState.currentLevel?.levelNumber ?? 1;
