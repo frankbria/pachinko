@@ -168,12 +168,13 @@ class GameManager extends ChangeNotifier {
   Future<Map<int, int>> bestScoresByLevel({int levels = 20}) async {
     final storage = _storageService;
     if (storage == null) return const {};
-    final best = <int, int>{};
-    for (int level = 1; level <= levels; level++) {
-      final score = await storage.getBestScore(level);
-      if (score != null) best[level] = score.score;
-    }
-    return best;
+    final scores = await Future.wait([
+      for (int level = 1; level <= levels; level++) storage.getBestScore(level),
+    ]);
+    return {
+      for (int level = 1; level <= levels; level++)
+        if (scores[level - 1] case final score?) level: score.score,
+    };
   }
 
   /// Sets whether a ball may only be launched once no ball is in play,

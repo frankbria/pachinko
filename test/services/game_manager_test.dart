@@ -1826,6 +1826,49 @@ void main() {
       expect(hinted.prizePegHint, isNull);
     });
   });
+  group('bestScoresByLevel', () {
+    test(
+        'Given stored scores on some levels Then it returns the best of each, and no entry for a level never played',
+        () async {
+      SharedPreferences.setMockInitialValues({});
+      final storage =
+          StorageService(prefs: await SharedPreferences.getInstance());
+      await storage.saveHighScore(2, 900);
+      await storage.saveHighScore(2, 4100);
+      await storage.saveHighScore(5, 2500);
+      final manager = GameManager(storageService: storage);
+      addTearDown(manager.dispose);
+
+      expect(await manager.bestScoresByLevel(), {2: 4100, 5: 2500});
+    });
+
+    test('Given no storage Then it returns an empty map', () async {
+      final manager = GameManager();
+      addTearDown(manager.dispose);
+
+      expect(await manager.bestScoresByLevel(), isEmpty);
+    });
+
+    // Storage that holds every read until the test opens it shows whether
+    // the reads were asked for together: one at a time, only the first
+    // would have been asked before any answered.
+    test('Given storage that answers late Then every level is asked at once',
+        () async {
+      SharedPreferences.setMockInitialValues({});
+      final storage = _GatedStorage(await SharedPreferences.getInstance());
+      final manager = GameManager(storageService: storage);
+      addTearDown(manager.dispose);
+
+      final best = manager.bestScoresByLevel(levels: 4);
+      await Future<void>.delayed(Duration.zero);
+      expect(storage.gates, hasLength(4));
+
+      for (final gate in storage.gates) {
+        gate.complete();
+      }
+      expect(await best, isEmpty);
+    });
+  });
 }
 
 /// Storage whose answer to "what is this level's best?" waits for the test:

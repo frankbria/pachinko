@@ -220,44 +220,4 @@ class PhysicsEngine {
 
     return hitSlots;
   }
-
-  Vector2 calculateLaunchVelocity(
-      Vector2 startPosition, Vector2 targetPosition, double force) {
-    final direction = (targetPosition - startPosition).normalized();
-    return direction * force;
-  }
-
-  bool isValidLaunchAngle(double angle) {
-    // Restrict launch angle to reasonable range (downward trajectory)
-    return angle >= math.pi * 0.25 && angle <= math.pi * 0.75;
-  }
-
-  double calculateTrajectoryMaxHeight(
-      Vector2 launchVelocity, Vector2 startPosition) {
-    // Calculate maximum height of projectile motion
-    final verticalVelocity = launchVelocity.y.abs();
-    final maxHeight = (verticalVelocity * verticalVelocity) / (2 * _gravity);
-    return startPosition.y - maxHeight;
-  }
-
-  List<Vector2> calculateTrajectoryPoints(Vector2 startPosition,
-      Vector2 launchVelocity, int numPoints, double timeStep) {
-    final points = <Vector2>[];
-    var position = startPosition.clone();
-    var velocity = launchVelocity.clone();
-
-    for (int i = 0; i < numPoints; i++) {
-      points.add(position.clone());
-
-      // Update position and velocity for next point
-      position.add(velocity * timeStep);
-      velocity.y += _gravity * timeStep;
-      velocity.scale(_airFactor(timeStep));
-
-      // Stop if ball goes off screen
-      if (position.y > GameConstants.boardHeight) break;
-    }
-
-    return points;
-  }
 }
