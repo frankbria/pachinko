@@ -12,13 +12,15 @@ import 'audio_service_test.mocks.dart';
 /// Tests for AudioService.
 ///
 /// Strategy: the service makes its players through a factory, and the tests
-/// hand it mocks, kept in the order it asked for them. Each sound's players
-/// are made together, in the order of [SoundEffect.values], so [playersOf]
-/// finds them. A load or start held open on a [Completer] shows the order of
-/// the calls when the service is disposed in the middle of one.
+/// hand it mocks, kept in the order it asked for them. The first player of
+/// each sound is made at once, in the order of [SoundEffect.values]; the
+/// rest only after it has loaded. [playersOf] finds a sound's players by the
+/// asset each loaded. A load or start held open on a [Completer] shows the
+/// order of the calls when the service is disposed in the middle of one.
 @GenerateMocks([AudioPlayer])
 void main() {
   late List<MockAudioPlayer> players;
+  late Map<MockAudioPlayer, String> assetOf;
   late AudioService audioService;
 
   MockAudioPlayer newPlayer() {
@@ -26,7 +28,10 @@ void main() {
     when(player.setPlayerMode(any)).thenAnswer((_) async {});
     when(player.setAudioContext(any)).thenAnswer((_) async {});
     when(player.setReleaseMode(any)).thenAnswer((_) async {});
-    when(player.setSource(any)).thenAnswer((_) async {});
+    when(player.setSource(any)).thenAnswer((invocation) async {
+      assetOf[player] =
+          (invocation.positionalArguments.first as AssetSource).path;
+    });
     when(player.stop()).thenAnswer((_) async {});
     when(player.setVolume(any)).thenAnswer((_) async {});
     when(player.setPlaybackRate(any)).thenAnswer((_) async {});
@@ -36,17 +41,15 @@ void main() {
     return player;
   }
 
-  /// The players made for [effect].
-  List<MockAudioPlayer> playersOf(SoundEffect effect) {
-    var first = 0;
-    for (final earlier in SoundEffect.values.takeWhile((e) => e != effect)) {
-      first += earlier.voices;
-    }
-    return players.sublist(first, first + effect.voices);
-  }
+  /// The players that loaded [effect], in the order they were made.
+  List<MockAudioPlayer> playersOf(SoundEffect effect) =>
+      players.where((player) => assetOf[player] == effect.asset).toList();
+
+  final allVoices = SoundEffect.values.fold(0, (sum, e) => sum + e.voices);
 
   setUp(() {
     players = [];
+    assetOf = {};
     audioService = AudioService(createPlayer: newPlayer);
   });
 
@@ -61,9 +64,9 @@ void main() {
         () async {
       await audioService.initialize();
 
-      final total = SoundEffect.values.fold(0, (sum, e) => sum + e.voices);
-      expect(players, hasLength(total));
+      expect(players, hasLength(allVoices));
       for (final effect in SoundEffect.values) {
+        expect(playersOf(effect), hasLength(effect.voices));
         for (final player in playersOf(effect)) {
           final source =
               verify(player.setSource(captureAny)).captured.single as Source;
@@ -106,15 +109,18 @@ void main() {
       final initialized = service.initialize();
       await Future<void>.delayed(Duration.zero);
 
-      final launch = players.sublist(0, SoundEffect.launch.voices);
-      verify(launch[0].setSource(any)).called(1);
-      verifyNever(launch[1].setSource(any));
-      // Other sounds are not held up by this one
-      verify(players[SoundEffect.launch.voices].setSource(any)).called(1);
+      // The launch's other player is not even made yet; the other sounds
+      // are not held up by it
+      expect(players, hasLength(allVoices - (SoundEffect.launch.voices - 1)));
+      expect(playersOf(SoundEffect.launch), isEmpty);
+      expect(
+          playersOf(SoundEffect.pegHit), hasLength(SoundEffect.pegHit.voices));
 
       firstLoad.complete();
       await initialized;
-      verify(launch[1].setSource(any)).called(1);
+      expect(players, hasLength(allVoices));
+      expect(playersOf(SoundEffect.launch),
+          hasLength(SoundEffect.launch.voices - 1));
       await service.dispose();
     });
 
@@ -317,8 +323,36 @@ void main() {
       verify(launch[1].resume()).called(1);
     });
 
-    test('a load that fails leaves that player out, and the others play',
+    test('a later player that fails to load is left out, and the rest play',
         () async {
+      var launchLoads = 0;
+      final service = AudioService(createPlayer: () {
+        final player = newPlayer();
+        when(player.setSource(any)).thenAnswer((invocation) async {
+          final path =
+              (invocation.positionalArguments.first as AssetSource).path;
+          if (path == SoundEffect.launch.asset && ++launchLoads == 2) {
+            throw StateError('load interrupted');
+          }
+          assetOf[player] = path;
+        });
+        return player;
+      });
+
+      await expectLater(service.initialize(), completes);
+      await service.playLaunch();
+      await service.playLaunch();
+
+      final failed = players.where((p) => !assetOf.containsKey(p)).single;
+      verifyNever(failed.resume());
+      verify(playersOf(SoundEffect.launch).single.resume()).called(2);
+      await service.dispose();
+    });
+
+    test('a sound whose first player fails to load stays silent, alone',
+        () async {
+      // Its other players would race for a sample that never loaded, so
+      // they are not made
       final service = AudioService(createPlayer: () {
         final player = newPlayer();
         if (players.length == 1) {
@@ -330,10 +364,11 @@ void main() {
 
       await expectLater(service.initialize(), completes);
       await service.playLaunch();
-      await service.playLaunch();
+      await service.playBonusTrigger();
 
-      verifyNever(players[0].resume());
-      verify(players[1].resume()).called(2);
+      expect(players, hasLength(allVoices - (SoundEffect.launch.voices - 1)));
+      verifyNever(players.first.resume());
+      verify(playersOf(SoundEffect.bonusTrigger).single.resume()).called(1);
       await service.dispose();
     });
 
@@ -421,6 +456,8 @@ void main() {
       await disposed;
       await preload;
       verify(players.first.dispose()).called(1);
+      // The first players' loads ended after dispose: no others are made
+      expect(players, hasLength(SoundEffect.values.length));
       // A player whose load ended after dispose is never played
       await service.playLaunch();
       verifyNever(players.first.resume());
@@ -442,7 +479,10 @@ void main() {
 
       await expectLater(disposed, completes);
       await preload;
-      verify(players.last.dispose()).called(1);
+      expect(players, hasLength(SoundEffect.values.length));
+      for (final player in players) {
+        verify(player.dispose()).called(1);
+      }
     });
 
     test('a disposed service touches no player', () async {

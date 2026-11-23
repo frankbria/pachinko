@@ -131,40 +131,47 @@ class AudioService {
   Future<void> initialize() async {
     if (_initialized || _disposed) return;
     _initialized = true;
-    final loads = <Future<void>>[];
-    for (final effect in SoundEffect.values) {
-      final voices = <AudioPlayer>[];
-      for (var voice = 0; voice < effect.voices; voice++) {
-        try {
-          voices.add(_createPlayer());
-        } catch (e) {
-          debugPrint('AudioService: no player for ${effect.name}: $e');
-        }
-      }
-      _players.addAll(voices);
-      if (voices.isNotEmpty) loads.add(_loadEffect(effect, voices));
-    }
-    await Future.wait(loads);
+    await Future.wait([
+      for (final effect in SoundEffect.values) _loadEffect(effect),
+    ]);
   }
 
   /// Loads [effect] onto its first player, then onto the rest. On Android a
   /// player given a sound that another is still loading copies that one's
   /// sample before it exists, and never sounds; once the first has loaded,
-  /// the others share its sample.
-  Future<void> _loadEffect(SoundEffect effect, List<AudioPlayer> voices) async {
-    await _loadVoice(effect, voices.first);
+  /// the others share its sample. If the first fails, the sound stays
+  /// silent rather than have the rest race for a sample that never loaded.
+  Future<void> _loadEffect(SoundEffect effect) async {
+    if (!await _loadVoice(effect)) return;
     await Future.wait([
-      for (final player in voices.skip(1)) _loadVoice(effect, player),
+      for (var voice = 1; voice < effect.voices; voice++) _loadVoice(effect),
     ]);
   }
 
-  Future<void> _loadVoice(SoundEffect effect, AudioPlayer player) async {
+  /// Makes a player and loads [effect] onto it, and says whether it loaded.
+  ///
+  /// The player is made only here, in the same turn as its first call: a
+  /// player starts registering with the platform as it is made, and an error
+  /// there with nothing awaiting it would reach no caller.
+  Future<bool> _loadVoice(SoundEffect effect) async {
+    if (_disposed) return false;
+    final AudioPlayer player;
+    try {
+      player = _createPlayer();
+    } catch (e) {
+      debugPrint('AudioService: no player for ${effect.name}: $e');
+      return false;
+    }
+    _players.add(player);
     try {
       await _tracked(_load(effect, player));
-      if (!_disposed) _loaded[effect]!.add(player);
     } catch (e) {
       debugPrint('AudioService: could not load ${effect.asset}: $e');
+      return false;
     }
+    if (_disposed) return false;
+    _loaded[effect]!.add(player);
+    return true;
   }
 
   Future<void> _load(SoundEffect effect, AudioPlayer player) async {
