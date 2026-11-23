@@ -1871,6 +1871,25 @@ void main() {
       expect(music.duck, MusicDuck.none);
     });
 
+    test(
+        'Given storage not loaded yet Then the music stays silent until the saved settings say otherwise',
+        () async {
+      managerWith(music);
+      expect(music.enabled, isFalse,
+          reason: 'a player who turned sound off must not hear the menu');
+
+      SharedPreferences.setMockInitialValues({});
+      final storage =
+          StorageService(prefs: await SharedPreferences.getInstance());
+      when(mockGameState.singleBallLaunch).thenReturn(true);
+      final late = MusicService(listAssets: () async => []);
+      addTearDown(late.dispose);
+      managerWith(late).attachServices(storageService: storage);
+
+      expect(late.enabled, isTrue);
+      expect(late.volume, const GameSettings().musicVolume);
+    });
+
     testLoop(
         'Given a screen hosting the board Then the round music plays, and the menu music once it lets go',
         () async {

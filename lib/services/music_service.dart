@@ -298,6 +298,9 @@ class MusicService {
   /// The stinger has played to its end, and the fever loop follows it if
   /// the fever is still on.
   void _stingerEnded() {
+    // A fade out still running would set the gain up again on its next step
+    // and start the stinger over
+    _fades.remove(MusicTrack.feverStinger)?.cancel();
     _gain[MusicTrack.feverStinger] = 0;
     _sounding.remove(MusicTrack.feverStinger);
     if (_scene == MusicScene.fever) _playFromStart(MusicTrack.feverLoop);

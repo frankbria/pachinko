@@ -278,6 +278,15 @@ class MockGameManager extends _i1.Mock implements _i8.GameManager {
       );
 
   @override
+  void notifyListeners() => super.noSuchMethod(
+        Invocation.method(
+          #notifyListeners,
+          [],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
   void startGame({
     int? level = 1,
     _i2.DailyBoard? daily,
@@ -408,15 +417,6 @@ class MockGameManager extends _i1.Mock implements _i8.GameManager {
         Invocation.method(
           #removeListener,
           [listener],
-        ),
-        returnValueForMissingStub: null,
-      );
-
-  @override
-  void notifyListeners() => super.noSuchMethod(
-        Invocation.method(
-          #notifyListeners,
-          [],
         ),
         returnValueForMissingStub: null,
       );

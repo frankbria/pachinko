@@ -141,6 +141,10 @@ class GameManager extends ChangeNotifier {
       _applySettings(storageService.settings);
       _readHints(storageService);
       unawaited(postPendingDailyScore());
+    } else {
+      // Silent until the saved settings arrive (attachServices) or the
+      // player changes one: the player may have turned sound off
+      _music?.enabled = false;
     }
     _updateMusic();
   }

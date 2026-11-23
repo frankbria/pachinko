@@ -316,6 +316,9 @@ void main() {
 
       expect(track(MusicTrack.feverLoop).playing, isFalse);
       expect(track(MusicTrack.round).playing, isTrue);
+      // Its fade out, cut short by its end, does not start it again
+      expect(track(MusicTrack.feverStinger).resumes, 1);
+      expect(track(MusicTrack.feverStinger).playing, isFalse);
       await music.dispose();
     });
 
