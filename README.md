@@ -51,7 +51,8 @@ The board changes colour every five levels. These are levels 1, 6, 11 and 16:
 - **18 achievements**, announced by a toast over whatever screen you are on. Some are milestones (First Launch, Marathon Runner), some take a good round (High Roller: 20,000 in one level), and some take luck or aim (Lucky Shot: the first ball of a round in a 2,000 slot; Combo King: every prize peg on a level with one ball).
 - **High scores.** The ten best scores for each level are kept on the device.
 - **One ball at a time, or not.** By default the next ball waits for the one in play to land. A setting turns that off, and then you can launch as many as you like. The recording above was made with it off.
-- **Sound** for the launch, the pins, the prize pegs, the slots and the bonus.
+- **Sound** for the launch, the pins, the prize pegs, the slots and the bonus: a pin sounds louder and higher the harder it is hit, and a slot by its value.
+- **Vibration** on a phone: a light tick for a pin, stronger for a prize peg, a 1,000 or 2,000 slot and the bonus.
 - **Pause.** The game also pauses itself when the app goes to the background, and waits for you to resume.
 
 ## Run it

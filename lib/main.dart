@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'services/game_manager.dart';
 import 'services/audio_service.dart';
+import 'services/haptics_service.dart';
 import 'services/storage_service.dart';
 import 'services/achievement_service.dart';
 import 'screens/menu_screen.dart';
@@ -24,6 +25,7 @@ class PachinkoApp extends StatefulWidget {
 
 class _PachinkoAppState extends State<PachinkoApp> {
   late final AudioService _audioService;
+  final HapticsService _haptics = HapticsService();
   StorageService? _storageService;
   AchievementService? _achievementService;
   final GlobalKey<AchievementToastOverlayState> _toastOverlayKey = GlobalKey();
@@ -89,6 +91,7 @@ class _PachinkoAppState extends State<PachinkoApp> {
             GameManager>(
           create: (context) => GameManager(
             audioService: _audioService,
+            haptics: _haptics,
             storageService: _storageService,
             achievementService: _achievementService,
           ),

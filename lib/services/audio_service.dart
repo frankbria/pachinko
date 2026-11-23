@@ -1,274 +1,244 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
-import 'package:just_audio/just_audio.dart';
 
-/// Audio service for managing game sound effects with pooling support
+/// A sound effect the game plays, with its asset and how many copies of it
+/// can sound at once.
+enum SoundEffect {
+  /// A ball leaving the launcher.
+  launch('sounds/launch.mp3', voices: 2),
+
+  /// A ball bouncing off a pin: the most frequent sound, so it has the most
+  /// voices, enough for three balls in play.
+  pegHit('sounds/peg_hit.wav', voices: 8),
+
+  /// A ball collecting a prize peg.
+  specialPeg('sounds/special_peg.mp3', voices: 2),
+
+  /// A ball landing in a slot.
+  slotScore('sounds/slot_score.wav', voices: 4),
+
+  /// The bonus triggering.
+  bonusTrigger('sounds/bonus_trigger.wav', voices: 1);
+
+  const SoundEffect(this.asset, {required this.voices});
+
+  /// The file, relative to `assets/` as `AssetSource` takes it.
+  final String asset;
+
+  /// Players loaded with this sound. A sound asked for while all of them
+  /// are starting is dropped; one asked for while all are sounding cuts off
+  /// the oldest.
+  final int voices;
+}
+
+/// How loud (0 to 1, before the service's volume) and at what playback rate
+/// a sound plays. A higher rate is a higher pitch.
+typedef SoundTone = ({double volume, double playbackRate});
+
+/// Plays the game's sound effects.
 ///
-/// Implements audio playback for 5 game events:
-/// - Ball launch (launch.mp3)
-/// - Peg hit collision (peg_hit.wav)
-/// - Special peg activation (special_peg.mp3)
-/// - Scoring slot (slot_score.wav)
-/// - Bonus trigger fanfare (bonus_trigger.wav)
+/// Each sound is loaded once, by [initialize], onto its own players in
+/// low-latency mode (Android's `SoundPool`), so playing it reloads nothing.
+/// A pin sounds louder and higher the harder the ball hits it
+/// ([pegHitToneFor]) and a slot by its tier ([slotToneFor]).
 ///
-/// Features:
-/// - Audio player pooling for simultaneous playback (prevents stuttering)
-/// - Volume control across all players
-/// - Dependency injection pattern for testability
-/// - Resource management (proper disposal)
-///
-/// Usage:
-/// ```dart
-/// // Production: uses default AudioPlayer instances
-/// final audioService = AudioService();
-/// await audioService.initialize();
-/// await audioService.playLaunch();
-///
-/// // Testing: inject mock players
-/// final audioService = AudioService(audioPlayers: mockPlayers);
-/// ```
+/// Nothing in the game awaits a sound, so no method here throws: a failing
+/// player is caught and logged. [dispose] waits for loads and starts in
+/// flight before it disposes the players.
 class AudioService {
-  /// Audio player pool for handling simultaneous playback
-  final List<AudioPlayer> _audioPlayers;
+  /// Creates the service. [createPlayer] makes each player and is for tests;
+  /// by default it makes a real `AudioPlayer`. No player exists until
+  /// [initialize].
+  AudioService({AudioPlayer Function()? createPlayer})
+      : _createPlayer = createPlayer ?? AudioPlayer.new;
 
-  /// Current player index for round-robin allocation
-  int _currentPlayerIndex = 0;
+  /// The impact speed, in pixels a second along the line between ball and
+  /// pin, at which a pin sounds at its loudest and highest.
+  static const double pegHitFullSpeed = 600;
 
-  /// Current volume level (0.0 to 1.0)
+  /// Sound effects take no audio focus, so they mix with the player's own
+  /// music instead of pausing it.
+  static final AudioContext _effectsContext = AudioContextConfig(
+    focus: AudioContextConfigFocus.mixWithOthers,
+  ).build();
+
+  final AudioPlayer Function() _createPlayer;
+
+  /// Every player made, loaded or not, so that [dispose] reaches them all.
+  final List<AudioPlayer> _players = [];
+
+  /// The players of each sound whose load finished.
+  final Map<SoundEffect, List<AudioPlayer>> _loaded = {
+    for (final effect in SoundEffect.values) effect: [],
+  };
+
+  /// Where each sound's round of its players continues from.
+  final Map<SoundEffect, int> _nextVoice = {
+    for (final effect in SoundEffect.values) effect: 0,
+  };
+
+  /// Players in the middle of starting a sound; they are skipped, because
+  /// two starts on one player would interleave.
+  final Set<AudioPlayer> _starting = {};
+
+  /// The volume set by [setVolume], 0 to 1.
   double _volume = 1.0;
+
+  bool _initialized = false;
 
   /// Set by [dispose]. No sound is loaded or started afterwards.
   bool _disposed = false;
 
-  /// Loads that have started and not finished. [dispose] waits for them: a
-  /// player disposed in the middle of a load goes on receiving platform
-  /// events on streams that are closed, and the plugin reports that as an
-  /// error no caller can catch.
-  final Set<Future<void>> _loads = {};
+  /// Platform calls that have started and not finished. [dispose] waits for
+  /// them: a player disposed in the middle of one goes on receiving platform
+  /// events on streams that are closed, which the plugin reports as an error
+  /// no caller can catch.
+  final Set<Future<void>> _inFlight = {};
 
-  /// Runs [load] and keeps it in [_loads] until it ends, whether it succeeds
-  /// or fails.
-  Future<void> _tracked(Future<void> load) async {
-    final settled = load.then<void>((_) {}, onError: (Object _) {});
-    _loads.add(settled);
+  /// Runs [calls] and keeps it in [_inFlight] until it ends, whether it
+  /// succeeds or fails.
+  Future<void> _tracked(Future<void> calls) async {
+    final settled = calls.then<void>((_) {}, onError: (Object _) {});
+    _inFlight.add(settled);
     try {
-      await load;
+      await calls;
     } finally {
-      _loads.remove(settled);
+      _inFlight.remove(settled);
     }
   }
 
-  /// Asset paths for sound effects
-  static const String _launchAsset = 'assets/sounds/launch.mp3';
-  static const String _pegHitAsset = 'assets/sounds/peg_hit.wav';
-  static const String _specialPegAsset = 'assets/sounds/special_peg.mp3';
-  static const String _slotScoreAsset = 'assets/sounds/slot_score.wav';
-  static const String _bonusTriggerAsset = 'assets/sounds/bonus_trigger.wav';
-
-  /// Creates AudioService with dependency injection support
-  ///
-  /// [audioPlayers] - Optional list of AudioPlayer instances for testing
-  /// [poolSize] - Number of audio players in pool (default: 5)
-  ///
-  /// Production usage:
-  /// ```dart
-  /// final service = AudioService(); // Uses default players
-  /// ```
-  ///
-  /// Test usage:
-  /// ```dart
-  /// final service = AudioService(audioPlayers: mockPlayers);
-  /// ```
-  AudioService({
-    List<AudioPlayer>? audioPlayers,
-    int poolSize = 5,
-  }) : _audioPlayers = audioPlayers ?? _createDefaultPlayers(poolSize);
-
-  /// Creates default audio player pool for production use
-  static List<AudioPlayer> _createDefaultPlayers(int poolSize) {
-    try {
-      return List.generate(poolSize, (_) => AudioPlayer());
-    } catch (e) {
-      // Platform doesn't support just_audio (e.g., Linux desktop)
-      // Return empty list - audio will be disabled but app will function
-      debugPrint('AudioService: Platform does not support audio ($e)');
-      return [];
-    }
+  /// The tone of a pin hit at [impactSpeed]: from soft and low at rest to
+  /// loud and high at [pegHitFullSpeed] and above.
+  static SoundTone pegHitToneFor(double impactSpeed) {
+    final strength = (impactSpeed / pegHitFullSpeed).clamp(0.0, 1.0);
+    return (volume: 0.3 + 0.7 * strength, playbackRate: 0.85 + 0.35 * strength);
   }
 
-  /// Initializes audio service by preloading all sound assets
-  ///
-  /// Should be called once during app initialization to prevent
-  /// lag on first playback. Preloads assets on available players
-  /// in the pool for faster playback.
-  ///
-  /// Gracefully handles platforms where just_audio is not available (Linux desktop).
-  ///
-  /// Call this before using any playback methods:
-  /// ```dart
-  /// await audioService.initialize();
-  /// ```
+  /// The tone of a slot worth [points], by its tier (the tiers of
+  /// `Slot.colorFor`): a 50 quiet and low, a 2,000 full and high.
+  static SoundTone slotToneFor(int points) {
+    if (points >= 2000) return (volume: 1.0, playbackRate: 1.25);
+    if (points >= 1000) return (volume: 0.85, playbackRate: 1.1);
+    if (points >= 100) return (volume: 0.65, playbackRate: 0.95);
+    return (volume: 0.5, playbackRate: 0.85);
+  }
+
+  static const SoundTone _plain = (volume: 1.0, playbackRate: 1.0);
+
+  /// Makes and loads every sound's players. The app does not await it; a
+  /// sound asked for before its players have loaded is not played. Calling
+  /// it again does nothing.
   Future<void> initialize() async {
-    try {
-      // Preload all assets to prevent first-play lag
-      // We'll load each asset on the first player for initial caching
-      // Actual playback will use round-robin allocation
-      if (_audioPlayers.isNotEmpty && !_disposed) {
-        await _tracked(_preload(_audioPlayers[0]));
+    if (_initialized || _disposed) return;
+    _initialized = true;
+    final loads = <Future<void>>[];
+    for (final effect in SoundEffect.values) {
+      for (var voice = 0; voice < effect.voices; voice++) {
+        final AudioPlayer player;
+        try {
+          player = _createPlayer();
+        } catch (e) {
+          debugPrint('AudioService: no player for ${effect.name}: $e');
+          continue;
+        }
+        _players.add(player);
+        loads.add(_loadVoice(effect, player));
       }
-    } catch (e) {
-      // Gracefully handle platforms where just_audio is not available (e.g., Linux desktop)
-      // Audio will be disabled but app continues to function
-      debugPrint(
-          'AudioService: Failed to initialize (platform may not support just_audio): $e');
     }
+    await Future.wait(loads);
   }
 
-  Future<void> _preload(AudioPlayer player) async {
-    // Preload all 5 assets sequentially
-    await player.setAsset(_launchAsset);
-    await player.setAsset(_pegHitAsset);
-    await player.setAsset(_specialPegAsset);
-    await player.setAsset(_slotScoreAsset);
-    await player.setAsset(_bonusTriggerAsset);
-
-    // Reset player for first actual playback
-    await player.seek(Duration.zero);
-  }
-
-  Future<void> _load(AudioPlayer player, String assetPath) async {
-    await player.setAsset(assetPath);
-    await player.setVolume(_volume);
-    await player.seek(Duration.zero); // Reset to start
-  }
-
-  /// Gets next available audio player using round-robin allocation
-  ///
-  /// Cycles through player pool to distribute playback load
-  /// and enable simultaneous sounds without stuttering.
-  AudioPlayer _getNextPlayer() {
-    final player = _audioPlayers[_currentPlayerIndex];
-    _currentPlayerIndex = (_currentPlayerIndex + 1) % _audioPlayers.length;
-    return player;
-  }
-
-  /// Plays sound effect with specified asset path
-  ///
-  /// Uses round-robin player allocation for simultaneous playback support.
-  /// Sets asset, applies current volume, and plays immediately.
-  ///
-  /// Never throws. Callers do not await a sound, so a failure in the player
-  /// (it was disposed while the sound was loading, or the platform has no
-  /// audio) would otherwise become an unhandled error.
-  Future<void> _playSound(String assetPath) async {
-    if (_disposed || _audioPlayers.isEmpty) return;
-
-    final player = _getNextPlayer();
-
+  Future<void> _loadVoice(SoundEffect effect, AudioPlayer player) async {
     try {
-      await _tracked(_load(player, assetPath));
-      // Disposed while it loaded: the player is about to go, so do not start it
-      if (_disposed) return;
-      await player.play();
+      await _tracked(_load(effect, player));
+      if (!_disposed) _loaded[effect]!.add(player);
     } catch (e) {
-      debugPrint('AudioService: could not play $assetPath: $e');
+      debugPrint('AudioService: could not load ${effect.asset}: $e');
     }
   }
 
-  /// Plays ball launch sound effect
-  ///
-  /// Triggered when ball is launched from bottom-right channel.
-  /// Sound: Mechanical boost/launch effect (~0.5s duration)
-  Future<void> playLaunch() async {
-    await _playSound(_launchAsset);
+  Future<void> _load(SoundEffect effect, AudioPlayer player) async {
+    await player.setPlayerMode(PlayerMode.lowLatency);
+    await player.setAudioContext(_effectsContext);
+    await player.setReleaseMode(ReleaseMode.stop);
+    await player.setSource(AssetSource(effect.asset));
   }
 
-  /// Plays peg hit collision sound effect
-  ///
-  /// Triggered on every ball-peg collision.
-  /// Sound: Wooden click, short and non-fatiguing (~0.5s duration)
-  ///
-  /// Note: This is the most frequently played sound, so pooling
-  /// is critical to prevent stuttering when multiple balls hit
-  /// pegs simultaneously.
-  Future<void> playPegHit() async {
-    await _playSound(_pegHitAsset);
+  /// The next player of [effect] in turn that is loaded and not starting.
+  AudioPlayer? _nextFreeVoice(SoundEffect effect) {
+    final voices = _loaded[effect]!;
+    for (var tried = 0; tried < voices.length; tried++) {
+      final index = (_nextVoice[effect]! + tried) % voices.length;
+      final player = voices[index];
+      if (!_starting.contains(player)) {
+        _nextVoice[effect] = (index + 1) % voices.length;
+        return player;
+      }
+    }
+    return null;
   }
 
-  /// Plays special peg activation sound effect
-  ///
-  /// Triggered when ball hits a special (highlighted) peg.
-  /// Sound: Achievement chime, celebratory (~1.6s duration)
+  /// Plays [effect] at [tone] on its next free player. Never throws.
+  Future<void> _play(SoundEffect effect, SoundTone tone) async {
+    if (_disposed) return;
+    final player = _nextFreeVoice(effect);
+    if (player == null) return;
+    _starting.add(player);
+    try {
+      await _tracked(_start(player, tone));
+    } catch (e) {
+      debugPrint('AudioService: could not play ${effect.asset}: $e');
+    } finally {
+      _starting.remove(player);
+    }
+  }
+
+  Future<void> _start(AudioPlayer player, SoundTone tone) async {
+    // Stopping ends the player's last sound, so that the next start is a
+    // new one from the beginning, at the rate set below
+    await player.stop();
+    await player.setVolume(tone.volume * _volume);
+    await player.setPlaybackRate(tone.playbackRate);
+    // Disposed while it was being set up: the player is about to go
+    if (_disposed) return;
+    await player.resume();
+  }
+
+  /// Plays the launch: a ball leaving the launcher.
+  Future<void> playLaunch() => _play(SoundEffect.launch, _plain);
+
+  /// Plays a pin hit at [impactSpeed], the speed at which the ball met the
+  /// pin along the line between them (see [pegHitToneFor]).
+  Future<void> playPegHit(double impactSpeed) =>
+      _play(SoundEffect.pegHit, pegHitToneFor(impactSpeed));
+
+  /// Plays the prize peg chime.
   ///
   /// Attribution: "Sound by mokasza from Freesound.org (CC-BY 4.0)"
-  /// (Attribution required - must be included in game credits)
-  Future<void> playSpecialPeg() async {
-    await _playSound(_specialPegAsset);
-  }
+  Future<void> playSpecialPeg() => _play(SoundEffect.specialPeg, _plain);
 
-  /// Plays scoring slot sound effect
-  ///
-  /// Triggered when ball lands in scoring slot at bottom.
-  /// Sound: Victory chime, satisfying completion tone (~0.8s duration)
-  ///
-  /// [points] - Score value (optional, for future volume scaling)
-  Future<void> playSlotScore(int points) async {
-    // Future enhancement: Could scale volume based on points
-    // Higher scoring slots = louder sound for better feedback
-    await _playSound(_slotScoreAsset);
-  }
+  /// Plays a ball landing in a slot worth [points] (see [slotToneFor]).
+  Future<void> playSlotScore(int points) =>
+      _play(SoundEffect.slotScore, slotToneFor(points));
 
-  /// Plays bonus trigger fanfare sound effect
-  ///
-  /// Triggered when major bonus event occurs (all special pegs hit).
-  /// Sound: Exciting power-up fanfare (~1.0s duration)
-  ///
-  /// This is the "top tier" sound in the audio hierarchy,
-  /// providing dramatic feedback for rare bonus events.
-  Future<void> playBonusTrigger() async {
-    await _playSound(_bonusTriggerAsset);
-  }
+  /// Plays the bonus fanfare.
+  Future<void> playBonusTrigger() => _play(SoundEffect.bonusTrigger, _plain);
 
-  /// Sets volume for all audio players in the pool
-  ///
-  /// [volume] - Volume level from 0.0 (muted) to 1.0 (full volume)
-  ///
-  /// Applies volume change to all players immediately and
-  /// stores for future playback.
-  ///
-  /// Example:
-  /// ```dart
-  /// await audioService.setVolume(0.0); // Mute
-  /// await audioService.setVolume(0.5); // 50% volume
-  /// await audioService.setVolume(1.0); // Full volume
-  /// ```
-  Future<void> setVolume(double volume) async {
-    // Clamp volume to valid range
+  /// Sets the volume of every sound from now on, clamped to 0 to 1.
+  void setVolume(double volume) {
     _volume = volume.clamp(0.0, 1.0);
-
-    // Apply volume to all players in pool
-    for (final player in _audioPlayers) {
-      await player.setVolume(_volume);
-    }
   }
 
-  /// Disposes all audio players to free resources
+  /// Disposes every player. The app does not await it, so it never throws,
+  /// and a player that fails to dispose does not keep the others alive.
   ///
-  /// Must be called when AudioService is no longer needed
-  /// to prevent memory leaks. Typically called during app
-  /// shutdown or when disposing Provider.
-  ///
-  /// After calling dispose(), do not use any playback methods.
-  ///
-  /// Never throws, for the same reason as [_playSound]: the app does not
-  /// await it. A player that fails to dispose does not keep the others alive.
-  ///
-  /// Waits for sounds that are still loading before it disposes the players
-  /// (see [_loads]). Calling it again does nothing.
+  /// Waits for loads and starts in flight first (see [_inFlight]). Sounds
+  /// asked for afterwards are ignored. Calling it again does nothing.
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
-    await Future.wait(_loads.toList());
-    for (final player in _audioPlayers) {
+    await Future.wait(_inFlight.toList());
+    for (final player in _players) {
       try {
         await player.dispose();
       } catch (e) {

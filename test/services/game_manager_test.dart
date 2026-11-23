@@ -12,7 +12,9 @@ import 'package:pachinko_game/models/peg.dart';
 import 'package:pachinko_game/models/slot.dart';
 import 'package:pachinko_game/models/level.dart';
 import 'package:pachinko_game/services/achievement_service.dart';
+import 'package:pachinko_game/services/audio_service.dart';
 import 'package:pachinko_game/services/game_manager.dart';
+import 'package:pachinko_game/services/haptics_service.dart';
 import 'package:pachinko_game/services/storage_service.dart';
 import 'package:pachinko_game/utils/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -612,6 +614,80 @@ void main() {
       // Then: Both scores should be added
       verify(mockGameState.addScore(1000)).called(greaterThan(0));
       verify(mockGameState.addScore(2000)).called(greaterThan(0));
+    });
+  });
+
+  /// What the player hears and feels (#110): the manager tells the audio
+  /// and the haptics what happened, and they decide the tone and strength.
+  group('Sound and haptics', () {
+    late _RecordingAudio audio;
+    late _RecordingHaptics haptics;
+    late GameManager feltManager;
+
+    void useRecorders() {
+      audio = _RecordingAudio();
+      haptics = _RecordingHaptics();
+      feltManager = GameManager(
+        gameState: mockGameState,
+        physicsEngine: mockPhysicsEngine,
+        ballLauncher: mockBallLauncher,
+        audioService: audio,
+        haptics: haptics,
+      );
+      host(feltManager);
+    }
+
+    testLoop(
+        'Given the last prize peg hit When the loop sees it Then the prize peg and the bonus are heard and felt',
+        () async {
+      useRecorders();
+      final ball = Ball(
+          position: Vector2(200, 200), velocity: Vector2(50, 50), radius: 8.0);
+      final prize =
+          Peg(position: Vector2(210, 210), radius: 10.0, type: PegType.special);
+      final mockLevel = MockLevel();
+      when(mockLevel.pegs).thenReturn([prize]);
+      when(mockLevel.specialPegs).thenReturn([prize]);
+      when(mockLevel.slots).thenReturn([]);
+      when(mockLevel.allSpecialPegsHit).thenReturn(true);
+      when(mockGameState.activeBalls).thenReturn([ball]);
+      when(mockGameState.currentLevel).thenReturn(mockLevel);
+      when(mockPhysicsEngine.checkPegCollisions(any, any)).thenReturn([prize]);
+      when(mockPhysicsEngine.checkSlotCollisions(any, any)).thenReturn([]);
+      when(mockBallLauncher.launch()).thenReturn(ball);
+
+      feltManager.launchBall();
+      await play(const Duration(milliseconds: 20));
+
+      expect(audio.played.take(3), ['launch', 'specialPeg', 'bonusTrigger']);
+      expect(haptics.felt.take(2), ['prizePeg', 'bonus']);
+    });
+
+    testLoop(
+        'Given balls landing in a 50 and a 2,000 slot When the loop sees them Then each slot is heard and reported by its points',
+        () async {
+      useRecorders();
+      final ball = Ball(
+          position: Vector2(100, 500), velocity: Vector2(0, 50), radius: 8.0);
+      final low = Slot(
+          position: Vector2(100, 550), width: 50, height: 60, pointValue: 50);
+      final high = Slot(
+          position: Vector2(300, 550), width: 50, height: 60, pointValue: 2000);
+      final mockLevel = MockLevel();
+      when(mockLevel.pegs).thenReturn([]);
+      when(mockLevel.slots).thenReturn([low, high]);
+      when(mockGameState.activeBalls).thenReturn([ball]);
+      when(mockGameState.currentLevel).thenReturn(mockLevel);
+      when(mockPhysicsEngine.checkPegCollisions(any, any)).thenReturn([]);
+      when(mockPhysicsEngine.checkSlotCollisions(any, any))
+          .thenReturn([low, high]);
+      when(mockBallLauncher.launch()).thenReturn(ball);
+
+      feltManager.launchBall();
+      await play(const Duration(milliseconds: 20));
+
+      expect(audio.played.skip(1).take(2), ['slotScore 50', 'slotScore 2000']);
+      expect(haptics.felt.take(2), ['slot 50', 'slot 2000']);
     });
   });
 
@@ -1632,4 +1708,36 @@ class _GatedStorage extends StorageService {
     await gate.future;
     return super.getBestScore(level);
   }
+}
+
+/// An audio service that plays nothing and records what it was asked for.
+class _RecordingAudio extends AudioService {
+  final List<String> played = [];
+
+  @override
+  Future<void> playLaunch() async => played.add('launch');
+
+  @override
+  Future<void> playSpecialPeg() async => played.add('specialPeg');
+
+  @override
+  Future<void> playSlotScore(int points) async =>
+      played.add('slotScore $points');
+
+  @override
+  Future<void> playBonusTrigger() async => played.add('bonusTrigger');
+}
+
+/// Haptics that vibrate nothing and record what they were asked for.
+class _RecordingHaptics extends HapticsService {
+  final List<String> felt = [];
+
+  @override
+  void prizePeg() => felt.add('prizePeg');
+
+  @override
+  void slot(int points) => felt.add('slot $points');
+
+  @override
+  void bonus() => felt.add('bonus');
 }

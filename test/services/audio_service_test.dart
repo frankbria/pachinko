@@ -1,469 +1,425 @@
 import 'dart:async';
+import 'dart:io';
+
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:pachinko_game/services/audio_service.dart';
 
 import 'audio_service_test.mocks.dart';
 
-/// Comprehensive test suite for AudioService
+/// Tests for AudioService.
 ///
-/// Tests audio playback, pooling, volume control, and resource management
-/// following Given-When-Then BDD pattern established in Phase 1.
-///
-/// Testing Strategy:
-/// - Mock AudioPlayer instances to avoid actual audio playback in tests
-/// - Verify asset paths are correct for all 5 sound effects
-/// - Test audio pooling behavior for simultaneous playback
-/// - Validate volume propagation across all players
-/// - Ensure proper resource cleanup (no memory leaks)
-
+/// Strategy: the service makes its players through a factory, and the tests
+/// hand it mocks, kept in the order it asked for them. Each sound's players
+/// are made together, in the order of [SoundEffect.values], so [playersOf]
+/// finds them. A load or start held open on a [Completer] shows the order of
+/// the calls when the service is disposed in the middle of one.
 @GenerateMocks([AudioPlayer])
 void main() {
-  group('AudioService', () {
-    late List<MockAudioPlayer> mockPlayers;
-    late AudioService audioService;
+  late List<MockAudioPlayer> players;
+  late AudioService audioService;
 
-    setUp(() {
-      // Create mock audio player pool (5 players for pooling)
-      mockPlayers = List.generate(5, (_) => MockAudioPlayer());
+  MockAudioPlayer newPlayer() {
+    final player = MockAudioPlayer();
+    when(player.setPlayerMode(any)).thenAnswer((_) async {});
+    when(player.setAudioContext(any)).thenAnswer((_) async {});
+    when(player.setReleaseMode(any)).thenAnswer((_) async {});
+    when(player.setSource(any)).thenAnswer((_) async {});
+    when(player.stop()).thenAnswer((_) async {});
+    when(player.setVolume(any)).thenAnswer((_) async {});
+    when(player.setPlaybackRate(any)).thenAnswer((_) async {});
+    when(player.resume()).thenAnswer((_) async {});
+    when(player.dispose()).thenAnswer((_) async {});
+    players.add(player);
+    return player;
+  }
 
-      // Configure default mock behaviors
-      for (final player in mockPlayers) {
-        when(player.setAsset(any)).thenAnswer((_) async => null);
-        when(player.play()).thenAnswer((_) async {});
-        when(player.setVolume(any)).thenAnswer((_) async {});
-        when(player.dispose()).thenAnswer((_) async {});
-        when(player.stop()).thenAnswer((_) async {});
-        when(player.seek(any)).thenAnswer((_) async {});
+  /// The players made for [effect].
+  List<MockAudioPlayer> playersOf(SoundEffect effect) {
+    var first = 0;
+    for (final earlier in SoundEffect.values.takeWhile((e) => e != effect)) {
+      first += earlier.voices;
+    }
+    return players.sublist(first, first + effect.voices);
+  }
+
+  setUp(() {
+    players = [];
+    audioService = AudioService(createPlayer: newPlayer);
+  });
+
+  tearDown(() => audioService.dispose());
+
+  group('loading', () {
+    test('makes no player before it is initialized', () {
+      expect(players, isEmpty);
+    });
+
+    test('loads each sound once onto each of its players, in low latency',
+        () async {
+      await audioService.initialize();
+
+      final total = SoundEffect.values.fold(0, (sum, e) => sum + e.voices);
+      expect(players, hasLength(total));
+      for (final effect in SoundEffect.values) {
+        for (final player in playersOf(effect)) {
+          final source =
+              verify(player.setSource(captureAny)).captured.single as Source;
+          expect((source as AssetSource).path, effect.asset);
+          verify(player.setPlayerMode(PlayerMode.lowLatency)).called(1);
+          verify(player.setReleaseMode(ReleaseMode.stop)).called(1);
+        }
+      }
+    });
+
+    test('every sound file it loads is in the assets', () {
+      for (final effect in SoundEffect.values) {
+        expect(File('assets/${effect.asset}').existsSync(), isTrue,
+            reason: effect.asset);
+      }
+    });
+
+    test('takes no audio focus, so it mixes with the player\'s music',
+        () async {
+      await audioService.initialize();
+
+      final context = verify(players.first.setAudioContext(captureAny))
+          .captured
+          .single as AudioContext;
+      expect(context.android.audioFocus, AndroidAudioFocus.none);
+    });
+
+    test('initializing again makes no more players', () async {
+      await audioService.initialize();
+      final count = players.length;
+
+      await audioService.initialize();
+
+      expect(players, hasLength(count));
+    });
+  });
+
+  group('playing', () {
+    setUp(() => audioService.initialize());
+
+    final sounds = <SoundEffect, Future<void> Function(AudioService)>{
+      SoundEffect.launch: (service) => service.playLaunch(),
+      SoundEffect.pegHit: (service) => service.playPegHit(300),
+      SoundEffect.specialPeg: (service) => service.playSpecialPeg(),
+      SoundEffect.slotScore: (service) => service.playSlotScore(1000),
+      SoundEffect.bonusTrigger: (service) => service.playBonusTrigger(),
+    };
+    for (final entry in sounds.entries) {
+      test('${entry.key.name} plays on its own player without reloading',
+          () async {
+        await entry.value(audioService);
+
+        final player = playersOf(entry.key).first;
+        verify(player.resume()).called(1);
+        // Loaded once by initialize, and not again to play
+        verify(player.setSource(any)).called(1);
+        for (final other in players.where((p) => p != player)) {
+          verifyNever(other.resume());
+        }
+      });
+    }
+
+    test('several pin sounds in quick succession all play', () async {
+      // Eight hits asked for at once, none awaited, as the physics asks
+      final pegPlayers = playersOf(SoundEffect.pegHit);
+      await Future.wait([
+        for (var hit = 0; hit < pegPlayers.length; hit++)
+          audioService.playPegHit(200),
+      ]);
+
+      for (final player in pegPlayers) {
+        verify(player.resume()).called(1);
+        verify(player.setSource(any)).called(1);
+      }
+    });
+
+    test('a start begins a new sound: the player is stopped, then resumed',
+        () async {
+      await audioService.playLaunch();
+
+      verifyInOrder([
+        playersOf(SoundEffect.launch).first.stop(),
+        playersOf(SoundEffect.launch).first.resume(),
+      ]);
+    });
+
+    test('once every player has sounded, the oldest is used again', () async {
+      final pegPlayers = playersOf(SoundEffect.pegHit);
+      for (var hit = 0; hit <= pegPlayers.length; hit++) {
+        await audioService.playPegHit(200);
       }
 
-      // Inject mocked players into AudioService
-      audioService = AudioService(audioPlayers: mockPlayers);
+      verify(pegPlayers.first.resume()).called(2);
+      verify(pegPlayers[1].resume()).called(1);
     });
 
-    tearDown(() {
-      audioService.dispose();
+    test('a sound asked for while all its players are starting is dropped',
+        () async {
+      final bonus = playersOf(SoundEffect.bonusTrigger).single;
+      final stopping = Completer<void>();
+      when(bonus.stop()).thenAnswer((_) => stopping.future);
+
+      final first = audioService.playBonusTrigger();
+      await audioService.playBonusTrigger();
+      stopping.complete();
+      await first;
+
+      verify(bonus.resume()).called(1);
+    });
+  });
+
+  test('a sound asked for before its players have loaded is not played',
+      () async {
+    final loading = Completer<void>();
+    final service = AudioService(createPlayer: () {
+      final player = newPlayer();
+      when(player.setSource(any)).thenAnswer((_) => loading.future);
+      return player;
+    });
+    final initialized = service.initialize();
+
+    await service.playLaunch();
+    loading.complete();
+    await initialized;
+
+    for (final player in players) {
+      verifyNever(player.resume());
+    }
+    await service.dispose();
+  });
+
+  group('tone', () {
+    test('a pin sounds louder and higher the harder it is hit', () {
+      final speeds = [0.0, 100.0, 300.0, 450.0, AudioService.pegHitFullSpeed];
+      final tones = speeds.map(AudioService.pegHitToneFor).toList();
+      for (var i = 1; i < tones.length; i++) {
+        expect(tones[i].volume, greaterThan(tones[i - 1].volume));
+        expect(tones[i].playbackRate, greaterThan(tones[i - 1].playbackRate));
+      }
+      expect(tones.first, (volume: 0.3, playbackRate: 0.85));
+      expect(tones.last.volume, 1.0);
+      expect(tones.last.playbackRate, closeTo(1.2, 1e-9));
     });
 
-    group('Initialization & Setup', () {
-      test(
-          'givenAudioService_whenInitialized_thenAudioPlayersCreatedSuccessfully',
-          () {
-        // Given: Fresh AudioService with injected mock players
-        // When: AudioService is initialized (in setUp)
-        // Then: Audio players should be created (5 players in pool)
-        expect(audioService, isNotNull);
-        // Verify constructor dependency injection works
-        expect(mockPlayers.length, equals(5));
-      });
-
-      test('givenAudioService_whenInitialized_thenAllAssetsPreloaded',
-          () async {
-        // Given: AudioService with mock players
-        // When: Initialize method is called to preload assets
-        await audioService.initialize();
-
-        // Then: All 5 assets should be preloaded on first player (player 0)
-        // Implementation uses player 0 for initial asset caching
-        final capturedAssets =
-            verify(mockPlayers[0].setAsset(captureAny)).captured.cast<String>();
-
-        // Expect all 5 asset paths to be loaded on player 0
-        expect(capturedAssets.length, equals(5));
-        expect(capturedAssets, contains('assets/sounds/launch.mp3'));
-        expect(capturedAssets, contains('assets/sounds/peg_hit.wav'));
-        expect(capturedAssets, contains('assets/sounds/special_peg.mp3'));
-        expect(capturedAssets, contains('assets/sounds/slot_score.wav'));
-        expect(capturedAssets, contains('assets/sounds/bonus_trigger.wav'));
-      });
+    test('a pin hit faster than full speed sounds as one at full speed', () {
+      expect(
+        AudioService.pegHitToneFor(AudioService.pegHitFullSpeed * 3),
+        AudioService.pegHitToneFor(AudioService.pegHitFullSpeed),
+      );
     });
 
-    group('Individual Playback Methods', () {
-      test('givenAudioService_whenPlayLaunchCalled_thenLaunchSoundPlays',
-          () async {
-        // Given: AudioService initialized with assets preloaded
-        await audioService.initialize();
-        clearInteractions(mockPlayers[0]); // Clear initialization interactions
-
-        // When: playLaunch() is called
-        await audioService.playLaunch();
-
-        // Then: Launch sound asset should be set and played on a player
-        final capturedAsset =
-            verify(mockPlayers[0].setAsset(captureAny)).captured.single;
-        expect(capturedAsset, equals('assets/sounds/launch.mp3'));
-        verify(mockPlayers[0].play()).called(1);
-      });
-
-      test('givenAudioService_whenPlayPegHitCalled_thenPegHitSoundPlays',
-          () async {
-        // Given: AudioService initialized
-        await audioService.initialize();
-        clearInteractions(mockPlayers[0]);
-
-        // When: playPegHit() is called
-        await audioService.playPegHit();
-
-        // Then: Peg hit sound should be set and played
-        final capturedAsset =
-            verify(mockPlayers[0].setAsset(captureAny)).captured.single;
-        expect(capturedAsset, equals('assets/sounds/peg_hit.wav'));
-        verify(mockPlayers[0].play()).called(1);
-      });
-
-      test(
-          'givenAudioService_whenPlaySpecialPegCalled_thenSpecialPegSoundPlays',
-          () async {
-        // Given: AudioService initialized
-        await audioService.initialize();
-        clearInteractions(mockPlayers[0]);
-
-        // When: playSpecialPeg() is called
-        await audioService.playSpecialPeg();
-
-        // Then: Special peg sound should be set and played
-        final capturedAsset =
-            verify(mockPlayers[0].setAsset(captureAny)).captured.single;
-        expect(capturedAsset, equals('assets/sounds/special_peg.mp3'));
-        verify(mockPlayers[0].play()).called(1);
-      });
-
-      test('givenAudioService_whenPlaySlotScoreCalled_thenSlotScoreSoundPlays',
-          () async {
-        // Given: AudioService initialized
-        await audioService.initialize();
-        clearInteractions(mockPlayers[0]);
-
-        // When: playSlotScore() is called with a score value
-        await audioService.playSlotScore(1000);
-
-        // Then: Slot score sound should be set and played
-        final capturedAsset =
-            verify(mockPlayers[0].setAsset(captureAny)).captured.single;
-        expect(capturedAsset, equals('assets/sounds/slot_score.wav'));
-        verify(mockPlayers[0].play()).called(1);
-      });
-
-      test(
-          'givenAudioService_whenPlayBonusTriggerCalled_thenBonusTriggerSoundPlays',
-          () async {
-        // Given: AudioService initialized
-        await audioService.initialize();
-        clearInteractions(mockPlayers[0]);
-
-        // When: playBonusTrigger() is called
-        await audioService.playBonusTrigger();
-
-        // Then: Bonus trigger sound should be set and played
-        final capturedAsset =
-            verify(mockPlayers[0].setAsset(captureAny)).captured.single;
-        expect(capturedAsset, equals('assets/sounds/bonus_trigger.wav'));
-        verify(mockPlayers[0].play()).called(1);
-      });
+    test('a slot sounds louder and higher by tier, cool to hot', () {
+      final tones = [50, 200, 1000, 2000].map(AudioService.slotToneFor);
+      final list = tones.toList();
+      for (var i = 1; i < list.length; i++) {
+        expect(list[i].volume, greaterThan(list[i - 1].volume));
+        expect(list[i].playbackRate, greaterThan(list[i - 1].playbackRate));
+      }
+      expect(list.last, (volume: 1.0, playbackRate: 1.25));
     });
 
-    group('Playback Failures', () {
-      /// Sounds are played without being awaited. A failure inside the player
-      /// (it was disposed while a sound was loading, or the platform has no
-      /// audio) would otherwise surface as an unhandled error.
-      test('givenPlayerThatFails_whenSoundPlayed_thenTheFailureDoesNotEscape',
-          () async {
-        // Given
-        when(mockPlayers[0].setAsset(any))
-            .thenThrow(StateError('player disposed'));
+    test('a pin and a slot are played at their tone', () async {
+      await audioService.initialize();
 
-        // When / Then
-        await expectLater(audioService.playLaunch(), completes);
-      });
+      await audioService.playPegHit(0);
+      await audioService.playSlotScore(2000);
 
-      test('givenPreloadThatFails_whenInitialized_thenTheFailureDoesNotEscape',
-          () async {
-        // Given
-        when(mockPlayers[0].setAsset(any))
-            .thenThrow(StateError('no audio on this platform'));
+      final pin = playersOf(SoundEffect.pegHit).first;
+      verify(pin.setVolume(0.3)).called(1);
+      verify(pin.setPlaybackRate(0.85)).called(1);
+      final slot = playersOf(SoundEffect.slotScore).first;
+      verify(slot.setVolume(1.0)).called(1);
+      verify(slot.setPlaybackRate(1.25)).called(1);
+    });
+  });
 
-        // When & Then
-        await expectLater(audioService.initialize(), completes);
-      });
+  group('volume', () {
+    setUp(() => audioService.initialize());
 
-      test(
-          'givenPlayersThatCannotBeCreated_whenServiceCreated_thenSoundsAreIgnored',
-          () async {
-        // Given: creating the pool throws. A real player cannot be made to
-        // throw from a unit test (its failure arrives later, on a future), so
-        // an impossible pool size stands in for a platform without audio
-        final withoutPlayers = AudioService(poolSize: -1);
+    test('scales every sound played afterwards', () async {
+      audioService.setVolume(0.5);
 
-        // When & Then
-        await expectLater(withoutPlayers.initialize(), completes);
-        await expectLater(withoutPlayers.playLaunch(), completes);
-        await expectLater(withoutPlayers.dispose(), completes);
-      });
+      await audioService.playLaunch();
+      await audioService.playSlotScore(50);
 
-      test(
-          'givenPlayerThatFailsToPlay_whenSoundPlayed_thenTheNextSoundStillPlays',
-          () async {
-        // Given
-        when(mockPlayers[0].play()).thenThrow(StateError('player disposed'));
-
-        // When
-        await audioService.playLaunch();
-        await audioService.playPegHit();
-
-        // Then: the second sound went to the next player in the pool
-        verify(mockPlayers[1].play()).called(1);
-      });
-
-      test(
-          'givenPlayerThatFailsToDispose_whenDisposed_thenTheOthersAreStillDisposed',
-          () async {
-        // Given
-        when(mockPlayers[0].dispose())
-            .thenThrow(StateError('already disposed'));
-
-        // When / Then: dispose is not awaited by the app either
-        await expectLater(audioService.dispose(), completes);
-        verify(mockPlayers[4].dispose()).called(1);
-      });
+      verify(playersOf(SoundEffect.launch).first.setVolume(0.5)).called(1);
+      verify(playersOf(SoundEffect.slotScore).first.setVolume(0.25)).called(1);
     });
 
-    group('Disposal While A Sound Is Loading', () {
-      /// The app disposes the service without waiting, and a sound may still
-      /// be loading. A player disposed in the middle of a load goes on
-      /// receiving platform events on streams that are closed, which the
-      /// plugin reports as an unhandled error (issue #66). These tests hold a
-      /// load open with a completer and watch the order of the calls.
-      test(
-          'givenSoundStillLoading_whenDisposed_thenThePlayerOutlivesTheLoadAndTheSoundIsNotStarted',
-          () async {
-        // Given: a sound whose load has not finished
-        final loading = Completer<Duration?>();
-        when(mockPlayers[0].setAsset(any)).thenAnswer((_) => loading.future);
-        final sound = audioService.playLaunch();
+    test('is clamped to 0 to 1', () async {
+      audioService.setVolume(-1);
+      await audioService.playLaunch();
+      audioService.setVolume(2);
+      await audioService.playLaunch();
 
-        // When
-        final disposed = audioService.dispose();
-        await Future<void>.delayed(Duration.zero);
+      final launch = playersOf(SoundEffect.launch);
+      verify(launch[0].setVolume(0.0)).called(1);
+      verify(launch[1].setVolume(1.0)).called(1);
+    });
+  });
 
-        // Then: nothing is disposed while the load is open
-        for (final player in mockPlayers) {
-          verifyNever(player.dispose());
-        }
+  group('failures do not escape', () {
+    /// Sounds are played without being awaited. A failure inside a player
+    /// (it was disposed while a sound was loading, or the platform has no
+    /// audio) would otherwise surface as an unhandled error.
+    test('a player that fails to start, and the next sound still plays',
+        () async {
+      await audioService.initialize();
+      final launch = playersOf(SoundEffect.launch);
+      when(launch[0].resume()).thenThrow(StateError('player disposed'));
 
-        // When the load ends
-        loading.complete(null);
-        await disposed;
-        await sound;
+      await expectLater(audioService.playLaunch(), completes);
+      await audioService.playLaunch();
 
-        // Then: the players are disposed, and the sound was not started
-        for (final player in mockPlayers) {
-          verify(player.dispose()).called(1);
-        }
-        verifyNever(mockPlayers[0].play());
-      });
-
-      test(
-          'givenPreloadStillRunning_whenDisposed_thenThePlayersOutliveThePreload',
-          () async {
-        // Given: initialize() is not awaited by the app either
-        final loading = Completer<Duration?>();
-        when(mockPlayers[0].setAsset(any)).thenAnswer((_) => loading.future);
-        final preload = audioService.initialize();
-
-        // When
-        final disposed = audioService.dispose();
-        await Future<void>.delayed(Duration.zero);
-
-        // Then
-        verifyNever(mockPlayers[0].dispose());
-        loading.complete(null);
-        await disposed;
-        await preload;
-        verify(mockPlayers[0].dispose()).called(1);
-      });
-
-      test('givenLoadThatFails_whenDisposed_thenThePlayersAreStillDisposed',
-          () async {
-        // Given
-        final loading = Completer<Duration?>();
-        when(mockPlayers[0].setAsset(any)).thenAnswer((_) => loading.future);
-        final sound = audioService.playLaunch();
-        final disposed = audioService.dispose();
-
-        // When
-        loading.completeError(StateError('load interrupted'));
-
-        // Then
-        await expectLater(disposed, completes);
-        await sound;
-        verify(mockPlayers[4].dispose()).called(1);
-      });
-
-      test('givenDisposedService_whenSoundAskedFor_thenNoPlayerIsTouched',
-          () async {
-        // Given
-        await audioService.dispose();
-
-        // When
-        await audioService.playPegHit();
-
-        // Then
-        for (final player in mockPlayers) {
-          verifyNever(player.setAsset(any));
-          verifyNever(player.play());
-        }
-      });
-
-      test('givenDisposedService_whenDisposedAgain_thenPlayersAreDisposedOnce',
-          () async {
-        await audioService.dispose();
-        await audioService.dispose();
-
-        for (final player in mockPlayers) {
-          verify(player.dispose()).called(1);
-        }
-      });
+      verify(launch[1].resume()).called(1);
     });
 
-    group('Volume Control', () {
-      test('givenAudioService_whenSetVolumeCalled_thenAllPlayersVolumeUpdated',
-          () async {
-        // Given: AudioService with 5 players in pool
-        // When: setVolume is called with 0.5 (50% volume)
-        await audioService.setVolume(0.5);
-
-        // Then: All 5 audio players should have volume set to 0.5
-        for (final player in mockPlayers) {
-          verify(player.setVolume(0.5)).called(1);
+    test('a load that fails leaves that player out, and the others play',
+        () async {
+      final service = AudioService(createPlayer: () {
+        final player = newPlayer();
+        if (players.length == 1) {
+          when(player.setSource(any))
+              .thenThrow(StateError('no audio on this platform'));
         }
+        return player;
       });
 
-      test('givenAudioService_whenSetVolumeToZero_thenSoundsMuted', () async {
-        // Given: AudioService initialized
-        // When: setVolume is called with 0.0 (muted)
-        await audioService.setVolume(0.0);
+      await expectLater(service.initialize(), completes);
+      await service.playLaunch();
+      await service.playLaunch();
 
-        // Then: All players should have volume set to 0.0 (muted)
-        for (final player in mockPlayers) {
-          verify(player.setVolume(0.0)).called(1);
-        }
-      });
-
-      test('givenAudioService_whenSetVolumeToOne_thenSoundsFullVolume',
-          () async {
-        // Given: AudioService initialized
-        // When: setVolume is called with 1.0 (full volume)
-        await audioService.setVolume(1.0);
-
-        // Then: All players should have volume set to 1.0 (max volume)
-        for (final player in mockPlayers) {
-          verify(player.setVolume(1.0)).called(1);
-        }
-      });
+      verifyNever(players[0].resume());
+      verify(players[1].resume()).called(2);
+      await service.dispose();
     });
 
-    group('Audio Pooling (Simultaneous Playback)', () {
-      /// Tests audio pooling behavior for handling multiple simultaneous sounds
-      /// Critical for preventing stuttering when many balls hit pegs at once
-      test(
-          'givenMultiplePegHits_whenPlayedSimultaneously_thenNoStutteringOccurs',
-          () async {
-        // Given: AudioService initialized
-        await audioService.initialize();
+    test('players that cannot be made leave the service silent', () async {
+      final withoutPlayers = AudioService(
+          createPlayer: () => throw UnsupportedError('no audio here'));
 
-        // When: Multiple peg hit sounds are played rapidly (simulating simultaneous collisions)
-        for (int i = 0; i < 10; i++) {
-          await audioService.playPegHit();
-        }
-
-        // Then: Peg hit sound should be played 10 times across the player pool
-        // Audio pooling should distribute playback across multiple players
-        int totalPlayCalls = 0;
-        for (final player in mockPlayers) {
-          totalPlayCalls += verify(player.play()).callCount;
-        }
-
-        // Expect at least 10 play calls total (may be more due to initialization)
-        expect(totalPlayCalls, greaterThanOrEqualTo(10));
-      });
-
-      /// Tests player reuse when all players in pool are active
-      /// Ensures oldest/completed playback is replaced when pool exhausted
-      test('givenAudioPool_whenAllPlayersActive_thenOldestPlayerReused',
-          () async {
-        // Given: AudioService with 5-player pool, all initialized
-        await audioService.initialize();
-        clearInteractions(mockPlayers[0]);
-        clearInteractions(mockPlayers[1]);
-        clearInteractions(mockPlayers[2]);
-        clearInteractions(mockPlayers[3]);
-        clearInteractions(mockPlayers[4]);
-
-        // When: 6 sounds are played (more than pool size of 5)
-        for (int i = 0; i < 6; i++) {
-          await audioService.playPegHit();
-        }
-
-        // Then: Pool should cycle through players using round-robin
-        // With 5 players and 6 calls, player 0 should be used twice (calls 1 and 6)
-        // Verify call counts for each player (avoid multiple verify() calls)
-        final player0Calls = verify(mockPlayers[0].setAsset(any)).callCount;
-        final player1Calls = verify(mockPlayers[1].setAsset(any)).callCount;
-        final player2Calls = verify(mockPlayers[2].setAsset(any)).callCount;
-        final player3Calls = verify(mockPlayers[3].setAsset(any)).callCount;
-        final player4Calls = verify(mockPlayers[4].setAsset(any)).callCount;
-
-        // Total calls should equal 6 (one per playPegHit call)
-        final totalCalls = player0Calls +
-            player1Calls +
-            player2Calls +
-            player3Calls +
-            player4Calls;
-        expect(totalCalls, equals(6));
-
-        // Verify round-robin behavior: player 0 used twice (index 0 and 5)
-        expect(player0Calls, equals(2));
-        // Each other player should have been used once
-        expect(player1Calls, equals(1));
-        expect(player2Calls, equals(1));
-        expect(player3Calls, equals(1));
-        expect(player4Calls, equals(1));
-      });
+      await expectLater(withoutPlayers.initialize(), completes);
+      await expectLater(withoutPlayers.playLaunch(), completes);
+      await expectLater(withoutPlayers.dispose(), completes);
     });
 
-    group('Resource Management', () {
-      test('givenAudioService_whenDisposeCalled_thenAllPlayersDisposed',
-          () async {
-        // Given: AudioService with 5 players
-        // When: dispose() is called
-        await audioService.dispose();
+    test('a player that fails to dispose, and the others are still disposed',
+        () async {
+      await audioService.initialize();
+      when(players.first.dispose()).thenThrow(StateError('already disposed'));
 
-        // Then: All 5 audio players should be disposed to prevent memory leaks
-        for (final player in mockPlayers) {
-          verify(player.dispose()).called(1);
-        }
+      await expectLater(audioService.dispose(), completes);
+      verify(players.last.dispose()).called(1);
+    });
+  });
+
+  group('disposal while a sound is loading or starting', () {
+    /// The app disposes the service without waiting, and a sound may still
+    /// be loading or starting. A player disposed in the middle of a platform
+    /// call goes on receiving events on streams that are closed, which the
+    /// plugin reports as an unhandled error (issue #66).
+    test('a sound still starting: the player outlives it and is not resumed',
+        () async {
+      await audioService.initialize();
+      final launch = playersOf(SoundEffect.launch).first;
+      final stopping = Completer<void>();
+      when(launch.stop()).thenAnswer((_) => stopping.future);
+      final sound = audioService.playLaunch();
+
+      final disposed = audioService.dispose();
+      await Future<void>.delayed(Duration.zero);
+      for (final player in players) {
+        verifyNever(player.dispose());
+      }
+
+      stopping.complete();
+      await disposed;
+      await sound;
+      for (final player in players) {
+        verify(player.dispose()).called(1);
+      }
+      verifyNever(launch.resume());
+    });
+
+    test('the preload still running: the players outlive it', () async {
+      final loading = Completer<void>();
+      final service = AudioService(createPlayer: () {
+        final player = newPlayer();
+        when(player.setSource(any)).thenAnswer((_) => loading.future);
+        return player;
       });
+      final preload = service.initialize();
 
-      test('givenAudioService_whenDisposeCalled_thenNoMemoryLeaks', () async {
-        // Given: AudioService with active playback
-        await audioService.initialize();
-        await audioService.playLaunch();
-        await audioService.playPegHit();
+      final disposed = service.dispose();
+      await Future<void>.delayed(Duration.zero);
+      verifyNever(players.first.dispose());
 
-        // When: dispose() is called after active usage
-        await audioService.dispose();
+      loading.complete();
+      await disposed;
+      await preload;
+      verify(players.first.dispose()).called(1);
+      // A player whose load ended after dispose is never played
+      await service.playLaunch();
+      verifyNever(players.first.resume());
+    });
 
-        // Then: All players should be disposed properly
-        for (final player in mockPlayers) {
-          verify(player.dispose()).called(1);
-        }
-
-        // Attempting to play after dispose should not crash
-        // (actual behavior depends on implementation - may throw or no-op)
-        // This test documents expected cleanup behavior
+    test('a load that fails: the players are still disposed', () async {
+      final loading = Completer<void>();
+      final service = AudioService(createPlayer: () {
+        final player = newPlayer();
+        when(player.setSource(any)).thenAnswer((_) => loading.future);
+        return player;
       });
+      final preload = service.initialize();
+      final disposed = service.dispose();
+      // Until every player has asked for its source
+      await Future<void>.delayed(Duration.zero);
+
+      loading.completeError(StateError('load interrupted'));
+
+      await expectLater(disposed, completes);
+      await preload;
+      verify(players.last.dispose()).called(1);
+    });
+
+    test('a disposed service touches no player', () async {
+      await audioService.initialize();
+      await audioService.dispose();
+      for (final player in players) {
+        clearInteractions(player);
+      }
+
+      await audioService.playPegHit(300);
+      await audioService.initialize();
+
+      for (final player in players) {
+        verifyZeroInteractions(player);
+      }
+    });
+
+    test('disposing twice disposes each player once', () async {
+      await audioService.initialize();
+      await audioService.dispose();
+      await audioService.dispose();
+
+      for (final player in players) {
+        verify(player.dispose()).called(1);
+      }
+    });
+
+    test('disposed before it was initialized, it never makes a player',
+        () async {
+      await audioService.dispose();
+      await audioService.initialize();
+
+      expect(players, isEmpty);
     });
   });
 }

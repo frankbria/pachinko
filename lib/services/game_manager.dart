@@ -12,6 +12,7 @@ import '../widgets/floating_text.dart';
 import '../utils/constants.dart';
 import 'physics_engine.dart';
 import 'audio_service.dart';
+import 'haptics_service.dart';
 import 'storage_service.dart';
 import 'achievement_service.dart';
 
@@ -20,6 +21,7 @@ class GameManager extends ChangeNotifier {
   final PhysicsEngine _physicsEngine;
   final BallLauncher _ballLauncher;
   final AudioService? _audioService;
+  final HapticsService? _haptics;
   StorageService? _storageService;
   AchievementService? _achievementService;
 
@@ -71,14 +73,16 @@ class GameManager extends ChangeNotifier {
     PhysicsEngine? physicsEngine,
     BallLauncher? ballLauncher,
     AudioService? audioService,
+    HapticsService? haptics,
     StorageService? storageService,
     AchievementService? achievementService,
   })  : _audioService = audioService,
+        _haptics = haptics,
         _storageService = storageService,
         _achievementService = achievementService,
         _gameState = gameState ?? GameState(),
-        _physicsEngine =
-            physicsEngine ?? PhysicsEngine(audioService: audioService),
+        _physicsEngine = physicsEngine ??
+            PhysicsEngine(audioService: audioService, haptics: haptics),
         _ballLauncher = ballLauncher ?? BallLauncher() {
     // The player's saved choice, when there is storage to read it from
     if (storageService != null) {
@@ -396,8 +400,8 @@ class GameManager extends ChangeNotifier {
   void _handlePegHits(List<Peg> hitPegs) {
     for (final peg in hitPegs) {
       if (peg.type == PegType.special) {
-        // Play special peg sound
         _audioService?.playSpecialPeg();
+        _haptics?.prizePeg();
         _checkSpecialBonus();
       }
     }
@@ -406,8 +410,8 @@ class GameManager extends ChangeNotifier {
   void _handleSlotHits(List<Slot> hitSlots) {
     for (final slot in hitSlots) {
       _gameState.addScore(slot.pointValue);
-      // Play slot score sound
       _audioService?.playSlotScore(slot.pointValue);
+      _haptics?.slot(slot.pointValue);
 
       // The slot lights, and the popup starts above its mouth, clear of its
       // value, in the slot's own colour and at a size that goes by the score
@@ -433,8 +437,8 @@ class GameManager extends ChangeNotifier {
 
     if (level.allSpecialPegsHit) {
       _gameState.triggerSpecialBonus();
-      // Play bonus trigger fanfare
       _audioService?.playBonusTrigger();
+      _haptics?.bonus();
 
       // Spawn confetti at center of board
       _gameState.spawnConfetti(
