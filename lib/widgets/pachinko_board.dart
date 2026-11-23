@@ -159,8 +159,10 @@ class _PachinkoBoardState extends State<PachinkoBoard>
     final tapX = details.localPosition.dx;
     final tapY = details.localPosition.dy;
 
-    // Scale coordinates to game coordinates
-    final gameX = tapX / _getScale(gameManager);
+    // Scale coordinates to game coordinates; a left-handed board is drawn
+    // reflected, so a touch is reflected back
+    final gameX = boardXOnScreen(tapX / _getScale(gameManager),
+        mirrored: gameManager.settings.leftHanded);
     final gameY = tapY / _getScale(gameManager);
 
     // Check if tap is near the launch area
@@ -235,6 +237,7 @@ class _PachinkoBoardPainter extends CustomPainter {
     if (level == null) return;
     final reducesMotion = gameManager.settings
         .reducesMotion(systemDisablesAnimations: systemDisablesAnimations);
+    final mirrored = gameManager.settings.leftHanded;
 
     // Scale the board to fit the available space
     final scaleX = size.width / GameConstants.boardWidth;
@@ -243,23 +246,28 @@ class _PachinkoBoardPainter extends CustomPainter {
 
     canvas.save();
     canvas.scale(scale);
+    // For a left-handed player the whole board is reflected; what must read
+    // the right way round is drawn through paintUnreflected
+    if (mirrored) mirrorBoard(canvas);
 
     // Felt, rail, pins and slots: recorded once per level and replayed
-    canvas.drawPicture(staticLayer.pictureFor(level));
+    canvas.drawPicture(staticLayer.pictureFor(level, mirrored: mirrored));
 
-    paintSlotLights(canvas, level.slots);
+    paintSlotLights(canvas, level.slots, mirrored: mirrored);
 
     // A phone's screen is taller than the board; the counts go in the strip below it
     final roomBelow = size.height / scale - GameConstants.boardHeight;
     paintSlotCounts(canvas, level.slots,
-        inTray: roomBelow >= slotTrayHeight + 8);
+        inTray: roomBelow >= slotTrayHeight + 8, mirrored: mirrored);
 
-    _drawAnimatedPegs(canvas, level, reducesMotion: reducesMotion);
+    _drawAnimatedPegs(canvas, level,
+        reducesMotion: reducesMotion, mirrored: mirrored);
     final prizes = level.pegs.where((peg) => peg.type == PegType.special);
     paintPrizeLamps(
       canvas,
       total: prizes.length,
       collected: prizes.where((peg) => peg.isCollected).length,
+      mirrored: mirrored,
     );
 
     // The bonus announcement dims the board. It goes under the balls, the
@@ -269,20 +277,22 @@ class _PachinkoBoardPainter extends CustomPainter {
         canvas,
         opacity: gameState.bonusOverlayOpacity,
         bonusBalls: GameConstants.bonusBallsFor(gameState.currentLevelNumber),
+        mirrored: mirrored,
       );
     }
 
     // Draw balls
-    _drawBalls(canvas, gameState, reducesMotion: reducesMotion);
+    _drawBalls(canvas, gameState,
+        reducesMotion: reducesMotion, mirrored: mirrored);
 
-    _drawLaunchArea(canvas, level);
+    _drawLaunchArea(canvas, level, mirrored: mirrored);
 
     // Draw launch power indicator
     if (isDragging &&
         dragStart != null &&
         dragEnd != null &&
         gameState.canLaunchBall) {
-      _drawLaunchPowerIndicator(canvas, scale);
+      _drawLaunchPowerIndicator(canvas, mirrored: mirrored);
     }
 
     if (!reducesMotion) {
@@ -293,7 +303,7 @@ class _PachinkoBoardPainter extends CustomPainter {
 
     // Draw floating texts
     for (final floatingText in gameState.floatingTexts) {
-      _drawFloatingText(canvas, floatingText);
+      _drawFloatingText(canvas, floatingText, mirrored: mirrored);
     }
 
     canvas.restore();
@@ -307,7 +317,7 @@ class _PachinkoBoardPainter extends CustomPainter {
   /// ring and no halo, so that it is plain which prizes remain. When motion
   /// is reduced the rings hold still.
   void _drawAnimatedPegs(Canvas canvas, Level level,
-      {required bool reducesMotion}) {
+      {required bool reducesMotion, required bool mirrored}) {
     for (final peg in level.pegs) {
       if (peg.type != PegType.special && !peg.isAnimating) continue;
       final centre = Offset(peg.position.x, peg.position.y);
@@ -332,9 +342,11 @@ class _PachinkoBoardPainter extends CustomPainter {
           peg.radius,
           peg.renderColor,
           glowColour: flashing ? GameConstants.specialPegColor : null,
+          mirrored: mirrored,
         );
       } else if (peg.isCollected) {
-        paintSphere(canvas, centre, peg.radius, peg.renderColor);
+        paintSphere(canvas, centre, peg.radius, peg.renderColor,
+            mirrored: mirrored);
         canvas.drawCircle(centre, peg.radius + 2, ring(1, 0.55));
       } else {
         // A prize still to win is a light: it has a halo and casts no shadow
@@ -345,6 +357,7 @@ class _PachinkoBoardPainter extends CustomPainter {
           peg.renderColor,
           castsShadow: false,
           glowColour: GameConstants.specialPegColor,
+          mirrored: mirrored,
         );
         // shimmerIntensity runs from 0.0 to 0.6
         final shimmer = reducesMotion ? _restingShimmer : peg.shimmerIntensity;
@@ -359,7 +372,7 @@ class _PachinkoBoardPainter extends CustomPainter {
   /// behind it: the ball is what the player has to follow. When motion is
   /// reduced the trail is its last [reducedMotionTrailLength] points.
   void _drawBalls(Canvas canvas, GameState gameState,
-      {required bool reducesMotion}) {
+      {required bool reducesMotion, required bool mirrored}) {
     for (final ball in gameState.activeBalls) {
       if (!ball.isActive) continue;
 
@@ -383,6 +396,7 @@ class _PachinkoBoardPainter extends CustomPainter {
         ball.radius,
         ball.color,
         glowColour: ball.color,
+        mirrored: mirrored,
       );
     }
   }
@@ -390,7 +404,7 @@ class _PachinkoBoardPainter extends CustomPainter {
   /// The launch area's box, the resting marker and the hint. All of it stays
   /// inside the board: the box used to overhang the right edge and was cut
   /// off by the screen.
-  void _drawLaunchArea(Canvas canvas, Level level) {
+  void _drawLaunchArea(Canvas canvas, Level level, {required bool mirrored}) {
     const right = GameConstants.boardWidth - 4;
     canvas.drawRRect(
       RRect.fromRectAndRadius(
@@ -414,7 +428,8 @@ class _PachinkoBoardPainter extends CustomPainter {
       Paint()..color = GameConstants.ballColor,
     );
 
-    // The hint, right-aligned to the box so that it cannot run off the board
+    // The hint, aligned to the box's outer edge so that it cannot run off the
+    // board
     final textPainter = TextPainter(
       text: TextSpan(
         text: launchHintFor(gameManager.ballLauncher.phase),
@@ -425,7 +440,8 @@ class _PachinkoBoardPainter extends CustomPainter {
         ),
       ),
       textDirection: TextDirection.ltr,
-      textAlign: TextAlign.right,
+      // Flush with the board's edge, on whichever side the launcher is
+      textAlign: mirrored ? TextAlign.left : TextAlign.right,
     );
     // Two short lines under the launch box, clear of the slots below. That
     // is where a popup rises from the right-hand slots, so the hint steps
@@ -442,17 +458,22 @@ class _PachinkoBoardPainter extends CustomPainter {
               fontSize: popup.fontSize,
             ).overlaps(hint));
     if (!underPopup && !gameManager.showsLaunchHint) {
-      textPainter.paint(canvas, hintAt);
+      paintUnreflected(canvas,
+          aboutX: hint.center.dx,
+          mirrored: mirrored,
+          paint: () => textPainter.paint(canvas, hintAt));
     }
   }
 
   /// The launch channel as the power meter, while the player drags.
-  void _drawLaunchPowerIndicator(Canvas canvas, double scale) {
+  void _drawLaunchPowerIndicator(Canvas canvas, {required bool mirrored}) {
     final launcher = gameManager.ballLauncher;
-    paintLaunchPower(canvas, launcher.launchPower / launcher.maxPower);
+    paintLaunchPower(canvas, launcher.launchPower / launcher.maxPower,
+        mirrored: mirrored);
   }
 
-  void _drawFloatingText(Canvas canvas, FloatingText floatingText) {
+  void _drawFloatingText(Canvas canvas, FloatingText floatingText,
+      {required bool mirrored}) {
     paintScorePopup(
       canvas,
       text: floatingText.text,
@@ -460,6 +481,7 @@ class _PachinkoBoardPainter extends CustomPainter {
       colour: floatingText.color,
       fontSize: floatingText.fontSize,
       opacity: floatingText.opacity,
+      mirrored: mirrored,
     );
   }
 

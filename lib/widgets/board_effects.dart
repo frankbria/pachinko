@@ -10,9 +10,10 @@ import 'board_static_layer.dart';
 /// Draws the bonus announcement over the board: a dark scrim so that the
 /// board stays visible but recedes, a gold glow, and the number of balls won.
 ///
-/// [opacity] runs from 1.0, fully shown, to 0.0 as the overlay fades.
+/// [opacity] runs from 1.0, fully shown, to 0.0 as the overlay fades. On a
+/// [mirrored] board the words are drawn to read the right way round.
 void paintBonusOverlay(Canvas canvas,
-    {required double opacity, required int bonusBalls}) {
+    {required double opacity, required int bonusBalls, bool mirrored = false}) {
   canvas.drawRect(
     const Rect.fromLTWH(
         0, 0, GameConstants.boardWidth, GameConstants.boardHeight),
@@ -62,11 +63,13 @@ void paintBonusOverlay(Canvas canvas,
     textDirection: TextDirection.ltr,
   )..layout();
 
-  amount.paint(canvas, centre - Offset(amount.width / 2, amount.height / 2));
-  caption.paint(
-      canvas,
-      centre -
-          Offset(caption.width / 2, amount.height / 2 + caption.height + 4));
+  paintUnreflected(canvas, aboutX: centre.dx, mirrored: mirrored, paint: () {
+    amount.paint(canvas, centre - Offset(amount.width / 2, amount.height / 2));
+    caption.paint(
+        canvas,
+        centre -
+            Offset(caption.width / 2, amount.height / 2 + caption.height + 4));
+  });
   caption.dispose();
   amount.dispose();
 }
@@ -119,9 +122,10 @@ const double _prizeLampSpacing = 20.0;
 
 /// Draws one lamp per prize peg in the dome, centred under the level sign.
 /// The first [collected] of the [total] are lit, so the row shows at a glance
-/// how many prizes are left to win.
+/// how many prizes are left to win. On a [mirrored] board the lit lamps are
+/// still lit from the upper left.
 void paintPrizeLamps(Canvas canvas,
-    {required int total, required int collected}) {
+    {required int total, required int collected, bool mirrored = false}) {
   final firstX = prizeLampCentreX - _prizeLampSpacing * (total - 1) / 2;
 
   for (int i = 0; i < total; i++) {
@@ -134,6 +138,7 @@ void paintPrizeLamps(Canvas canvas,
         GameConstants.specialPegColor,
         castsShadow: false,
         glowColour: GameConstants.specialPegColor,
+        mirrored: mirrored,
       );
     } else {
       canvas.drawCircle(
@@ -162,8 +167,10 @@ const double _slotTrayGap = 4.0;
 /// With [inTray] the counts go in a glass tray under the slots, below the
 /// board's own height: a phone's screen is taller than the board, and that
 /// strip is otherwise empty. Without it (a window as wide as it is tall)
-/// they are drawn inside the slots, under the values.
-void paintSlotCounts(Canvas canvas, List<Slot> slots, {required bool inTray}) {
+/// they are drawn inside the slots, under the values. On a [mirrored] board
+/// they are drawn to read the right way round.
+void paintSlotCounts(Canvas canvas, List<Slot> slots,
+    {required bool inTray, bool mirrored = false}) {
   if (slots.isEmpty) return;
 
   const trayTop = GameConstants.boardHeight + _slotTrayGap;
@@ -196,13 +203,18 @@ void paintSlotCounts(Canvas canvas, List<Slot> slots, {required bool inTray}) {
     final top = inTray
         ? trayTop + (slotTrayHeight - count.height) / 2
         : slot.bottom - count.height - 3;
-    count.paint(canvas, Offset(slot.position.x - count.width / 2, top));
+    paintUnreflected(canvas,
+        aboutX: slot.position.x,
+        mirrored: mirrored,
+        paint: () => count.paint(
+            canvas, Offset(slot.position.x - count.width / 2, top)));
   }
 }
 
 /// Draws each lit slot over its unlit picture: the pocket filled with its
-/// tier colour, as strongly as the slot is lit, and its value in ink on top.
-void paintSlotLights(Canvas canvas, List<Slot> slots) {
+/// tier colour, as strongly as the slot is lit, and its value in ink on top,
+/// reading the right way round on a [mirrored] board.
+void paintSlotLights(Canvas canvas, List<Slot> slots, {bool mirrored = false}) {
   for (final slot in slots) {
     if (slot.glow <= 0.0) continue;
 
@@ -211,7 +223,8 @@ void paintSlotLights(Canvas canvas, List<Slot> slots) {
       Paint()..color = slot.color.withValues(alpha: 0.75 * slot.glow),
     );
     paintSlotValue(canvas, slot.bounds, slot.pointValue,
-        GameConstants.inkColor.withValues(alpha: slot.glow));
+        GameConstants.inkColor.withValues(alpha: slot.glow),
+        mirrored: mirrored);
   }
 }
 
@@ -257,7 +270,7 @@ Rect scorePopupBounds({
 }
 
 /// Draws a score popup at [centreTop], in its own colour and size, inside
-/// [scorePopupBounds].
+/// [scorePopupBounds], reading the right way round on a [mirrored] board.
 void paintScorePopup(
   Canvas canvas, {
   required String text,
@@ -265,10 +278,15 @@ void paintScorePopup(
   required Color colour,
   required double fontSize,
   required double opacity,
+  bool mirrored = false,
 }) {
   final bounds =
       scorePopupBounds(text: text, centreTop: centreTop, fontSize: fontSize);
-  _scorePopup(text, colour, fontSize, opacity).paint(canvas, bounds.topLeft);
+  paintUnreflected(canvas,
+      aboutX: bounds.center.dx,
+      mirrored: mirrored,
+      paint: () => _scorePopup(text, colour, fontSize, opacity)
+          .paint(canvas, bounds.topLeft));
 }
 
 /// The colour of launch power at [ratio] (0.0 to 1.0): cyan, rising through
@@ -295,7 +313,8 @@ String launchHintFor(LaunchPhase phase) => phase == LaunchPhase.charging
 /// power the light stops at the top of the channel's inner wall. The ramp is
 /// two two-colour gradients, one above the other: a single three-colour
 /// gradient aborts the CI emulator (see the board materials slice, #26).
-void paintLaunchPower(Canvas canvas, double ratio) {
+/// On a [mirrored] board the percentage reads the right way round.
+void paintLaunchPower(Canvas canvas, double ratio, {bool mirrored = false}) {
   final power = ratio.clamp(0.0, 1.0);
   const left = GameConstants.launchChannelStartX + 2;
   const right =
@@ -338,13 +357,14 @@ void paintLaunchPower(Canvas canvas, double ratio) {
     ),
     textDirection: TextDirection.ltr,
   )..layout();
-  label.paint(
-    canvas,
-    Offset(
-      GameConstants.launchChannelStartX - 20 - label.width,
-      GameConstants.launchChannelStartY - label.height / 2,
-    ),
+  final labelAt = Offset(
+    GameConstants.launchChannelStartX - 20 - label.width,
+    GameConstants.launchChannelStartY - label.height / 2,
   );
+  paintUnreflected(canvas,
+      aboutX: labelAt.dx + label.width / 2,
+      mirrored: mirrored,
+      paint: () => label.paint(canvas, labelAt));
 }
 
 /// Draws the plunger the resting ball sits on: a cap under the ball and a

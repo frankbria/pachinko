@@ -1,4 +1,4 @@
-/// The player's choices for sound, vibration and motion, as the settings
+/// The player's choices for sound, vibration, motion and the launcher's side, as the settings
 /// screen shows them and `StorageService` keeps them.
 ///
 /// Immutable: a change is a new value from [copyWith], given to
@@ -18,13 +18,19 @@ class GameSettings {
   /// system's setting decides (see [reducesMotion]).
   final bool? reducedMotion;
 
+  /// Whether the launch channel and the plunger are on the left, for a
+  /// left-handed player: the board is drawn reflected, and the game played on
+  /// it is the same.
+  final bool leftHanded;
+
   /// The settings of a new install: sound and vibration on at full volume,
-  /// and motion as the system has it.
+  /// motion as the system has it, and the launcher on the right.
   const GameSettings({
     this.soundOn = true,
     this.soundVolume = 1.0,
     this.vibrationOn = true,
     this.reducedMotion,
+    this.leftHanded = false,
   });
 
   /// Whether the board reduces motion, given whether the system asks apps
@@ -38,12 +44,14 @@ class GameSettings {
     double? soundVolume,
     bool? vibrationOn,
     bool? reducedMotion,
+    bool? leftHanded,
   }) =>
       GameSettings(
         soundOn: soundOn ?? this.soundOn,
         soundVolume: soundVolume ?? this.soundVolume,
         vibrationOn: vibrationOn ?? this.vibrationOn,
         reducedMotion: reducedMotion ?? this.reducedMotion,
+        leftHanded: leftHanded ?? this.leftHanded,
       );
 
   @override
@@ -52,14 +60,15 @@ class GameSettings {
       other.soundOn == soundOn &&
       other.soundVolume == soundVolume &&
       other.vibrationOn == vibrationOn &&
-      other.reducedMotion == reducedMotion;
+      other.reducedMotion == reducedMotion &&
+      other.leftHanded == leftHanded;
 
   @override
   String toString() => 'GameSettings(soundOn: $soundOn, '
       'soundVolume: $soundVolume, vibrationOn: $vibrationOn, '
-      'reducedMotion: $reducedMotion)';
+      'reducedMotion: $reducedMotion, leftHanded: $leftHanded)';
 
   @override
   int get hashCode =>
-      Object.hash(soundOn, soundVolume, vibrationOn, reducedMotion);
+      Object.hash(soundOn, soundVolume, vibrationOn, reducedMotion, leftHanded);
 }

@@ -9,6 +9,7 @@ void main() {
     expect(settings.soundVolume, 1.0);
     expect(settings.vibrationOn, isTrue);
     expect(settings.reducedMotion, isNull);
+    expect(settings.leftHanded, isFalse);
   });
 
   group('reduced motion', () {
@@ -42,6 +43,8 @@ void main() {
         const GameSettings(vibrationOn: false));
     expect(settings.copyWith(reducedMotion: true),
         const GameSettings(reducedMotion: true));
+    expect(settings.copyWith(leftHanded: true),
+        const GameSettings(leftHanded: true));
   });
 
   test('settings are equal when every choice is', () {
@@ -57,6 +60,6 @@ void main() {
     expect(
         const GameSettings(soundOn: false, reducedMotion: true).toString(),
         'GameSettings(soundOn: false, soundVolume: 1.0, vibrationOn: true, '
-        'reducedMotion: true)');
+        'reducedMotion: true, leftHanded: false)');
   });
 }

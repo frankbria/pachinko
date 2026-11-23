@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../services/game_manager.dart';
 import '../utils/constants.dart';
 import 'board_effects.dart';
+import 'board_static_layer.dart';
 
 /// The hints of a first round, laid over the board drawn at [scale]: a ghost
 /// hand that shows the drag on the plunger, and a callout that says what the
@@ -17,15 +18,20 @@ class FirstRoundHints extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (showsHand, prizePegs) = context.select<GameManager, (bool, int?)>(
-        (manager) => (manager.showsLaunchHint, manager.prizePegHint));
+    final (showsHand, prizePegs, mirrored) =
+        context.select<GameManager, (bool, int?, bool)>((manager) => (
+              manager.showsLaunchHint,
+              manager.prizePegHint,
+              manager.settings.leftHanded,
+            ));
     return IgnorePointer(
       child: Stack(
         children: [
-          if (showsHand) GhostHand(scale: scale),
+          if (showsHand) GhostHand(scale: scale, mirrored: mirrored),
           if (prizePegs != null)
             PrizePegCallout(
               scale: scale,
+              mirrored: mirrored,
               prizePegs: prizePegs,
               onFinished: context.read<GameManager>().dismissPrizePegHint,
             ),
@@ -41,6 +47,10 @@ class GhostHand extends StatefulWidget {
   /// Screen pixels per board pixel.
   final double scale;
 
+  /// Whether the board is drawn reflected for a left-handed player: the
+  /// hand is then a left hand, on the plunger at the left.
+  final bool mirrored;
+
   /// The hand's size, in board pixels.
   static const double size = 30.0;
 
@@ -50,7 +60,11 @@ class GhostHand extends StatefulWidget {
   /// One press, pull and return.
   static const Duration cycle = Duration(milliseconds: 1600);
 
-  const GhostHand({super.key, required this.scale});
+  const GhostHand({super.key, required this.scale, this.mirrored = false});
+
+  /// How far across the hand its fingertip is, as a share of its width: the
+  /// fingertip of the touch_app glyph is a little left of its middle.
+  static const double _fingertip = 0.42;
 
   /// How far down the hand is at [progress] (0 to 1) through a [cycle]: at
   /// the plunger at the start and end, and [pull] down half way.
@@ -75,10 +89,15 @@ class _GhostHandState extends State<GhostHand>
   @override
   Widget build(BuildContext context) {
     final scale = widget.scale;
-    // The fingertip of the touch_app glyph is a little left of its middle,
-    // near its top; it rests on the plunger's cap
+    final mirrored = widget.mirrored;
+    // The fingertip, near the top of the glyph, rests on the plunger's cap;
+    // reflected, it is as far from the hand's other side
+    final fingertip =
+        mirrored ? 1 - GhostHand._fingertip : GhostHand._fingertip;
+    final plungerX =
+        boardXOnScreen(GameConstants.ballLaunchX, mirrored: mirrored);
     return Positioned(
-      left: (GameConstants.ballLaunchX - GhostHand.size * 0.42) * scale,
+      left: (plungerX - GhostHand.size * fingertip) * scale,
       top: (GameConstants.launchChannelStartY + GameConstants.ballRadius) *
           scale,
       child: AnimatedBuilder(
@@ -87,10 +106,13 @@ class _GhostHandState extends State<GhostHand>
           offset: Offset(0, GhostHand.pullAt(_motion.value) * scale),
           child: hand,
         ),
-        child: Icon(
-          Icons.touch_app,
-          size: GhostHand.size * scale,
-          color: GameConstants.inkColor.withValues(alpha: 0.85),
+        child: Transform.flip(
+          flipX: mirrored,
+          child: Icon(
+            Icons.touch_app,
+            size: GhostHand.size * scale,
+            color: GameConstants.inkColor.withValues(alpha: 0.85),
+          ),
         ),
       ),
     );
@@ -102,6 +124,10 @@ class _GhostHandState extends State<GhostHand>
 class PrizePegCallout extends StatefulWidget {
   /// Screen pixels per board pixel.
   final double scale;
+
+  /// Whether the board is drawn reflected for a left-handed player: the
+  /// callout then follows the lamps.
+  final bool mirrored;
 
   /// The level's number of prize pegs.
   final int prizePegs;
@@ -115,6 +141,7 @@ class PrizePegCallout extends StatefulWidget {
   const PrizePegCallout({
     super.key,
     required this.scale,
+    this.mirrored = false,
     required this.prizePegs,
     required this.onFinished,
   });
@@ -153,8 +180,12 @@ class _PrizePegCalloutState extends State<PrizePegCallout>
       width: GameConstants.boardWidth * scale,
       top: (prizeLampRowY + 14) * scale,
       child: Align(
-        alignment: const Alignment(
-            prizeLampCentreX / GameConstants.boardWidth * 2 - 1, 0),
+        alignment: Alignment(
+            boardXOnScreen(prizeLampCentreX, mirrored: widget.mirrored) /
+                    GameConstants.boardWidth *
+                    2 -
+                1,
+            0),
         child: FadeTransition(
           opacity: _opacity,
           child: Container(
