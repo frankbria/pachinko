@@ -247,6 +247,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Gold pegs'), findsOneWidget);
+      expect(find.textContaining('every slot pays ×2'), findsOneWidget);
       expect(find.textContaining(RegExp('orange', caseSensitive: false)),
           findsNothing);
     });

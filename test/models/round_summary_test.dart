@@ -83,6 +83,24 @@ void main() {
   });
 
   test(
+      'given a landing in the fever, then the summary reports what the fever added, and the tiers count slot values',
+      () {
+    final state = GameState()..startNewGame(level: 1);
+    addTearDown(state.dispose);
+    final edge =
+        state.currentLevel!.slots.firstWhere((slot) => slot.pointValue == 2000);
+    state.triggerSpecialBonus();
+
+    edge.addBall();
+    state.scoreLanding(edge);
+    final summary = RoundSummary.of(state);
+
+    expect(summary.feverPoints, 2000);
+    expect(summary.score, 4000);
+    expect(summary.tiers.first.points + summary.feverPoints, summary.score);
+  });
+
+  test(
       'given every prize peg collected on level 60, then the summary reports the balls the game dropped',
       () {
     final state = roundWith({50: 1}, levelNumber: 60);

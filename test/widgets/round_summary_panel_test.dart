@@ -98,6 +98,30 @@ void main() {
     expect(find.text('1 of 3'), findsOneWidget);
   });
 
+  testWidgets(
+      'given a round with a fever, then the panel says what the fever paid, and without one it says nothing of it',
+      (tester) async {
+    const withFever = RoundSummary(
+      levelNumber: 3,
+      score: 10550,
+      tiers: [SlotTierTally(pointValue: 2000, balls: 2)],
+      prizePegsCollected: 5,
+      prizePegsTotal: 5,
+      bonusBalls: 6,
+      feverPoints: 2000,
+    );
+    await pumpPanel(tester, withFever);
+
+    final line = find
+        .ancestor(of: find.text('Fever ×2'), matching: find.byType(Row))
+        .first;
+    expect(find.descendant(of: line, matching: find.text('+2,000')),
+        findsOneWidget);
+
+    await pumpPanel(tester, example);
+    expect(find.text('Fever ×2'), findsNothing);
+  });
+
   testWidgets('given the three actions, then each button calls its own',
       (tester) async {
     final tapped = <String>[];

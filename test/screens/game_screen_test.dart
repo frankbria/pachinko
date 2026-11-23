@@ -43,6 +43,7 @@ void main() {
     // Read by the round summary at game over
     when(mockGameManager.roundIsNewBest).thenReturn(null);
     when(mockGameState.levelScore).thenReturn(0);
+    when(mockGameState.feverPoints).thenReturn(0);
     when(mockGameState.specialBonusTriggered).thenReturn(false);
     when(mockGameState.currentLevelNumber).thenReturn(3);
     when(mockGameState.activeBalls).thenReturn([]);

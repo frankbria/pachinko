@@ -33,6 +33,10 @@ class RoundSummary {
   /// collected.
   final int bonusBalls;
 
+  /// The points the fever added over what the slots pay without it. The
+  /// [tiers] count slot values; [score] includes these.
+  final int feverPoints;
+
   /// Whether [score] beats the level's best before this round. Null when it
   /// is not known (there is no storage, or it has not answered yet).
   final bool? isNewBest;
@@ -44,6 +48,7 @@ class RoundSummary {
     required this.prizePegsCollected,
     required this.prizePegsTotal,
     required this.bonusBalls,
+    this.feverPoints = 0,
     this.isNewBest,
   });
 
@@ -79,6 +84,7 @@ class RoundSummary {
       bonusBalls: prizes.isNotEmpty && prizes.every((peg) => peg.isCollected)
           ? GameConstants.bonusBallsFor(state.currentLevelNumber)
           : 0,
+      feverPoints: state.feverPoints,
       isNewBest: isNewBest,
     );
   }

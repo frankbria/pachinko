@@ -22,6 +22,7 @@ Future<void> showHowToPlay(BuildContext context) => showDialog<void>(
                   '• Pegs change the ball\'s direction'),
               _heading(Icons.auto_awesome, 'Special Features'),
               _body('• Gold pegs are prizes: hit them all for bonus balls\n'
+                  '• The bonus brings a fever: for a few seconds of play every slot pays ×${GameConstants.feverMultiplier}\n'
                   '• Edge slots give the most points and are the hardest to reach\n'
                   '• The centre slot gives good points'),
               _heading(Icons.emoji_events, 'Scoring'),

@@ -248,7 +248,7 @@ void main() {
           'Land the first ball of a round in a 2,000 slot');
     });
 
-    test('the thresholds are 20,000 and 25,000, and each description says so',
+    test('the thresholds are 27,500 and 37,500, and each description says so',
         () async {
       service = await freshService();
       String description(String id) => service
@@ -256,10 +256,10 @@ void main() {
           .firstWhere((a) => a.id == id)
           .description;
 
-      expect(AchievementService.highRollerScore, 20000);
-      expect(AchievementService.scoreMasterScore, 25000);
-      expect(description('high_roller'), 'Score 20,000+ in single level');
-      expect(description('score_master'), 'Score 25,000+ in single level');
+      expect(AchievementService.highRollerScore, 27500);
+      expect(AchievementService.scoreMasterScore, 37500);
+      expect(description('high_roller'), 'Score 27,500+ in single level');
+      expect(description('score_master'), 'Score 37,500+ in single level');
     });
 
     test(
@@ -304,7 +304,7 @@ void main() {
 
       expect(highRoller.isUnlocked, isTrue);
       expect(highRoller.unlockedDate, DateTime(2025, 11, 17, 10));
-      expect(highRoller.description, 'Score 20,000+ in single level');
+      expect(highRoller.description, 'Score 27,500+ in single level');
     });
 
     test('givenTotalScore1Million_whenTracked_thenMillionaireUnlocked',

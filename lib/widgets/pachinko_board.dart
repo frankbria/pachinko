@@ -254,6 +254,7 @@ class _PachinkoBoardPainter extends CustomPainter {
     canvas.drawPicture(staticLayer.pictureFor(level, mirrored: mirrored));
 
     paintSlotLights(canvas, level.slots, mirrored: mirrored);
+    paintFever(canvas, level.slots, remaining: gameState.feverRemaining);
 
     // A phone's screen is taller than the board; the counts go in the strip below it
     final roomBelow = size.height / scale - GameConstants.boardHeight;

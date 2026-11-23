@@ -93,8 +93,31 @@ class GameConstants {
 
   // Game constants
   static const int ballsPerRound = 20;
-  static const int minSpecialPegs = 2;
-  static const int maxSpecialPegs = 4;
+
+  /// The prize pegs on every level. With all of them to collect, the bonus
+  /// comes in 35 to 50% of rounds on every band of levels, measured with
+  /// `tool/scoring_simulation_test.dart` (#113).
+  static const int prizePegsPerLevel = 5;
+
+  /// Where prize pegs are placed: a zigzag column down the middle of the
+  /// field, low down, the first at [prizeColumnTopY] and each next one
+  /// [prizeColumnStep] lower and on the other side of [prizeColumnX] by
+  /// [prizeColumnSway], moved by up to [prizeColumnJitter] either way. A ball
+  /// that reaches one has usually been turned aside by the one above it,
+  /// which is what makes collecting them all rare; set with
+  /// `tool/scoring_simulation_test.dart` (#113).
+  static const double prizeColumnX = boardWidth / 2;
+  static const double prizeColumnTopY = 340.0;
+  static const double prizeColumnStep = 41.0;
+  static const double prizeColumnSway = 25.0;
+  static const double prizeColumnJitter = 8.0;
+
+  /// How much a slot pays during the fever that follows the bonus.
+  static const int feverMultiplier = 2;
+
+  /// How long the fever lasts, in seconds of play: it runs down only while a
+  /// ball is in play, so neither pausing nor waiting to launch uses it up.
+  static const double feverSeconds = 8.0;
   static const int bonusBallsBase = 5;
 
   /// The most balls a bonus drops. The bonus grows with the level and
@@ -265,6 +288,7 @@ class GameStrings {
   static const String newBest = 'New best for this level';
   static const String prizePegs = 'Prize pegs';
   static const String bonusBalls = 'Bonus balls';
+  static const String feverPoints = 'Fever ×${GameConstants.feverMultiplier}';
   static const String levelComplete = 'Level Complete!';
   static const String gameOver = 'Game Over';
   static const String score = 'Score';
