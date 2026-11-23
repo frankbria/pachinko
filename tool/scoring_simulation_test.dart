@@ -8,7 +8,9 @@
 //     flutter test tool/scoring_simulation_test.dart \
 //       --dart-define=LEVELS=60 --dart-define=ROUNDS=20
 //
-// and read the lines that start with SIM and BAND. To compare two commits,
+// and read the lines that start with SIM and BAND. A BAND line gives the
+// spread of round scores on its levels (p10 to p99): the difficulty curve
+// (#115) is that p50 stays flat from band to band while the bonus grows. To compare two commits,
 // copy this file into a checkout of each: it uses what GameState,
 // BallLauncher, PhysicsEngine and Level have offered since #6, the fixed
 // step and seeding added in #108, and the fever added in #113. For an older
@@ -109,7 +111,7 @@ class Tally {
   String share(int n) => '${(100 * n / rounds).toStringAsFixed(1)}%';
   String band(String name) =>
       '$name | ${share(bonusRounds)} | ${(balls / rounds).toStringAsFixed(1)} | ${(score / rounds).round()} | '
-      '${share(over10k)} | ${percentile(50)} | ${percentile(90)} | ${percentile(99)} | '
+      '${share(over10k)} | ${percentile(10)} | ${percentile(25)} | ${percentile(50)} | ${percentile(90)} | ${percentile(99)} | '
       '${share(reaching(AchievementService.highRollerScore))} | '
       '${share(reaching(AchievementService.scoreMasterScore))} | '
       '${share(comboRounds)} | ${share(luckyRounds)} | $best';
@@ -364,7 +366,7 @@ void main() {
     print('SIM ${all.row('all')}');
     // ignore: avoid_print
     print(
-        'BAND levels | bonus rounds | balls/round | score/round | rounds over 10k | p50 | p90 | p99 | High Roller | Score Master | Combo King | Lucky Shot | best round');
+        'BAND levels | bonus rounds | balls/round | score/round | rounds over 10k | p10 | p25 | p50 | p90 | p99 | High Roller | Score Master | Combo King | Lucky Shot | best round');
     bands.forEach((name, tally) {
       // ignore: avoid_print
       if (tally.rounds > 0) print('BAND ${tally.band(name)}');
