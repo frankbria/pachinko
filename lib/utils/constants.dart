@@ -28,8 +28,6 @@ class GameConstants {
   // Ball constants
   static const double ballRadius = 8.0;
   static const double ballMass = 1.0;
-  static const double launchForceMin = 300.0;
-  static const double launchForceMax = 800.0;
 
   // Peg constants
   static const double pegRadiusMin = 8.0;
@@ -190,14 +188,7 @@ class GameConstants {
   static const Color surfaceColor = Color(0xFF171C36);
   static const Color errorColor = Color(0xFFCF6679);
 
-  // Animation durations (in milliseconds)
-  static const int launchAnimationDuration = 300;
-  static const int pegHitAnimationDuration = 200;
-  static const int scoreAnimationDuration = 500;
-  static const int ballLandAnimationDuration = 150;
-
   // Debug options
-  static const bool showDebugGrid = false;
   static const bool showPegSpacing = false;
 
   /// How many fixed physics steps make a second of play, whatever the
@@ -225,14 +216,10 @@ class GameConstants {
   };
 
   // Level progression
-  static const int baseLegsPerLevel = 40;
   static const int additionalPegsPerLevel = 5;
-  static const double pegDensityIncrease = 0.1;
 
   // Audio
-  static const double masterVolume = 0.7;
   static const double sfxVolume = 0.8;
-  static const double musicVolume = 0.5;
 }
 
 class GameStrings {
